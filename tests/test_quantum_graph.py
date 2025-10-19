@@ -1,8 +1,11 @@
 """Test quantum graph functionality."""
 
+import networkx as nx
+import networkx as nx
+import numpy as np
 import pytest
 
-from kmeanssa_ng import QGCenter, QGPoint, QuantumGraph, generate_sbm, generate_simple_graph
+from kmeanssa_ng import QGCenter, QGPoint, QuantumGraph, generate_sbm, generate_simple_graph, generate_random_sbm, as_quantum_graph, complete_quantum_graph
 
 
 class TestQuantumGraph:
@@ -395,3 +398,88 @@ class TestDistance:
         dist = graph.distance(p1, p2)
         # Should be (0.5 from p1 to node 1) + (0.5 from node 1 to p2) = 1.0
         assert abs(dist - 1.0) < 1e-10
+
+
+class TestValidation:
+    """Tests for input validation in QuantumGraph."""
+
+    def test_add_edge_without_length_raises(self):
+        """Test that adding an edge without length raises ValueError."""
+        graph = QuantumGraph()
+        with pytest.raises(ValueError, match="must have a 'length' attribute"):
+            graph.add_edge(0, 1)
+
+    def test_add_edge_with_zero_length_raises(self):
+        """Test that zero length raises ValueError."""
+        graph = QuantumGraph()
+        with pytest.raises(ValueError, match="must be positive"):
+            graph.add_edge(0, 1, length=0)
+
+    def test_add_edge_with_negative_length_raises(self):
+        """Test that negative length raises ValueError."""
+        graph = QuantumGraph()
+        with pytest.raises(ValueError, match="must be positive"):
+            graph.add_edge(0, 1, length=-1.5)
+
+    def test_add_edge_with_non_numeric_length_raises(self):
+        """Test that non-numeric length raises ValueError."""
+        graph = QuantumGraph()
+        with pytest.raises(ValueError, match="must be a number"):
+            graph.add_edge(0, 1, length="invalid")
+
+    def test_validate_edge_lengths_with_missing_length(self):
+        """Test validation fails when edge is missing length attribute."""
+        graph = QuantumGraph()
+        # Bypass validation by using parent class method
+        nx.Graph.add_edge(graph, 0, 1, weight=1.0)  # No length attribute
+
+        with pytest.raises(ValueError, match="missing 'length' attribute"):
+            graph.validate_edge_lengths()
+
+    def test_validate_edge_lengths_with_invalid_length(self):
+        """Test validation fails when edge has invalid length."""
+        graph = QuantumGraph()
+        # Bypass validation by using parent class method
+        nx.Graph.add_edge(graph, 0, 1, length=-2.0)
+
+        with pytest.raises(ValueError, match="invalid length.*must be positive"):
+            graph.validate_edge_lengths()
+
+    def test_validate_edge_lengths_success(self):
+        """Test validation succeeds with valid edges."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 2, length=2.0)
+
+        # Should not raise
+        graph.validate_edge_lengths()
+
+    def test_precomputing_disconnected_graph_raises(self):
+        """Test that precomputing on disconnected graph raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(2, 3, length=1.0)  # Separate component
+
+        with pytest.raises(ValueError, match="must be connected.*2 connected components"):
+            graph.precomputing()
+
+    def test_precomputing_invalid_edges_raises(self):
+        """Test that precomputing validates edge lengths."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        # Manually corrupt an edge length
+        graph[0][1]["length"] = -1.0
+
+        with pytest.raises(ValueError, match="invalid length"):
+            graph.precomputing()
+
+    def test_precomputing_connected_graph_success(self):
+        """Test that precomputing succeeds on valid connected graph."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 2, length=2.0)
+        graph.add_edge(0, 2, length=3.0)
+
+        # Should not raise
+        graph.precomputing()
+        assert graph._pairwise_nodes_distance is not None

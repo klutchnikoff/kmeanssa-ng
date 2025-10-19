@@ -51,6 +51,40 @@ class QuantumGraph(nx.Graph, Space):
         self._diameter: float = 0.0
         self._node_position: dict | None = None
 
+    def add_edge(self, u_for_edge, v_for_edge, **attr) -> None:
+        """Add an edge with validation of the length attribute.
+
+        Args:
+            u_for_edge: First node.
+            v_for_edge: Second node.
+            **attr: Edge attributes. Must include 'length' with a positive value.
+
+        Raises:
+            ValueError: If 'length' is missing, not positive, or not a number.
+        """
+        if "length" not in attr:
+            raise ValueError(
+                f"Edge ({u_for_edge}, {v_for_edge}) must have a 'length' attribute"
+            )
+
+        length = attr["length"]
+
+        # Check if length is a number
+        try:
+            length_float = float(length)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"Edge ({u_for_edge}, {v_for_edge}) length must be a number, got {type(length).__name__}"
+            ) from e
+
+        # Check if length is positive
+        if length_float <= 0:
+            raise ValueError(
+                f"Edge ({u_for_edge}, {v_for_edge}) length must be positive, got {length_float}"
+            )
+
+        super().add_edge(u_for_edge, v_for_edge, **attr)
+
     @property
     def diameter(self) -> float:
         """Compute and cache the graph diameter.
@@ -66,12 +100,49 @@ class QuantumGraph(nx.Graph, Space):
                         self._diameter = d
         return self._diameter
 
+    def validate_edge_lengths(self) -> None:
+        """Validate that all edges have positive length attributes.
+
+        Raises:
+            ValueError: If any edge is missing 'length' or has invalid length.
+        """
+        for u, v, data in self.edges(data=True):
+            if "length" not in data:
+                raise ValueError(f"Edge ({u}, {v}) missing 'length' attribute")
+
+            length = data["length"]
+            try:
+                length_float = float(length)
+            except (TypeError, ValueError) as e:
+                raise ValueError(
+                    f"Edge ({u}, {v}) length must be a number, got {type(length).__name__}"
+                ) from e
+
+            if length_float <= 0:
+                raise ValueError(
+                    f"Edge ({u}, {v}) has invalid length {length_float}, must be positive"
+                )
+
     def precomputing(self) -> None:
         """Precompute and cache all pairwise node distances.
 
         This significantly speeds up distance queries.
         Should be called once after graph construction.
+
+        Raises:
+            ValueError: If graph is not connected or has invalid edge lengths.
         """
+        # Validate edge lengths first
+        self.validate_edge_lengths()
+
+        # Check connectivity
+        if self.number_of_nodes() > 0 and not nx.is_connected(self):
+            num_components = nx.number_connected_components(self)
+            raise ValueError(
+                f"Graph must be connected for distance precomputing. "
+                f"Found {num_components} connected components."
+            )
+
         if self._pairwise_nodes_distance is None:
             self._pairwise_nodes_distance = dict(
                 nx.all_pairs_dijkstra_path_length(self, weight="length")
