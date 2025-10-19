@@ -209,6 +209,20 @@ class TestSamplingEdgeCases:
         centers = graph.sample_kpp_centers(1)
         assert len(centers) == 1
         assert isinstance(centers[0], QGCenter)
+        
+    def test_sample_kpp_centers_covers_line_404(self):
+        """Test k-means++ with k=2 to cover line 404 (dist_centers.shape == 1)."""
+        # Create a very small graph to ensure after first center, dist_centers has shape (n,)
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 2, length=2.0) 
+        graph.precomputing()
+        
+        # With 3 nodes, after picking first center, dist_centers will be 1D array
+        centers = graph.sample_kpp_centers(2)
+        
+        assert len(centers) == 2
+        assert all(isinstance(c, QGCenter) for c in centers)
 
     def test_compute_clusters(self):
         """Test cluster assignment."""

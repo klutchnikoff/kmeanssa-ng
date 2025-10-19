@@ -155,8 +155,8 @@ class TestQGPoint:
         with pytest.raises(ValueError, match="does not belong to the graph"):
             point.edge = (5, 6)
 
-    def test_set_edge_succeeds(self):
-        """Test that setting edge to valid edge succeeds."""
+    def test_set_edge_succeeds_and_edge_property_checks(self):
+        """Test that setting edge and edge property coverage (covers 104-107, 153-154)."""
         graph = QuantumGraph()
         graph.add_edge(0, 1, length=2.0)
         graph.add_edge(1, 2, length=3.0)
@@ -167,6 +167,29 @@ class TestQGPoint:
         assert point.edge == (1, 2)
         # Position is not automatically updated when changing edge
         assert point.position == 1.5
+
+        # Cover __str__ representation path (includes graph name if present)
+        graph.name = "TestGraph"
+        s = str(point)
+        assert "TestGraph" in s
+
+        # Force edge property to pass through "edge not in graph" branch with self-loop
+        point.edge = (3, 3)  # Self-loop allowed by property
+        assert point.edge == (3, 3)
+        
+    def test_edge_property_raises_when_not_in_graph(self):
+        """Test edge property raises when edge not in graph (covers line 107)."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        
+        point = QGPoint(graph, edge=(0, 1), position=0.5)
+        
+        # Force the edge to be something not in the graph and not a self-loop
+        point._edge = (5, 6)  # Set directly to bypass setter validation
+        
+        # Now accessing the property should raise
+        with pytest.raises(ValueError, match="does not belong to the graph"):
+            _ = point.edge
 
 
 class TestQGCenter:
@@ -326,6 +349,61 @@ class TestQGCenter:
         center2 = QGCenter(center_point)
         center2.drift(target_point, 1.0)
         assert abs(center2.position - target_point.position) < 1e-10
+
+    def test_find_best_neighbor_same_nodes(self):
+        """Test _find_best_neighbor when n1 == n2 (covers line 65)."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(0, 2, length=2.0)
+        graph.precomputing()
+
+        point = QGPoint(graph, edge=(0, 1), position=0.5)
+        center = QGCenter(point)
+
+        # When n1 == n2, should return n1
+        result = center._find_best_neighbor(0, 0)
+        assert result == 0
+
+    def test_drift_on_same_edge_different_parametrizations(self):
+        """Test drift when edges have different parametrizations (covers lines 131-137)."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.precomputing()
+
+        # Create points on "same" edge but different parametrizations
+        center_point = QGPoint(graph, edge=(0, 1), position=0.3)
+        target_point = QGPoint(graph, edge=(1, 0), position=0.2)  # Reversed edge
+        
+        center = QGCenter(center_point)
+        initial_pos = center.position
+        
+        # This should trigger the "different parametrization" branch
+        center.drift(target_point, 0.1)
+        
+        # Position should have changed
+        assert center.position != initial_pos
+        
+        # Test the other condition: center.position > target.position (line 135)
+        center_point2 = QGPoint(graph, edge=(0, 1), position=0.7)
+        target_point2 = QGPoint(graph, edge=(1, 0), position=0.2)  # Reversed edge  
+        
+        center2 = QGCenter(center_point2)
+        initial_pos2 = center2.position
+        
+        # This should trigger line 135
+        center2.drift(target_point2, 0.1)
+        assert center2.position != initial_pos2
+        
+        # Test line 131: center.position > target.position on same orientation
+        center_point3 = QGPoint(graph, edge=(0, 1), position=0.8)
+        target_point3 = QGPoint(graph, edge=(0, 1), position=0.2)  
+        
+        center3 = QGCenter(center_point3)
+        initial_pos3 = center3.position
+        
+        # This should trigger line 131
+        center3.drift(target_point3, 0.1)
+        assert center3.position < initial_pos3  # Should move backward
 
 
 class TestGenerators:

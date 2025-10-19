@@ -198,6 +198,21 @@ class TestSimulatedAnnealing:
 
         assert energy >= 0  # Energy should be non-negative
 
+    def test_centers_property(self):
+        """Test centers property (covers line 113)."""
+        graph = generate_simple_graph(n_a=3)
+        points = graph.sample_points(20)
+
+        sa = SimulatedAnnealing(points, k=2)
+        
+        # Initially empty
+        assert sa.centers == []
+        
+        # After running, should have centers
+        centers = sa.run(initialization="kpp")
+        # Note: centers property returns the private _centers, which is set during run
+        assert len(sa.centers) == 2
+
     def test_run_for_mean(self):
         """Test run_for_mean method (k=1 special case)."""
         graph = generate_simple_graph(n_a=3)
@@ -218,6 +233,30 @@ class TestSimulatedAnnealing:
 
         with pytest.raises(ValueError, match="k=1"):
             sa.run_for_mean()
+
+    def test_run_for_mean_invalid_robust_prop_raises(self):
+        """Test that run_for_mean with invalid robust_prop raises ValueError (covers line 51)."""
+        graph = generate_simple_graph()
+        points = graph.sample_points(20)
+        sa = QGSimulatedAnnealing(points, k=1)
+
+        with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
+            sa.run_for_mean(robust_prop=1.5)
+
+        with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
+            sa.run_for_mean(robust_prop=-0.1)
+
+    def test_run_for_kmeans_invalid_robust_prop_raises(self):
+        """Test that run_for_kmeans with invalid robust_prop raises ValueError (covers line 105)."""
+        graph = generate_simple_graph()
+        points = graph.sample_points(20)
+        sa = QGSimulatedAnnealing(points, k=2)
+
+        with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
+            sa.run_for_kmeans(robust_prop=1.5)
+
+        with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
+            sa.run_for_kmeans(robust_prop=-0.1)
 
     def test_run_for_kmeans(self):
         """Test run_for_kmeans method."""
