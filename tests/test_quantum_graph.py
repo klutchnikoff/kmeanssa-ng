@@ -83,6 +83,88 @@ class TestQGPoint:
         assert point.edge == (1, 0)
         assert abs(point.position - 0.7) < 1e-10
 
+    def test_create_point_with_none_graph_raises(self):
+        """Test that creating a point with None graph raises ValueError."""
+        with pytest.raises(ValueError, match="quantum_graph cannot be None"):
+            QGPoint(None, edge=(0, 1), position=0.5)
+
+    def test_create_point_with_invalid_edge_type_raises(self):
+        """Test that invalid edge type raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+
+        with pytest.raises(ValueError, match="must be a tuple of two nodes"):
+            QGPoint(graph, edge=[0, 1], position=0.5)
+
+    def test_create_point_with_nonexistent_edge_raises(self):
+        """Test that point on non-existent edge raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+
+        with pytest.raises(ValueError, match="does not exist in the graph"):
+            QGPoint(graph, edge=(2, 3), position=0.5)
+
+    def test_create_point_with_negative_position_raises(self):
+        """Test that negative position raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+
+        with pytest.raises(ValueError, match="must be non-negative"):
+            QGPoint(graph, edge=(0, 1), position=-0.5)
+
+    def test_create_point_with_position_exceeding_length_raises(self):
+        """Test that position exceeding edge length raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+
+        with pytest.raises(ValueError, match="exceeds edge length"):
+            QGPoint(graph, edge=(0, 1), position=1.5)
+
+    def test_create_point_with_non_numeric_position_raises(self):
+        """Test that non-numeric position raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+
+        with pytest.raises(ValueError, match="must be a number"):
+            QGPoint(graph, edge=(0, 1), position="invalid")
+
+    def test_create_point_at_edge_boundaries(self):
+        """Test creating points at edge boundaries (0 and edge_length)."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=2.0)
+
+        # Position at start
+        point1 = QGPoint(graph, edge=(0, 1), position=0.0)
+        assert point1.position == 0.0
+
+        # Position at end
+        point2 = QGPoint(graph, edge=(0, 1), position=2.0)
+        assert point2.position == 2.0
+
+    def test_set_edge_with_nonexistent_edge_raises(self):
+        """Test that setting a non-existent edge raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=2.0)
+
+        point = QGPoint(graph, edge=(0, 1), position=1.5)
+
+        # Try to change to non-existent edge - should fail
+        with pytest.raises(ValueError, match="does not belong to the graph"):
+            point.edge = (5, 6)
+
+    def test_set_edge_succeeds(self):
+        """Test that setting edge to valid edge succeeds."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=2.0)
+        graph.add_edge(1, 2, length=3.0)
+
+        point = QGPoint(graph, edge=(0, 1), position=1.5)
+        point.edge = (1, 2)  # Should succeed
+
+        assert point.edge == (1, 2)
+        # Position is not automatically updated when changing edge
+        assert point.position == 1.5
+
 
 class TestQGCenter:
     """Tests for QGCenter class."""
