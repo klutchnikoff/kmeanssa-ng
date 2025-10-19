@@ -132,6 +132,116 @@ class TestQGCenter:
         # Should have moved closer to target
         assert center.position > initial_pos
 
+    def test_brownian_motion_with_negative_time_raises(self):
+        """Test that negative time_to_travel raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 2, length=1.0)
+
+        point = QGPoint(graph, edge=(0, 1), position=0.5)
+        center = QGCenter(point)
+
+        with pytest.raises(ValueError, match="must be non-negative"):
+            center.brownian_motion(-0.1)
+
+    def test_brownian_motion_with_non_numeric_time_raises(self):
+        """Test that non-numeric time_to_travel raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 2, length=1.0)
+
+        point = QGPoint(graph, edge=(0, 1), position=0.5)
+        center = QGCenter(point)
+
+        with pytest.raises(ValueError, match="must be a number"):
+            center.brownian_motion("invalid")
+
+    def test_brownian_motion_with_zero_time_succeeds(self):
+        """Test that zero time_to_travel is valid."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 2, length=1.0)
+
+        point = QGPoint(graph, edge=(0, 1), position=0.5)
+        center = QGCenter(point)
+
+        initial_position = center.position
+        center.brownian_motion(0.0)  # Should not crash
+
+        # Position might change slightly due to random normal, but should be close
+        assert center.position is not None
+
+    def test_drift_with_none_target_raises(self):
+        """Test that None target_point raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.precomputing()
+
+        point = QGPoint(graph, edge=(0, 1), position=0.5)
+        center = QGCenter(point)
+
+        with pytest.raises(ValueError, match="target_point cannot be None"):
+            center.drift(None, 0.5)
+
+    def test_drift_with_negative_prop_raises(self):
+        """Test that negative prop_to_travel raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.precomputing()
+
+        center_point = QGPoint(graph, edge=(0, 1), position=0.2)
+        target_point = QGPoint(graph, edge=(0, 1), position=0.8)
+        center = QGCenter(center_point)
+
+        with pytest.raises(ValueError, match="must be in"):
+            center.drift(target_point, -0.1)
+
+    def test_drift_with_prop_greater_than_one_raises(self):
+        """Test that prop_to_travel > 1 raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.precomputing()
+
+        center_point = QGPoint(graph, edge=(0, 1), position=0.2)
+        target_point = QGPoint(graph, edge=(0, 1), position=0.8)
+        center = QGCenter(center_point)
+
+        with pytest.raises(ValueError, match="must be in"):
+            center.drift(target_point, 1.5)
+
+    def test_drift_with_non_numeric_prop_raises(self):
+        """Test that non-numeric prop_to_travel raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.precomputing()
+
+        center_point = QGPoint(graph, edge=(0, 1), position=0.2)
+        target_point = QGPoint(graph, edge=(0, 1), position=0.8)
+        center = QGCenter(center_point)
+
+        with pytest.raises(ValueError, match="must be a number"):
+            center.drift(target_point, "invalid")
+
+    def test_drift_with_boundary_values_succeeds(self):
+        """Test that prop_to_travel at boundaries (0 and 1) succeed."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.precomputing()
+
+        center_point = QGPoint(graph, edge=(0, 1), position=0.2)
+        target_point = QGPoint(graph, edge=(0, 1), position=0.8)
+
+        # Test with prop = 0 (no movement)
+        center1 = QGCenter(center_point)
+        initial_pos = center1.position
+        center1.drift(target_point, 0.0)
+        assert center1.position == initial_pos
+
+        # Test with prop = 1 (full movement)
+        center2 = QGCenter(center_point)
+        center2.drift(target_point, 1.0)
+        assert abs(center2.position - target_point.position) < 1e-10
+
 
 class TestGenerators:
     """Tests for graph generators."""
