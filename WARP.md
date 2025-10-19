@@ -2,6 +2,22 @@
 
 This file provides guidance to WARP (warp.dev) when working with code in this repository.
 
+## Commit Guidelines
+
+**Use Conventional Commits format for all commits**:
+- `feat:` for new features
+- `fix:` for bug fixes  
+- `docs:` for documentation changes
+- `style:` for formatting changes
+- `refactor:` for code refactoring
+- `test:` for adding/modifying tests
+- `chore:` for maintenance tasks
+
+Examples:
+- `feat: add quantum graph distance caching`
+- `fix: handle disconnected graphs in validation`
+- `docs: update installation instructions`
+
 ## Development Commands
 
 ### Environment Setup
