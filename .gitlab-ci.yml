@@ -1,6 +1,7 @@
 stages:
   - lint
   - test
+  - deploy
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -44,6 +45,17 @@ test-coverage:
         path: coverage.xml
     expire_in: 1 week
   allow_failure: false
+
+# Documentation deployment
+pages:
+  stage: deploy
+  script:
+    - pdm run mkdocs build --site-dir public
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
 
 # Multi-version testing (optional - uncomment if needed)
 # test-python-3.10:
