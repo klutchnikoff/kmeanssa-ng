@@ -51,12 +51,13 @@ class SimulatedAnnealing:
         Args:
             observations: List of points to cluster, all in the same metric space.
             k: Number of clusters.
-            lambda_param: Intensity parameter for Poisson process.
-            beta: Inverse temperature parameter (higher = faster convergence).
-            step_size: Time step for updating centers.
+            lambda_param: Intensity parameter for Poisson process (must be > 0).
+            beta: Inverse temperature parameter (must be > 0, higher = faster convergence).
+            step_size: Time step for updating centers (must be > 0).
 
         Raises:
-            ValueError: If observations is empty, k <= 0, or points are in different spaces.
+            ValueError: If observations is empty, k <= 0, points are in different spaces,
+                or hyperparameters are invalid.
         """
         if not observations:
             raise ValueError("Observations must be a non-empty list of points.")
@@ -65,12 +66,42 @@ class SimulatedAnnealing:
         if any(obs.space != observations[0].space for obs in observations):
             raise ValueError("All observations must belong to the same metric space.")
 
+        # Validate lambda_param
+        try:
+            lambda_float = float(lambda_param)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"lambda_param must be a number, got {type(lambda_param).__name__}"
+            ) from e
+        if lambda_float <= 0:
+            raise ValueError(f"lambda_param must be positive, got {lambda_float}")
+
+        # Validate beta
+        try:
+            beta_float = float(beta)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"beta must be a number, got {type(beta).__name__}"
+            ) from e
+        if beta_float <= 0:
+            raise ValueError(f"beta must be positive, got {beta_float}")
+
+        # Validate step_size
+        try:
+            step_size_float = float(step_size)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"step_size must be a number, got {type(step_size).__name__}"
+            ) from e
+        if step_size_float <= 0:
+            raise ValueError(f"step_size must be positive, got {step_size_float}")
+
         self._space = observations[0].space
         self._observations = observations.copy()
         self._k = k
-        self._lambda = lambda_param
-        self._beta = beta
-        self._step_size = step_size
+        self._lambda = lambda_float
+        self._beta = beta_float
+        self._step_size = step_size_float
 
         rd.shuffle(self._observations)
         self._centers: list[Center] = []

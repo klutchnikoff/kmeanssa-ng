@@ -47,6 +47,78 @@ class TestSimulatedAnnealing:
         with pytest.raises(ValueError, match="same metric space"):
             SimulatedAnnealing(points1 + points2, k=2)
 
+    def test_negative_lambda_param_raises(self):
+        """Test that negative lambda_param raises ValueError."""
+        graph = generate_simple_graph()
+        points = graph.sample_points(10)
+
+        with pytest.raises(ValueError, match="lambda_param must be positive"):
+            SimulatedAnnealing(points, k=2, lambda_param=-1)
+
+    def test_zero_lambda_param_raises(self):
+        """Test that zero lambda_param raises ValueError."""
+        graph = generate_simple_graph()
+        points = graph.sample_points(10)
+
+        with pytest.raises(ValueError, match="lambda_param must be positive"):
+            SimulatedAnnealing(points, k=2, lambda_param=0)
+
+    def test_non_numeric_lambda_param_raises(self):
+        """Test that non-numeric lambda_param raises ValueError."""
+        graph = generate_simple_graph()
+        points = graph.sample_points(10)
+
+        with pytest.raises(ValueError, match="lambda_param must be a number"):
+            SimulatedAnnealing(points, k=2, lambda_param="invalid")
+
+    def test_negative_beta_raises(self):
+        """Test that negative beta raises ValueError."""
+        graph = generate_simple_graph()
+        points = graph.sample_points(10)
+
+        with pytest.raises(ValueError, match="beta must be positive"):
+            SimulatedAnnealing(points, k=2, beta=-1.0)
+
+    def test_zero_beta_raises(self):
+        """Test that zero beta raises ValueError."""
+        graph = generate_simple_graph()
+        points = graph.sample_points(10)
+
+        with pytest.raises(ValueError, match="beta must be positive"):
+            SimulatedAnnealing(points, k=2, beta=0.0)
+
+    def test_non_numeric_beta_raises(self):
+        """Test that non-numeric beta raises ValueError."""
+        graph = generate_simple_graph()
+        points = graph.sample_points(10)
+
+        with pytest.raises(ValueError, match="beta must be a number"):
+            SimulatedAnnealing(points, k=2, beta="invalid")
+
+    def test_negative_step_size_raises(self):
+        """Test that negative step_size raises ValueError."""
+        graph = generate_simple_graph()
+        points = graph.sample_points(10)
+
+        with pytest.raises(ValueError, match="step_size must be positive"):
+            SimulatedAnnealing(points, k=2, step_size=-0.1)
+
+    def test_zero_step_size_raises(self):
+        """Test that zero step_size raises ValueError."""
+        graph = generate_simple_graph()
+        points = graph.sample_points(10)
+
+        with pytest.raises(ValueError, match="step_size must be positive"):
+            SimulatedAnnealing(points, k=2, step_size=0.0)
+
+    def test_non_numeric_step_size_raises(self):
+        """Test that non-numeric step_size raises ValueError."""
+        graph = generate_simple_graph()
+        points = graph.sample_points(10)
+
+        with pytest.raises(ValueError, match="step_size must be a number"):
+            SimulatedAnnealing(points, k=2, step_size="invalid")
+
     def test_run_basic(self):
         """Test running the algorithm with basic parameters."""
         graph = generate_simple_graph(n_a=3, bridge_length=5.0)
