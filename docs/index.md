@@ -71,25 +71,25 @@ centers = sa.run(robust_prop=0.1, initialization="kpp")
 
 <div class="grid cards" markdown>
 
--   :material-rocket-launch: **[Quick Start](getting-started/quickstart.md)**
+-   :material-rocket-launch: **[Quick Start](getting-started/quickstart/)**
 
     ---
 
     Get up and running with your first clustering example
 
--   :material-book-open: **[Core Concepts](getting-started/concepts.md)**
+-   :material-book-open: **[Core Concepts](getting-started/concepts/)**
 
     ---
 
     Understand quantum graphs and simulated annealing
 
--   :material-api: **[API Reference](api/core.md)**
+-   :material-api: **[API Reference](api/core/)**
 
     ---
 
     Detailed API documentation for all modules
 
--   :material-lightbulb: **[Examples](examples/basic-clustering.md)**
+-   :material-lightbulb: **[Examples](examples/basic-clustering/)**
 
     ---
 

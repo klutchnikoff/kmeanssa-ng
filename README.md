@@ -5,7 +5,7 @@
 [![Pipeline Status](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/badges/main/pipeline.svg)](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/pipelines)
 [![Coverage Report](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/badges/main/coverage.svg)](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/commits/main)
 [![Code style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Documentation](https://img.shields.io/badge/docs-GitLab%20Pages-blue)](https://nicolas.klutchnikoff.pages.plmlab.math.cnrs.fr/kmeanssa-ng/)
+[![Documentation](https://img.shields.io/badge/docs-GitLab%20Pages-blue)](https://kmeanssa-ng-b901a8.pages.math.cnrs.fr/)
 <!-- Future badges (uncomment when ready):
 [![PyPI version](https://badge.fury.io/py/kmeanssa-ng.svg)](https://badge.fury.io/py/kmeanssa-ng)
 -->
@@ -40,13 +40,13 @@ centers = sa.run(initialization="kpp")
 
 ## 📖 Documentation
 
-**[📚 Full Documentation →](https://nicolas.klutchnikoff.pages.plmlab.math.cnrs.fr/kmeanssa-ng/)**
+**[📚 Full Documentation →](https://kmeanssa-ng-b901a8.pages.math.cnrs.fr/)
 
-- **[🎯 Quick Start Guide](https://nicolas.klutchnikoff.pages.plmlab.math.cnrs.fr/kmeanssa-ng/getting-started/quickstart/)** - Get running in 5 minutes
-- **[📐 Core Concepts](https://nicolas.klutchnikoff.pages.plmlab.math.cnrs.fr/kmeanssa-ng/getting-started/concepts/)** - Quantum graphs & simulated annealing
-- **[🔧 API Reference](https://nicolas.klutchnikoff.pages.plmlab.math.cnrs.fr/kmeanssa-ng/api/core/)** - Complete API documentation
-- **[💡 Examples](https://nicolas.klutchnikoff.pages.plmlab.math.cnrs.fr/kmeanssa-ng/examples/basic-clustering/)** - Practical use cases
-- **[🏗️ User Guides](https://nicolas.klutchnikoff.pages.plmlab.math.cnrs.fr/kmeanssa-ng/user-guide/quantum-graphs/)** - Deep dives into features
+- **[🎯 Quick Start Guide](https://kmeanssa-ng-b901a8.pages.math.cnrs.fr/getting-started/quickstart/)** - Get running in 5 minutes
+- **[📐 Core Concepts](https://kmeanssa-ng-b901a8.pages.math.cnrs.fr/getting-started/concepts/)** - Quantum graphs & simulated annealing
+- **[🔧 API Reference](https://kmeanssa-ng-b901a8.pages.math.cnrs.fr/api/core/)** - Complete API documentation
+- **[💡 Examples](https://kmeanssa-ng-b901a8.pages.math.cnrs.fr/examples/basic-clustering/)** - Practical use cases
+- **[🏗️ User Guides](https://kmeanssa-ng-b901a8.pages.math.cnrs.fr/user-guide/quantum-graphs/)** - Deep dives into features
 
 ## 📦 Installation
 

@@ -1,7 +1,7 @@
 site_name: kmeanssa-ng
 site_description: K-means clustering on quantum graphs and metric spaces using simulated annealing
 site_author: Nicolas Klutchnikoff
-site_url: https://nicolas.klutchnikoff.pages.plmlab.math.cnrs.fr/kmeanssa-ng
+site_url: https://kmeanssa-ng-b901a8.pages.math.cnrs.fr
 
 repo_name: nicolas.klutchnikoff/kmeanssa-ng
 repo_url: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng
