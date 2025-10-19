@@ -77,9 +77,7 @@ class QGPoint(Point):
         try:
             position_float = float(position)
         except (TypeError, ValueError) as e:
-            raise ValueError(
-                f"Position must be a number, got {type(position).__name__}"
-            ) from e
+            raise ValueError(f"Position must be a number, got {type(position).__name__}") from e
 
         # Check if position is non-negative
         if position_float < 0:
@@ -89,8 +87,7 @@ class QGPoint(Point):
         edge_length = self.space.get_edge_length(*self._edge)
         if position_float > edge_length:
             raise ValueError(
-                f"Position {position_float} exceeds edge length {edge_length} "
-                f"for edge {self._edge}"
+                f"Position {position_float} exceeds edge length {edge_length} for edge {self._edge}"
             )
 
         self.position = position_float

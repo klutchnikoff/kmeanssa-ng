@@ -107,9 +107,7 @@ class QGCenter(QGPoint, Center):
             ) from e
 
         if prop_float < 0 or prop_float > 1:
-            raise ValueError(
-                f"prop_to_travel must be in [0, 1], got {prop_float}"
-            )
+            raise ValueError(f"prop_to_travel must be in [0, 1], got {prop_float}")
 
         quantum_path = self.space.quantum_path(self, target_point)
         path = quantum_path["path"]

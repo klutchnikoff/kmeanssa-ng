@@ -80,9 +80,7 @@ class SimulatedAnnealing:
         try:
             beta_float = float(beta)
         except (TypeError, ValueError) as e:
-            raise ValueError(
-                f"beta must be a number, got {type(beta).__name__}"
-            ) from e
+            raise ValueError(f"beta must be a number, got {type(beta).__name__}") from e
         if beta_float <= 0:
             raise ValueError(f"beta must be positive, got {beta_float}")
 
@@ -90,9 +88,7 @@ class SimulatedAnnealing:
         try:
             step_size_float = float(step_size)
         except (TypeError, ValueError) as e:
-            raise ValueError(
-                f"step_size must be a number, got {type(step_size).__name__}"
-            ) from e
+            raise ValueError(f"step_size must be a number, got {type(step_size).__name__}") from e
         if step_size_float <= 0:
             raise ValueError(f"step_size must be positive, got {step_size_float}")
 

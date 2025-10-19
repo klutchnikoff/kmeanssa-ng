@@ -63,9 +63,7 @@ class QuantumGraph(nx.Graph, Space):
             ValueError: If 'length' is missing, not positive, or not a number.
         """
         if "length" not in attr:
-            raise ValueError(
-                f"Edge ({u_for_edge}, {v_for_edge}) must have a 'length' attribute"
-            )
+            raise ValueError(f"Edge ({u_for_edge}, {v_for_edge}) must have a 'length' attribute")
 
         length = attr["length"]
 
