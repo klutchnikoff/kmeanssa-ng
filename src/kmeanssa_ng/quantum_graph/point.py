@@ -41,10 +41,59 @@ class QGPoint(Point):
             quantum_graph: The quantum graph containing this point.
             edge: Tuple (node1, node2) representing the edge.
             position: Distance from node1 along the edge.
+
+        Raises:
+            ValueError: If quantum_graph is None, edge doesn't exist in graph,
+                or position is outside [0, edge_length].
         """
+        if quantum_graph is None:
+            raise ValueError("quantum_graph cannot be None")
+
+        if not isinstance(edge, tuple) or len(edge) != 2:
+            raise ValueError(f"edge must be a tuple of two nodes, got {edge}")
+
+        # Check edge exists in graph (allow self-loops)
+        if edge[0] != edge[1] and edge not in quantum_graph.edges:
+            # Try reversed edge
+            if (edge[1], edge[0]) not in quantum_graph.edges:
+                raise ValueError(f"Edge {edge} does not exist in the graph")
+
         self._quantum_graph = quantum_graph
         self._edge = edge
-        self.position = position
+
+        # Validate and set position
+        self._validate_and_set_position(position)
+
+    def _validate_and_set_position(self, position: float) -> None:
+        """Validate and set the position on the edge.
+
+        Args:
+            position: Position along the edge from node1.
+
+        Raises:
+            ValueError: If position is not numeric or outside [0, edge_length].
+        """
+        # Check if position is numeric
+        try:
+            position_float = float(position)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"Position must be a number, got {type(position).__name__}"
+            ) from e
+
+        # Check if position is non-negative
+        if position_float < 0:
+            raise ValueError(f"Position must be non-negative, got {position_float}")
+
+        # Check if position is within edge length
+        edge_length = self.space.get_edge_length(*self._edge)
+        if position_float > edge_length:
+            raise ValueError(
+                f"Position {position_float} exceeds edge length {edge_length} "
+                f"for edge {self._edge}"
+            )
+
+        self.position = position_float
 
     @property
     def space(self) -> QuantumGraph:
@@ -70,11 +119,16 @@ class QGPoint(Point):
 
         Raises:
             ValueError: If the edge doesn't belong to the graph.
+
+        Note:
+            Position validation is not performed here to allow internal
+            operations (brownian_motion, drift) to change edge first, then
+            update position. Position validation is done in __init__.
         """
-        if (new_edge in self.space.edges) or (new_edge[0] == new_edge[1]):
-            self._edge = new_edge
-        else:
+        if not ((new_edge in self.space.edges) or (new_edge[0] == new_edge[1])):
             raise ValueError("The edge does not belong to the graph")
+
+        self._edge = new_edge
 
     def _closest_node(self) -> int:
         """Get the closest node to this point.

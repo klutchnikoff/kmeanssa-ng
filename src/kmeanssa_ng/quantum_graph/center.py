@@ -89,7 +89,28 @@ class QGCenter(QGPoint, Center):
         Args:
             target_point: The point to move toward.
             prop_to_travel: Proportion of distance to travel (0 to 1).
+
+        Raises:
+            ValueError: If target_point is None, prop_to_travel is not numeric,
+                or prop_to_travel is not in [0, 1].
         """
+        # Validate target_point
+        if target_point is None:
+            raise ValueError("target_point cannot be None")
+
+        # Validate prop_to_travel
+        try:
+            prop_float = float(prop_to_travel)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"prop_to_travel must be a number, got {type(prop_to_travel).__name__}"
+            ) from e
+
+        if prop_float < 0 or prop_float > 1:
+            raise ValueError(
+                f"prop_to_travel must be in [0, 1], got {prop_float}"
+            )
+
         quantum_path = self.space.quantum_path(self, target_point)
         path = quantum_path["path"]
         dist_to_target = quantum_path["distance"]
@@ -162,8 +183,22 @@ class QGCenter(QGPoint, Center):
 
         Args:
             time_to_travel: Time parameter (distance ~ sqrt(time)).
+
+        Raises:
+            ValueError: If time_to_travel is negative or not numeric.
         """
-        dist_to_travel = np.sqrt(time_to_travel) * self._rng.standard_normal()
+        # Validate time_to_travel
+        try:
+            time_float = float(time_to_travel)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"time_to_travel must be a number, got {type(time_to_travel).__name__}"
+            ) from e
+
+        if time_float < 0:
+            raise ValueError(f"time_to_travel must be non-negative, got {time_float}")
+
+        dist_to_travel = np.sqrt(time_float) * self._rng.standard_normal()
         edge_length = self.space.get_edge_length(*self.edge)
 
         forward = dist_to_travel > 0
