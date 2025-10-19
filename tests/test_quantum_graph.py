@@ -370,6 +370,206 @@ class TestGenerators:
         assert len(centers) == 3
         assert all(isinstance(c, QGCenter) for c in centers)
 
+    @pytest.mark.parametrize(
+        "invalid_graph, expected_error_match",
+        [
+            (None, "`graph` must be a networkx.Graph object."),
+            ("not a graph", "`graph` must be a networkx.Graph object."),
+            (123, "`graph` must be a networkx.Graph object."),
+        ],
+    )
+    def test_as_quantum_graph_invalid_graph_raises_value_error(self, invalid_graph, expected_error_match):
+        """Test that invalid 'graph' raises ValueError."""
+        with pytest.raises(ValueError, match=expected_error_match):
+            as_quantum_graph(invalid_graph)
+
+    @pytest.mark.parametrize(
+        "invalid_weight, expected_error_match",
+        [
+            (0, "`node_weight` must be a positive number."),
+            (-1, "`node_weight` must be a positive number."),
+            ("invalid", "`node_weight` must be a positive number."),
+        ],
+    )
+    def test_as_quantum_graph_invalid_node_weight_raises_value_error(self, invalid_weight, expected_error_match):
+        """Test that invalid 'node_weight' raises ValueError."""
+        G = nx.Graph()
+        G.add_edge(0, 1)
+        with pytest.raises(ValueError, match=expected_error_match):
+            as_quantum_graph(G, node_weight=invalid_weight)
+
+    @pytest.mark.parametrize(
+        "invalid_length, expected_error_match",
+        [
+            (0, "`edge_length` must be a positive number."),
+            (-1, "`edge_length` must be a positive number."),
+            ("invalid", "`edge_length` must be a positive number."),
+        ],
+    )
+    def test_as_quantum_graph_invalid_edge_length_raises_value_error(self, invalid_length, expected_error_match):
+        """Test that invalid 'edge_length' raises ValueError."""
+        G = nx.Graph()
+        G.add_edge(0, 1)
+        with pytest.raises(ValueError, match=expected_error_match):
+            as_quantum_graph(G, edge_length=invalid_length)
+
+    @pytest.mark.parametrize(
+        "invalid_weight, expected_error_match",
+        [
+            (0, "`edge_weight` must be a positive number."),
+            (-1, "`edge_weight` must be a positive number."),
+            ("invalid", "`edge_weight` must be a positive number."),
+        ],
+    )
+    def test_as_quantum_graph_invalid_edge_weight_raises_value_error(self, invalid_weight, expected_error_match):
+        """Test that invalid 'edge_weight' raises ValueError."""
+        G = nx.Graph()
+        G.add_edge(0, 1)
+        with pytest.raises(ValueError, match=expected_error_match):
+            as_quantum_graph(G, edge_weight=invalid_weight)
+
+    @pytest.mark.parametrize(
+        "invalid_objects, expected_error_match",
+        [
+            ([], "`objects` must be a non-empty list."),
+            ("not a list", "`objects` must be a non-empty list."),
+            (123, "`objects` must be a non-empty list."),
+        ],
+    )
+    def test_complete_quantum_graph_invalid_objects_raises_value_error(self, invalid_objects, expected_error_match):
+        """Test that invalid 'objects' raise ValueError."""
+        with pytest.raises(ValueError, match=expected_error_match):
+            complete_quantum_graph(invalid_objects)
+
+    @pytest.mark.parametrize(
+        "invalid_similarities, expected_error_match",
+        [
+            ("not an array", "`similarities` must be a numpy array."),
+            (np.array([[1, 2]]), "`similarities` must be a square matrix of size 2x2."),  # Not square
+            (np.array([[-1, 2], [3, 4]]), "Elements of `similarities` must be non-negative."),  # Negative value
+        ],
+    )
+    def test_complete_quantum_graph_invalid_similarities_raises_value_error(self, invalid_similarities, expected_error_match):
+        """Test that invalid 'similarities' raise ValueError."""
+        objects = [1, 2]
+        with pytest.raises(ValueError, match=expected_error_match):
+            complete_quantum_graph(objects, similarities=invalid_similarities)
+
+    @pytest.mark.parametrize(
+        "invalid_labels, expected_error_match",
+        [
+            ("not a list", "`true_labels` must be a list."),
+            ([1], "`true_labels` must have the same length as `objects` \(\d+\)." ),  # Incorrect length
+        ],
+    )
+    def test_complete_quantum_graph_invalid_true_labels_raises_value_error(self, invalid_labels, expected_error_match):
+        """Test that invalid 'true_labels' raise ValueError."""
+        objects = [1, 2]
+        with pytest.raises(ValueError, match=expected_error_match):
+            complete_quantum_graph(objects, true_labels=invalid_labels)
+
+
+class TestGenerateRandomSBM:
+    """Tests for generate_random_sbm input validation."""
+
+    def test_generate_random_sbm_default_params(self):
+        """Test generate_random_sbm with default parameters."""
+        graph = generate_random_sbm()
+        assert graph.number_of_nodes() == 100  # 50 + 50
+        assert graph.number_of_edges() > 0
+
+    @pytest.mark.parametrize(
+        "invalid_sizes, expected_error_match",
+        [
+            (None, None),  # Default behavior, no error
+            ([], "`sizes` must be a non-empty list of positive integers."),
+            ([0], "`sizes` must be a non-empty list of positive integers."),
+            ([-10], "`sizes` must be a non-empty list of positive integers."),
+            ([10, -5], "`sizes` must be a non-empty list of positive integers."),
+            ([10.5, 20], "`sizes` must be a non-empty list of positive integers."),
+            ("not a list", "`sizes` must be a non-empty list of positive integers."),
+            ([10, "invalid"], "`sizes` must be a non-empty list of positive integers."),
+        ],
+    )
+    def test_generate_random_sbm_invalid_sizes_raises_value_error(self, invalid_sizes, expected_error_match):
+        """Test that invalid 'sizes' raise ValueError."""
+        if expected_error_match is None:
+            graph = generate_random_sbm(sizes=invalid_sizes)
+            assert graph.number_of_nodes() == 100
+        else:
+            with pytest.raises(ValueError, match=expected_error_match):
+                # For empty sizes, provide empty p, weights, lengths to avoid early validation errors
+                if invalid_sizes == []:
+                    generate_random_sbm(sizes=invalid_sizes, p=[], weights=[], lengths=[])
+                else:
+                    generate_random_sbm(sizes=invalid_sizes)
+
+    @pytest.mark.parametrize(
+        "invalid_p, expected_error_match",
+        [
+            (None, None),  # Default behavior, no error
+            ([], "`p` must be a square matrix of size \d+x\d+."),
+            ([[0.5]], "`p` must be a square matrix of size \d+x\d+."),  # Not square
+            ([[0.5, 0.5]], "`p` must be a square matrix of size \d+x\d+."),  # Not square
+            ([[0.5, 0.5], [0.5]], "`p` must be a square matrix of size \d+x\d+."),  # Not square
+            ([[0.5, 0.5], [0.5, 1.5]], "Elements of `p` must be floats or integers between 0 and 1."),  # Value > 1
+            ([[-0.1, 0.5], [0.5, 0.5]], "Elements of `p` must be floats or integers between 0 and 1."),  # Value < 0
+            ([[0.5, "invalid"], [0.5, 0.5]], "Elements of `p` must be floats or integers between 0 and 1."),  # Non-numeric
+            ("not a list", "`p` must be a square matrix of size \d+x\d+."),
+        ],
+    )
+    def test_generate_random_sbm_invalid_p_raises_value_error(self, invalid_p, expected_error_match):
+        """Test that invalid 'p' raises ValueError."""
+        if expected_error_match is None:
+            graph = generate_random_sbm(p=invalid_p)
+            assert graph.number_of_nodes() == 100
+        else:
+            with pytest.raises(ValueError, match=expected_error_match):
+                generate_random_sbm(sizes=[50, 50], p=invalid_p)
+
+    @pytest.mark.parametrize(
+        "invalid_weights, expected_error_match",
+        [
+            (None, None),  # Default behavior, no error
+            ([], "`weights` must be a list of size \d+."),
+            ([0], "`weights` must be a list of size \d+."),
+            ([-1], "`weights` must be a list of size \d+."),
+            ([1, -0.5], "Elements of `weights` must be positive numbers."),
+            ([1, "invalid"], "Elements of `weights` must be positive numbers."),
+            ("not a list", "`weights` must be a list of size \d+."),
+        ],
+    )
+    def test_generate_random_sbm_invalid_weights_raises_value_error(self, invalid_weights, expected_error_match):
+        """Test that invalid 'weights' raise ValueError."""
+        if expected_error_match is None:
+            graph = generate_random_sbm(weights=invalid_weights)
+            assert graph.number_of_nodes() == 100
+        else:
+            with pytest.raises(ValueError, match=expected_error_match):
+                generate_random_sbm(sizes=[50, 50], weights=invalid_weights)
+
+    @pytest.mark.parametrize(
+        "invalid_lengths, expected_error_match",
+        [
+            (None, None),  # Default behavior, no error
+            ([], "`lengths` must be a square matrix of size \d+x\d+."),
+            ([[1]], "`lengths` must be a square matrix of size \d+x\d+."),  # Not square
+            ([[1, 2]], "`lengths` must be a square matrix of size \d+x\d+."),  # Not square
+            ([[1, 2], [3]], "`lengths` must be a square matrix of size \d+x\d+."),  # Not square
+            ([[1, -2], [3, 4]], "Elements of `lengths` must be positive numbers."),  # Negative value
+            ([[1, "invalid"], [3, 4]], "Elements of `lengths` must be positive numbers."),  # Non-numeric
+            ("not a list", "`lengths` must be a square matrix of size \d+x\d+."),
+        ],
+    )
+    def test_generate_random_sbm_invalid_lengths_raises_value_error(self, invalid_lengths, expected_error_match):
+        """Test that invalid 'lengths' raise ValueError."""
+        if expected_error_match is None:
+            graph = generate_random_sbm(lengths=invalid_lengths)
+            assert graph.number_of_nodes() == 100
+        else:
+            with pytest.raises(ValueError, match=expected_error_match):
+                generate_random_sbm(sizes=[50, 50], lengths=invalid_lengths)
+
 
 class TestDistance:
     """Tests for distance computation."""
