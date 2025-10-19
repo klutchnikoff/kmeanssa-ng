@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import random as rd
+from collections import Counter
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -10,8 +10,7 @@ import numpy as np
 from ..core import SimulatedAnnealing
 
 if TYPE_CHECKING:
-    from .center import QGCenter
-    from .point import QGPoint
+    pass
 
 
 class QGSimulatedAnnealing(SimulatedAnnealing):
@@ -84,7 +83,7 @@ class QGSimulatedAnnealing(SimulatedAnnealing):
             if i >= i0:
                 central_nodes.append(self._centers[0]._closest_node())
 
-        return max(set(central_nodes), key=central_nodes.count)
+        return Counter(central_nodes).most_common(1)[0][0]
 
     def run_for_kmeans(self, robust_prop: float = 0.0) -> list:
         """Run simulated annealing and return most frequent closest nodes for each center.
@@ -141,6 +140,6 @@ class QGSimulatedAnnealing(SimulatedAnnealing):
         robust_nodes = []
         for m in range(central_nodes.shape[1]):
             nodes_list = list(central_nodes[:, m])
-            robust_nodes.append(max(set(nodes_list), key=nodes_list.count))
+            robust_nodes.append(Counter(nodes_list).most_common(1)[0][0])
 
         return robust_nodes

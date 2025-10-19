@@ -459,7 +459,7 @@ class TestGenerators:
         "invalid_labels, expected_error_match",
         [
             ("not a list", "`true_labels` must be a list."),
-            ([1], "`true_labels` must have the same length as `objects` \(\d+\)." ),  # Incorrect length
+            ([1], r"`true_labels` must have the same length as `objects` \(\d+\)." ),  # Incorrect length
         ],
     )
     def test_complete_quantum_graph_invalid_true_labels_raises_value_error(self, invalid_labels, expected_error_match):
@@ -508,14 +508,14 @@ class TestGenerateRandomSBM:
         "invalid_p, expected_error_match",
         [
             (None, None),  # Default behavior, no error
-            ([], "`p` must be a square matrix of size \d+x\d+."),
-            ([[0.5]], "`p` must be a square matrix of size \d+x\d+."),  # Not square
-            ([[0.5, 0.5]], "`p` must be a square matrix of size \d+x\d+."),  # Not square
-            ([[0.5, 0.5], [0.5]], "`p` must be a square matrix of size \d+x\d+."),  # Not square
+            ([], r"`p` must be a square matrix of size \d+x\d+."),
+            ([[0.5]], r"`p` must be a square matrix of size \d+x\d+."),  # Not square
+            ([[0.5, 0.5]], r"`p` must be a square matrix of size \d+x\d+."),  # Not square
+            ([[0.5, 0.5], [0.5]], r"`p` must be a square matrix of size \d+x\d+."),  # Not square
             ([[0.5, 0.5], [0.5, 1.5]], "Elements of `p` must be floats or integers between 0 and 1."),  # Value > 1
             ([[-0.1, 0.5], [0.5, 0.5]], "Elements of `p` must be floats or integers between 0 and 1."),  # Value < 0
             ([[0.5, "invalid"], [0.5, 0.5]], "Elements of `p` must be floats or integers between 0 and 1."),  # Non-numeric
-            ("not a list", "`p` must be a square matrix of size \d+x\d+."),
+            ("not a list", r"`p` must be a square matrix of size \d+x\d+."),
         ],
     )
     def test_generate_random_sbm_invalid_p_raises_value_error(self, invalid_p, expected_error_match):
@@ -531,12 +531,12 @@ class TestGenerateRandomSBM:
         "invalid_weights, expected_error_match",
         [
             (None, None),  # Default behavior, no error
-            ([], "`weights` must be a list of size \d+."),
-            ([0], "`weights` must be a list of size \d+."),
-            ([-1], "`weights` must be a list of size \d+."),
+            ([], r"`weights` must be a list of size \d+."),
+            ([0], r"`weights` must be a list of size \d+."),
+            ([-1], r"`weights` must be a list of size \d+."),
             ([1, -0.5], "Elements of `weights` must be positive numbers."),
             ([1, "invalid"], "Elements of `weights` must be positive numbers."),
-            ("not a list", "`weights` must be a list of size \d+."),
+            ("not a list", r"`weights` must be a list of size \d+."),
         ],
     )
     def test_generate_random_sbm_invalid_weights_raises_value_error(self, invalid_weights, expected_error_match):
@@ -552,13 +552,13 @@ class TestGenerateRandomSBM:
         "invalid_lengths, expected_error_match",
         [
             (None, None),  # Default behavior, no error
-            ([], "`lengths` must be a square matrix of size \d+x\d+."),
-            ([[1]], "`lengths` must be a square matrix of size \d+x\d+."),  # Not square
-            ([[1, 2]], "`lengths` must be a square matrix of size \d+x\d+."),  # Not square
-            ([[1, 2], [3]], "`lengths` must be a square matrix of size \d+x\d+."),  # Not square
+            ([], r"`lengths` must be a square matrix of size \d+x\d+."),
+            ([[1]], r"`lengths` must be a square matrix of size \d+x\d+."),  # Not square
+            ([[1, 2]], r"`lengths` must be a square matrix of size \d+x\d+."),  # Not square
+            ([[1, 2], [3]], r"`lengths` must be a square matrix of size \d+x\d+."),  # Not square
             ([[1, -2], [3, 4]], "Elements of `lengths` must be positive numbers."),  # Negative value
             ([[1, "invalid"], [3, 4]], "Elements of `lengths` must be positive numbers."),  # Non-numeric
-            ("not a list", "`lengths` must be a square matrix of size \d+x\d+."),
+            ("not a list", r"`lengths` must be a square matrix of size \d+x\d+."),
         ],
     )
     def test_generate_random_sbm_invalid_lengths_raises_value_error(self, invalid_lengths, expected_error_match):
