@@ -2,6 +2,13 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Pipeline Status](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/badges/main/pipeline.svg)](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/pipelines)
+[![Coverage Report](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/badges/main/coverage.svg)](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/commits/main)
+[![Code style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+<!-- Future badges (uncomment when ready):
+[![PyPI version](https://badge.fury.io/py/kmeanssa-ng.svg)](https://badge.fury.io/py/kmeanssa-ng)
+[![Documentation Status](https://readthedocs.org/projects/kmeanssa-ng/badge/?version=latest)](https://kmeanssa-ng.readthedocs.io/en/latest/?badge=latest)
+-->
 
 **K-means clustering on quantum graphs and metric spaces using simulated annealing**
 
