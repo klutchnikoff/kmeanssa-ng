@@ -77,7 +77,9 @@ class QGPoint(Point):
         try:
             position_float = float(position)
         except (TypeError, ValueError) as e:
-            raise ValueError(f"Position must be a number, got {type(position).__name__}") from e
+            raise ValueError(
+                f"Position must be a number, got {type(position).__name__}"
+            ) from e
 
         # Check if position is non-negative
         if position_float < 0:
@@ -150,7 +152,11 @@ class QGPoint(Point):
 
     def __str__(self) -> str:
         """String representation of the point."""
-        name = f" '{self.space.name}'" if hasattr(self.space, "name") and self.space.name else ""
+        name = (
+            f" '{self.space.name}'"
+            if hasattr(self.space, "name") and self.space.name
+            else ""
+        )
         return f"QGPoint on{name} edge {self.edge} at position {self.position:.3f}"
 
     def __repr__(self) -> str:

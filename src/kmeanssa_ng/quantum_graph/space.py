@@ -55,7 +55,11 @@ def _batch_distances_numba(
 
         # Compute 4 possible paths
         d0 = node_dist_matrix[c_edge_0, target_edge_0] + c_pos + target_pos
-        d1 = node_dist_matrix[c_edge_0, target_edge_1] + c_pos + (target_length - target_pos)
+        d1 = (
+            node_dist_matrix[c_edge_0, target_edge_1]
+            + c_pos
+            + (target_length - target_pos)
+        )
         d2 = node_dist_matrix[c_edge_1, target_edge_0] + (c_length - c_pos) + target_pos
         d3 = (
             node_dist_matrix[c_edge_1, target_edge_1]
@@ -135,7 +139,9 @@ class QuantumGraph(nx.Graph, Space):
             ValueError: If 'length' is missing, not positive, or not a number.
         """
         if "length" not in attr:
-            raise ValueError(f"Edge ({u_for_edge}, {v_for_edge}) must have a 'length' attribute")
+            raise ValueError(
+                f"Edge ({u_for_edge}, {v_for_edge}) must have a 'length' attribute"
+            )
 
         length = attr["length"]
 
@@ -226,9 +232,9 @@ class QuantumGraph(nx.Graph, Space):
 
             for i, node_i in enumerate(node_list):
                 for j, node_j in enumerate(node_list):
-                    self._pairwise_nodes_distance_array[i, j] = self._pairwise_nodes_distance[
-                        node_i
-                    ][node_j]
+                    self._pairwise_nodes_distance_array[i, j] = (
+                        self._pairwise_nodes_distance[node_i][node_j]
+                    )
 
     @property
     def node_position(self) -> dict:
@@ -239,7 +245,9 @@ class QuantumGraph(nx.Graph, Space):
         """
         if self._node_position is None:
             drawing = nx.get_edge_attributes(self, "length")
-            drawing_weights = {(i, j): {"drawing": 1 / drawing[(i, j)]} for i, j in drawing}
+            drawing_weights = {
+                (i, j): {"drawing": 1 / drawing[(i, j)]} for i, j in drawing
+            }
             nx.set_edge_attributes(self, drawing_weights)
             self._node_position = nx.layout.spring_layout(self, weight="drawing")
         return self._node_position
@@ -293,7 +301,11 @@ class QuantumGraph(nx.Graph, Space):
         d0 = self.distance_between_nodes(edge1[0], edge2[0]) + pos1 + pos2
         d1 = self.distance_between_nodes(edge1[0], edge2[1]) + pos1 + (length2 - pos2)
         d2 = self.distance_between_nodes(edge1[1], edge2[0]) + (length1 - pos1) + pos2
-        d3 = self.distance_between_nodes(edge1[1], edge2[1]) + (length1 - pos1) + (length2 - pos2)
+        d3 = (
+            self.distance_between_nodes(edge1[1], edge2[1])
+            + (length1 - pos1)
+            + (length2 - pos2)
+        )
 
         # Find minimum distance (break ties randomly)
         distances = np.array([d0, d1, d2, d3])
@@ -302,7 +314,11 @@ class QuantumGraph(nx.Graph, Space):
         d_min = distances[idx]
 
         # Check if points are on the same edge
-        if edge1[0] == edge2[1] and edge1[1] == edge2[0] and d_min > abs(length1 - pos1 - pos2):
+        if (
+            edge1[0] == edge2[1]
+            and edge1[1] == edge2[0]
+            and d_min > abs(length1 - pos1 - pos2)
+        ):
             return {"distance": abs(length1 - pos1 - pos2), "path": None}
 
         if edge1 == edge2 and abs(pos1 - pos2) < d_min:
@@ -332,7 +348,9 @@ class QuantumGraph(nx.Graph, Space):
         """
         return self.quantum_path(p1, p2)["distance"]
 
-    def batch_distances_from_centers(self, centers: list[QGCenter], target: QGPoint) -> np.ndarray:
+    def batch_distances_from_centers(
+        self, centers: list[QGCenter], target: QGPoint
+    ) -> np.ndarray:
         """Compute distances from multiple centers to a single target point.
 
         This is a Numba-accelerated operation that efficiently computes distances
@@ -359,7 +377,9 @@ class QuantumGraph(nx.Graph, Space):
             ```
         """
         if self._pairwise_nodes_distance_array is None:
-            raise ValueError("Must call precomputing() before batch_distances_from_centers")
+            raise ValueError(
+                "Must call precomputing() before batch_distances_from_centers"
+            )
 
         k = len(centers)
 
@@ -571,7 +591,10 @@ class QuantumGraph(nx.Graph, Space):
         """
         for node in self.nodes:
             distances = np.array(
-                [self.distance_between_nodes(center.edge[0], node) for center in centers]
+                [
+                    self.distance_between_nodes(center.edge[0], node)
+                    for center in centers
+                ]
             )
             nx.set_node_attributes(self, {node: {"cluster": np.argmin(distances)}})
 
@@ -596,7 +619,9 @@ class QuantumGraph(nx.Graph, Space):
             for node in self.nodes:
                 neighbor = next(self.neighbors(node))
                 point = QGPoint(self, (node, neighbor), 0)
-                min_dist_sq = min(self.distance(center, point) ** 2 for center in centers)
+                min_dist_sq = min(
+                    self.distance(center, point) ** 2 for center in centers
+                )
                 energy += min_dist_sq
             return energy / self.number_of_nodes()
         else:  # how == "obs"
@@ -607,7 +632,9 @@ class QuantumGraph(nx.Graph, Space):
                 if nb_obs > 0:
                     neighbor = rd.choice(list(self.neighbors(node)))
                     point = QGPoint(self, (node, neighbor), 0)
-                    min_dist_sq = min(self.distance(center, point) ** 2 for center in centers)
+                    min_dist_sq = min(
+                        self.distance(center, point) ** 2 for center in centers
+                    )
                     energy += min_dist_sq * nb_obs
                     total_obs += nb_obs
 

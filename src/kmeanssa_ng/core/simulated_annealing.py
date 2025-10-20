@@ -87,7 +87,9 @@ class SimulatedAnnealing:
         try:
             step_size_float = float(step_size)
         except (TypeError, ValueError) as e:
-            raise ValueError(f"step_size must be a number, got {type(step_size).__name__}") from e
+            raise ValueError(
+                f"step_size must be a number, got {type(step_size).__name__}"
+            ) from e
         if step_size_float <= 0:
             raise ValueError(f"step_size must be positive, got {step_size_float}")
 
@@ -171,7 +173,8 @@ class SimulatedAnnealing:
             Average squared distance to nearest center.
         """
         energy = sum(
-            min(self.space.distance(center, point) ** 2 for center in centers) for point in points
+            min(self.space.distance(center, point) ** 2 for center in centers)
+            for point in points
         )
         return energy / len(points)
 
@@ -247,7 +250,9 @@ class SimulatedAnnealing:
                     center.brownian_motion(h)
 
                 # Vectorized distance computation
-                distances = self.space.batch_distances_from_centers(self._centers, point)
+                distances = self.space.batch_distances_from_centers(
+                    self._centers, point
+                )
                 closest_idx = np.argmin(distances)
                 closest_center = self._centers[closest_idx]
 

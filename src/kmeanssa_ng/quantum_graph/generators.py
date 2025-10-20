@@ -99,7 +99,7 @@ def generate_simple_graph(
         nx.set_edge_attributes(graph, {edge: {"weight": 1.0}})
         edge_length = graph.get_edge_data(*edge)["length"]
         # Proper closure to capture edge_length
-        distrib = lambda L=edge_length: rd.uniform(0, L)
+        distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
         nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
     graph.precomputing()
@@ -138,7 +138,9 @@ def generate_simple_random_graph(
     # Central nodes and bridge
     graph.add_node("A0", weight=5)
     graph.add_node("B0", weight=5)
-    graph.add_edge("A0", "B0", length=rd.uniform(0.9 * bridge_length, 1.1 * bridge_length))
+    graph.add_edge(
+        "A0", "B0", length=rd.uniform(0.9 * bridge_length, 1.1 * bridge_length)
+    )
 
     # Build cluster A
     for i in range(1, n_a + 1):
@@ -173,7 +175,7 @@ def generate_simple_random_graph(
         nx.set_edge_attributes(graph, {edge: {"weight": w}})
 
         edge_length = graph.get_edge_data(*edge)["length"]
-        distrib = lambda L=edge_length: rd.uniform(0, L)
+        distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
         nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
     graph.precomputing()
@@ -223,7 +225,9 @@ def generate_sbm(
         try:
             size_int = int(size)
         except (TypeError, ValueError) as e:
-            raise ValueError(f"sizes[{i}] must be an integer, got {type(size).__name__}") from e
+            raise ValueError(
+                f"sizes[{i}] must be an integer, got {type(size).__name__}"
+            ) from e
         if size_int <= 0:
             raise ValueError(f"sizes[{i}] must be positive, got {size_int}")
 
@@ -244,7 +248,9 @@ def generate_sbm(
             try:
                 prob_float = float(prob)
             except (TypeError, ValueError) as e:
-                raise ValueError(f"p[{i}][{j}] must be a number, got {type(prob).__name__}") from e
+                raise ValueError(
+                    f"p[{i}][{j}] must be a number, got {type(prob).__name__}"
+                ) from e
             if prob_float < 0 or prob_float > 1:
                 raise ValueError(f"p[{i}][{j}] must be in [0, 1], got {prob_float}")
 
@@ -258,7 +264,7 @@ def generate_sbm(
     for edge in graph.edges:
         nx.set_edge_attributes(graph, {edge: {"weight": 1}})
         edge_length = graph.get_edge_data(*edge)["length"]
-        distrib = lambda L=edge_length: rd.uniform(0, L)
+        distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
         nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
     graph.precomputing()
@@ -315,12 +321,18 @@ def generate_random_sbm(
 
     # Validate 'p'
     if not isinstance(p, list) or len(p) != num_blocks:
-        raise ValueError(f"`p` must be a square matrix of size {num_blocks}x{num_blocks}.")
+        raise ValueError(
+            f"`p` must be a square matrix of size {num_blocks}x{num_blocks}."
+        )
     for row in p:
         if not isinstance(row, list) or len(row) != num_blocks:
-            raise ValueError(f"`p` must be a square matrix of size {num_blocks}x{num_blocks}.")
+            raise ValueError(
+                f"`p` must be a square matrix of size {num_blocks}x{num_blocks}."
+            )
         if not all(isinstance(val, (float, int)) and 0 <= val <= 1 for val in row):
-            raise ValueError("Elements of `p` must be floats or integers between 0 and 1.")
+            raise ValueError(
+                "Elements of `p` must be floats or integers between 0 and 1."
+            )
 
     # Validate 'weights'
     if not isinstance(weights, list) or len(weights) != num_blocks:
@@ -330,7 +342,9 @@ def generate_random_sbm(
 
     # Validate 'lengths'
     if not isinstance(lengths, list) or len(lengths) != num_blocks:
-        raise ValueError(f"`lengths` must be a square matrix of size {num_blocks}x{num_blocks}.")
+        raise ValueError(
+            f"`lengths` must be a square matrix of size {num_blocks}x{num_blocks}."
+        )
     for row in lengths:
         if not isinstance(row, list) or len(row) != num_blocks:
             raise ValueError(
@@ -355,7 +369,7 @@ def generate_random_sbm(
         edge_length = lengths[block_i][block_j]
 
         nx.set_edge_attributes(graph, {edge: {"length": edge_length, "weight": 1}})
-        distrib = lambda L=edge_length: rd.uniform(0, L)
+        distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
         nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
     graph.precomputing()
@@ -407,7 +421,7 @@ def as_quantum_graph(
     nx.set_edge_attributes(qg, edge_length, "length")
     nx.set_edge_attributes(qg, edge_weight, "weight")
 
-    distrib = lambda L=edge_length: rd.uniform(0, L)
+    distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
     for edge in qg.edges:
         nx.set_edge_attributes(qg, {edge: {"distribution": distrib}})
 
@@ -483,7 +497,7 @@ def complete_quantum_graph(
             else:
                 edge_length = 1.0
 
-            distrib = lambda L=edge_length: rd.uniform(0, L)
+            distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
             graph.add_edge(i, j, weight=1, length=edge_length, distribution=distrib)
 
     graph.precomputing()
