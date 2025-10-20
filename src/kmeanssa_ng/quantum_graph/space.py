@@ -248,6 +248,91 @@ class QuantumGraph(nx.Graph, Space):
         """
         return self.quantum_path(p1, p2)["distance"]
 
+    def batch_distances_from_centers(
+        self, centers: list[QGCenter], target: QGPoint
+    ) -> np.ndarray:
+        """Compute distances from multiple centers to a single target point.
+
+        This is a vectorized operation that efficiently computes distances
+        from all centers to one target point. Works for any target location
+        (on nodes or edges).
+
+        Args:
+            centers: List of k centers to compute distances from.
+            target: The target point (can be on a node or edge).
+
+        Returns:
+            Array of shape (k,) with distances from each center to target.
+
+        Raises:
+            ValueError: If pairwise distances not precomputed.
+
+        Example:
+            ```python
+            centers = graph.sample_centers(5)
+            target = graph.sample_points(1)[0]
+            distances = graph.batch_distances_from_centers(centers, target)
+            closest_idx = np.argmin(distances)
+            closest_center = centers[closest_idx]
+            ```
+        """
+        if self._pairwise_nodes_distance is None:
+            raise ValueError("Must call precomputing() before batch_distances_from_centers")
+
+        k = len(centers)
+
+        # Extract target information
+        target_edge = target.edge
+        target_pos = target.position
+        target_length = self.get_edge_length(*target_edge)
+
+        # Vectorized computation for all centers
+        distances = np.empty(k, dtype=np.float64)
+
+        for i, center in enumerate(centers):
+            center_edge = center.edge
+            center_pos = center.position
+            center_length = self.get_edge_length(*center_edge)
+
+            # Compute 4 possible paths (same as quantum_path but vectorized setup)
+            d0 = (
+                self._pairwise_nodes_distance[center_edge[0]][target_edge[0]]
+                + center_pos
+                + target_pos
+            )
+            d1 = (
+                self._pairwise_nodes_distance[center_edge[0]][target_edge[1]]
+                + center_pos
+                + (target_length - target_pos)
+            )
+            d2 = (
+                self._pairwise_nodes_distance[center_edge[1]][target_edge[0]]
+                + (center_length - center_pos)
+                + target_pos
+            )
+            d3 = (
+                self._pairwise_nodes_distance[center_edge[1]][target_edge[1]]
+                + (center_length - center_pos)
+                + (target_length - target_pos)
+            )
+
+            # Take minimum of 4 paths
+            d_min = min(d0, d1, d2, d3)
+
+            # Check same edge cases (same logic as quantum_path)
+            if (
+                center_edge[0] == target_edge[1]
+                and center_edge[1] == target_edge[0]
+                and d_min > abs(center_length - center_pos - target_pos)
+            ):
+                distances[i] = abs(center_length - center_pos - target_pos)
+            elif center_edge == target_edge and abs(center_pos - target_pos) < d_min:
+                distances[i] = abs(center_pos - target_pos)
+            else:
+                distances[i] = d_min
+
+        return distances
+
     def _sample_point(self, where: str = "Node") -> QGPoint:
         """Sample a random point on the graph.
 

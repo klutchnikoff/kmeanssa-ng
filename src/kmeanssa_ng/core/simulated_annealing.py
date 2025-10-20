@@ -242,17 +242,17 @@ class SimulatedAnnealing:
                 h = min(time + self._step_size, T) - time
                 prop = min(h * self._beta * np.log(1 + time), 1)
 
-                closest_center = None
-                min_distance = float("inf")
-
+                # Brownian motion for all centers
                 for center in self._centers:
                     center.brownian_motion(h)
-                    dist = self.space.distance(center, point)
-                    if dist < min_distance:
-                        closest_center, min_distance = center, dist
 
-                if closest_center is not None:
-                    closest_center.drift(point, prop)
+                # Vectorized distance computation
+                distances = self.space.batch_distances_from_centers(self._centers, point)
+                closest_idx = np.argmin(distances)
+                closest_center = self._centers[closest_idx]
+
+                # Drift toward observation
+                closest_center.drift(point, prop)
 
                 time += h
 
@@ -284,18 +284,13 @@ class SimulatedAnnealing:
                     center.brownian_motion(h)
                 time += h
 
-            # Drift phase
-            closest_center = None
-            min_distance = float("inf")
-
-            for center in self._centers:
-                dist = self.space.distance(center, point)
-                if dist < min_distance:
-                    closest_center, min_distance = center, dist
+            # Drift phase - vectorized distance computation
+            distances = self.space.batch_distances_from_centers(self._centers, point)
+            closest_idx = np.argmin(distances)
+            closest_center = self._centers[closest_idx]
 
             prop = min((times[i] - times[i - 1]) * self._beta * np.log(1 + time), 1)
-            if closest_center is not None:
-                closest_center.drift(point, prop)
+            closest_center.drift(point, prop)
 
             time = T
 
