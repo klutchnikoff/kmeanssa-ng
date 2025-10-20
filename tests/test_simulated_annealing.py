@@ -130,7 +130,7 @@ class TestSimulatedAnnealing:
 
         assert len(centers) == 2
         # Check that centers are from the same graph (not exact object equality after deepcopy)
-        assert all(hasattr(c, 'space') for c in centers)
+        assert all(hasattr(c, "space") for c in centers)
 
     def test_run_kpp_initialization(self):
         """Test running with k-means++ initialization."""
@@ -204,10 +204,10 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(20)
 
         sa = SimulatedAnnealing(points, k=2)
-        
+
         # Initially empty
         assert sa.centers == []
-        
+
         # After running, should have centers
         centers = sa.run(initialization="kpp")
         # Note: centers property returns the private _centers, which is set during run

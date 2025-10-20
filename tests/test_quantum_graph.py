@@ -5,7 +5,16 @@ import networkx as nx
 import numpy as np
 import pytest
 
-from kmeanssa_ng import QGCenter, QGPoint, QuantumGraph, generate_sbm, generate_simple_graph, generate_random_sbm, as_quantum_graph, complete_quantum_graph
+from kmeanssa_ng import (
+    QGCenter,
+    QGPoint,
+    QuantumGraph,
+    generate_sbm,
+    generate_simple_graph,
+    generate_random_sbm,
+    as_quantum_graph,
+    complete_quantum_graph,
+)
 
 
 class TestQuantumGraph:
@@ -76,7 +85,7 @@ class TestQuantumGraph:
 
         # Case 2: Center and target on reversed edge
         c2 = QGCenter(QGPoint(graph, (0, 1), 0.2))
-        p2 = QGPoint(graph, (1, 0), 0.2) # Same as (0, 1) at 0.8
+        p2 = QGPoint(graph, (1, 0), 0.2)  # Same as (0, 1) at 0.8
         dist2 = graph.batch_distances_from_centers([c2], p2)
         assert np.isclose(dist2[0], 0.6)
 
@@ -208,17 +217,17 @@ class TestQGPoint:
         # Force edge property to pass through "edge not in graph" branch with self-loop
         point.edge = (3, 3)  # Self-loop allowed by property
         assert point.edge == (3, 3)
-        
+
     def test_edge_property_raises_when_not_in_graph(self):
         """Test edge property raises when edge not in graph (covers line 107)."""
         graph = QuantumGraph()
         graph.add_edge(0, 1, length=1.0)
-        
+
         point = QGPoint(graph, edge=(0, 1), position=0.5)
-        
+
         # Force the edge to be something not in the graph and not a self-loop
         point._edge = (5, 6)  # Set directly to bypass setter validation
-        
+
         # Now accessing the property should raise
         with pytest.raises(ValueError, match="does not belong to the graph"):
             _ = point.edge
@@ -405,34 +414,34 @@ class TestQGCenter:
         # Create points on "same" edge but different parametrizations
         center_point = QGPoint(graph, edge=(0, 1), position=0.3)
         target_point = QGPoint(graph, edge=(1, 0), position=0.2)  # Reversed edge
-        
+
         center = QGCenter(center_point)
         initial_pos = center.position
-        
+
         # This should trigger the "different parametrization" branch
         center.drift(target_point, 0.1)
-        
+
         # Position should have changed
         assert center.position != initial_pos
-        
+
         # Test the other condition: center.position > target.position (line 135)
         center_point2 = QGPoint(graph, edge=(0, 1), position=0.7)
-        target_point2 = QGPoint(graph, edge=(1, 0), position=0.2)  # Reversed edge  
-        
+        target_point2 = QGPoint(graph, edge=(1, 0), position=0.2)  # Reversed edge
+
         center2 = QGCenter(center_point2)
         initial_pos2 = center2.position
-        
+
         # This should trigger line 135
         center2.drift(target_point2, 0.1)
         assert center2.position != initial_pos2
-        
+
         # Test line 131: center.position > target.position on same orientation
         center_point3 = QGPoint(graph, edge=(0, 1), position=0.8)
-        target_point3 = QGPoint(graph, edge=(0, 1), position=0.2)  
-        
+        target_point3 = QGPoint(graph, edge=(0, 1), position=0.2)
+
         center3 = QGCenter(center_point3)
         initial_pos3 = center3.position
-        
+
         # This should trigger line 131
         center3.drift(target_point3, 0.1)
         assert center3.position < initial_pos3  # Should move backward
@@ -488,7 +497,9 @@ class TestGenerators:
             (123, "`graph` must be a networkx.Graph object."),
         ],
     )
-    def test_as_quantum_graph_invalid_graph_raises_value_error(self, invalid_graph, expected_error_match):
+    def test_as_quantum_graph_invalid_graph_raises_value_error(
+        self, invalid_graph, expected_error_match
+    ):
         """Test that invalid 'graph' raises ValueError."""
         with pytest.raises(ValueError, match=expected_error_match):
             as_quantum_graph(invalid_graph)
@@ -501,7 +512,9 @@ class TestGenerators:
             ("invalid", "`node_weight` must be a positive number."),
         ],
     )
-    def test_as_quantum_graph_invalid_node_weight_raises_value_error(self, invalid_weight, expected_error_match):
+    def test_as_quantum_graph_invalid_node_weight_raises_value_error(
+        self, invalid_weight, expected_error_match
+    ):
         """Test that invalid 'node_weight' raises ValueError."""
         G = nx.Graph()
         G.add_edge(0, 1)
@@ -516,7 +529,9 @@ class TestGenerators:
             ("invalid", "`edge_length` must be a positive number."),
         ],
     )
-    def test_as_quantum_graph_invalid_edge_length_raises_value_error(self, invalid_length, expected_error_match):
+    def test_as_quantum_graph_invalid_edge_length_raises_value_error(
+        self, invalid_length, expected_error_match
+    ):
         """Test that invalid 'edge_length' raises ValueError."""
         G = nx.Graph()
         G.add_edge(0, 1)
@@ -531,7 +546,9 @@ class TestGenerators:
             ("invalid", "`edge_weight` must be a positive number."),
         ],
     )
-    def test_as_quantum_graph_invalid_edge_weight_raises_value_error(self, invalid_weight, expected_error_match):
+    def test_as_quantum_graph_invalid_edge_weight_raises_value_error(
+        self, invalid_weight, expected_error_match
+    ):
         """Test that invalid 'edge_weight' raises ValueError."""
         G = nx.Graph()
         G.add_edge(0, 1)
@@ -546,7 +563,9 @@ class TestGenerators:
             (123, "`objects` must be a non-empty list."),
         ],
     )
-    def test_complete_quantum_graph_invalid_objects_raises_value_error(self, invalid_objects, expected_error_match):
+    def test_complete_quantum_graph_invalid_objects_raises_value_error(
+        self, invalid_objects, expected_error_match
+    ):
         """Test that invalid 'objects' raise ValueError."""
         with pytest.raises(ValueError, match=expected_error_match):
             complete_quantum_graph(invalid_objects)
@@ -555,11 +574,19 @@ class TestGenerators:
         "invalid_similarities, expected_error_match",
         [
             ("not an array", "`similarities` must be a numpy array."),
-            (np.array([[1, 2]]), "`similarities` must be a square matrix of size 2x2."),  # Not square
-            (np.array([[-1, 2], [3, 4]]), "Elements of `similarities` must be non-negative."),  # Negative value
+            (
+                np.array([[1, 2]]),
+                "`similarities` must be a square matrix of size 2x2.",
+            ),  # Not square
+            (
+                np.array([[-1, 2], [3, 4]]),
+                "Elements of `similarities` must be non-negative.",
+            ),  # Negative value
         ],
     )
-    def test_complete_quantum_graph_invalid_similarities_raises_value_error(self, invalid_similarities, expected_error_match):
+    def test_complete_quantum_graph_invalid_similarities_raises_value_error(
+        self, invalid_similarities, expected_error_match
+    ):
         """Test that invalid 'similarities' raise ValueError."""
         objects = [1, 2]
         with pytest.raises(ValueError, match=expected_error_match):
@@ -569,10 +596,15 @@ class TestGenerators:
         "invalid_labels, expected_error_match",
         [
             ("not a list", "`true_labels` must be a list."),
-            ([1], r"`true_labels` must have the same length as `objects` \(\d+\)." ),  # Incorrect length
+            (
+                [1],
+                r"`true_labels` must have the same length as `objects` \(\d+\).",
+            ),  # Incorrect length
         ],
     )
-    def test_complete_quantum_graph_invalid_true_labels_raises_value_error(self, invalid_labels, expected_error_match):
+    def test_complete_quantum_graph_invalid_true_labels_raises_value_error(
+        self, invalid_labels, expected_error_match
+    ):
         """Test that invalid 'true_labels' raise ValueError."""
         objects = [1, 2]
         with pytest.raises(ValueError, match=expected_error_match):
@@ -601,7 +633,9 @@ class TestGenerateRandomSBM:
             ([10, "invalid"], "`sizes` must be a non-empty list of positive integers."),
         ],
     )
-    def test_generate_random_sbm_invalid_sizes_raises_value_error(self, invalid_sizes, expected_error_match):
+    def test_generate_random_sbm_invalid_sizes_raises_value_error(
+        self, invalid_sizes, expected_error_match
+    ):
         """Test that invalid 'sizes' raise ValueError."""
         if expected_error_match is None:
             graph = generate_random_sbm(sizes=invalid_sizes)
@@ -610,7 +644,9 @@ class TestGenerateRandomSBM:
             with pytest.raises(ValueError, match=expected_error_match):
                 # For empty sizes, provide empty p, weights, lengths to avoid early validation errors
                 if invalid_sizes == []:
-                    generate_random_sbm(sizes=invalid_sizes, p=[], weights=[], lengths=[])
+                    generate_random_sbm(
+                        sizes=invalid_sizes, p=[], weights=[], lengths=[]
+                    )
                 else:
                     generate_random_sbm(sizes=invalid_sizes)
 
@@ -620,15 +656,32 @@ class TestGenerateRandomSBM:
             (None, None),  # Default behavior, no error
             ([], r"`p` must be a square matrix of size \d+x\d+."),
             ([[0.5]], r"`p` must be a square matrix of size \d+x\d+."),  # Not square
-            ([[0.5, 0.5]], r"`p` must be a square matrix of size \d+x\d+."),  # Not square
-            ([[0.5, 0.5], [0.5]], r"`p` must be a square matrix of size \d+x\d+."),  # Not square
-            ([[0.5, 0.5], [0.5, 1.5]], "Elements of `p` must be floats or integers between 0 and 1."),  # Value > 1
-            ([[-0.1, 0.5], [0.5, 0.5]], "Elements of `p` must be floats or integers between 0 and 1."),  # Value < 0
-            ([[0.5, "invalid"], [0.5, 0.5]], "Elements of `p` must be floats or integers between 0 and 1."),  # Non-numeric
+            (
+                [[0.5, 0.5]],
+                r"`p` must be a square matrix of size \d+x\d+.",
+            ),  # Not square
+            (
+                [[0.5, 0.5], [0.5]],
+                r"`p` must be a square matrix of size \d+x\d+.",
+            ),  # Not square
+            (
+                [[0.5, 0.5], [0.5, 1.5]],
+                "Elements of `p` must be floats or integers between 0 and 1.",
+            ),  # Value > 1
+            (
+                [[-0.1, 0.5], [0.5, 0.5]],
+                "Elements of `p` must be floats or integers between 0 and 1.",
+            ),  # Value < 0
+            (
+                [[0.5, "invalid"], [0.5, 0.5]],
+                "Elements of `p` must be floats or integers between 0 and 1.",
+            ),  # Non-numeric
             ("not a list", r"`p` must be a square matrix of size \d+x\d+."),
         ],
     )
-    def test_generate_random_sbm_invalid_p_raises_value_error(self, invalid_p, expected_error_match):
+    def test_generate_random_sbm_invalid_p_raises_value_error(
+        self, invalid_p, expected_error_match
+    ):
         """Test that invalid 'p' raises ValueError."""
         if expected_error_match is None:
             graph = generate_random_sbm(p=invalid_p)
@@ -649,7 +702,9 @@ class TestGenerateRandomSBM:
             ("not a list", r"`weights` must be a list of size \d+."),
         ],
     )
-    def test_generate_random_sbm_invalid_weights_raises_value_error(self, invalid_weights, expected_error_match):
+    def test_generate_random_sbm_invalid_weights_raises_value_error(
+        self, invalid_weights, expected_error_match
+    ):
         """Test that invalid 'weights' raise ValueError."""
         if expected_error_match is None:
             graph = generate_random_sbm(weights=invalid_weights)
@@ -663,15 +718,32 @@ class TestGenerateRandomSBM:
         [
             (None, None),  # Default behavior, no error
             ([], r"`lengths` must be a square matrix of size \d+x\d+."),
-            ([[1]], r"`lengths` must be a square matrix of size \d+x\d+."),  # Not square
-            ([[1, 2]], r"`lengths` must be a square matrix of size \d+x\d+."),  # Not square
-            ([[1, 2], [3]], r"`lengths` must be a square matrix of size \d+x\d+."),  # Not square
-            ([[1, -2], [3, 4]], "Elements of `lengths` must be positive numbers."),  # Negative value
-            ([[1, "invalid"], [3, 4]], "Elements of `lengths` must be positive numbers."),  # Non-numeric
+            (
+                [[1]],
+                r"`lengths` must be a square matrix of size \d+x\d+.",
+            ),  # Not square
+            (
+                [[1, 2]],
+                r"`lengths` must be a square matrix of size \d+x\d+.",
+            ),  # Not square
+            (
+                [[1, 2], [3]],
+                r"`lengths` must be a square matrix of size \d+x\d+.",
+            ),  # Not square
+            (
+                [[1, -2], [3, 4]],
+                "Elements of `lengths` must be positive numbers.",
+            ),  # Negative value
+            (
+                [[1, "invalid"], [3, 4]],
+                "Elements of `lengths` must be positive numbers.",
+            ),  # Non-numeric
             ("not a list", r"`lengths` must be a square matrix of size \d+x\d+."),
         ],
     )
-    def test_generate_random_sbm_invalid_lengths_raises_value_error(self, invalid_lengths, expected_error_match):
+    def test_generate_random_sbm_invalid_lengths_raises_value_error(
+        self, invalid_lengths, expected_error_match
+    ):
         """Test that invalid 'lengths' raise ValueError."""
         if expected_error_match is None:
             graph = generate_random_sbm(lengths=invalid_lengths)
@@ -770,7 +842,9 @@ class TestValidation:
         graph.add_edge(0, 1, length=1.0)
         graph.add_edge(2, 3, length=1.0)  # Separate component
 
-        with pytest.raises(ValueError, match="must be connected.*2 connected components"):
+        with pytest.raises(
+            ValueError, match="must be connected.*2 connected components"
+        ):
             graph.precomputing()
 
     def test_precomputing_invalid_edges_raises(self):

@@ -59,13 +59,13 @@ class TestGenerateSimpleRandomGraph:
     def test_generate_simple_random_graph_default_params(self):
         """Test generate_simple_random_graph with default parameters."""
         graph = generate_simple_random_graph()
-        
+
         # Should have at least central nodes A0 and B0
         assert graph.number_of_nodes() >= 2
         assert graph.has_node("A0")
         assert graph.has_node("B0")
         assert graph.has_edge("A0", "B0")
-        
+
         # Check that graph has precomputed distances
         assert graph._pairwise_nodes_distance is not None
 
@@ -74,12 +74,12 @@ class TestGenerateSimpleRandomGraph:
         graph = generate_simple_random_graph(
             n_a=3, n_b=2, lam_a=2, lam_b=1, bridge_length=5.0
         )
-        
+
         # Should have A0, B0, A1-A3, B1-B2
         expected_nodes = ["A0", "B0", "A1", "A2", "A3", "B1", "B2"]
         for node in expected_nodes:
             assert graph.has_node(node)
-        
+
         # Check bridge exists with correct length range
         bridge_data = graph.get_edge_data("A0", "B0")
         assert 4.5 <= bridge_data["length"] <= 5.5  # 0.9*5 to 1.1*5
@@ -87,7 +87,7 @@ class TestGenerateSimpleRandomGraph:
     def test_generate_simple_random_graph_zero_poisson(self):
         """Test generate_simple_random_graph with zero Poisson parameters."""
         graph = generate_simple_random_graph(n_a=2, n_b=2, lam_a=0, lam_b=0)
-        
+
         # Should only have first and second level nodes (no third level)
         expected_nodes = ["A0", "B0", "A1", "A2", "B1", "B2"]
         assert graph.number_of_nodes() == len(expected_nodes)
@@ -176,19 +176,19 @@ class TestAsQuantumGraph:
         G = nx.Graph()
         G.add_edge(0, 1)
         G.add_edge(1, 2)
-        
+
         qg = as_quantum_graph(G, node_weight=2.0, edge_length=1.5, edge_weight=0.8)
-        
+
         # Check structure preserved
         assert qg.number_of_nodes() == 3
         assert qg.number_of_edges() == 2
         assert qg.has_edge(0, 1)
         assert qg.has_edge(1, 2)
-        
+
         # Check attributes set correctly
         for node in qg.nodes():
             assert qg.nodes[node]["weight"] == 2.0
-        
+
         for edge in qg.edges():
             edge_data = qg.get_edge_data(*edge)
             assert edge_data["length"] == 1.5
@@ -199,10 +199,10 @@ class TestAsQuantumGraph:
         """Test conversion of Karate Club graph."""
         G = nx.karate_club_graph()
         qg = as_quantum_graph(G, edge_length=1.0)
-        
+
         assert qg.number_of_nodes() == G.number_of_nodes()
         assert qg.number_of_edges() == G.number_of_edges()
-        
+
         # All edges should have length 1.0
         for edge in qg.edges():
             assert qg.get_edge_data(*edge)["length"] == 1.0
@@ -216,7 +216,7 @@ class TestAsQuantumGraph:
         """Test that invalid node_weight raises ValueError."""
         G = nx.Graph()
         G.add_edge(0, 1)
-        
+
         with pytest.raises(ValueError, match="`node_weight` must be a positive number"):
             as_quantum_graph(G, node_weight=0)
 
@@ -224,7 +224,7 @@ class TestAsQuantumGraph:
         """Test that invalid edge_length raises ValueError."""
         G = nx.Graph()
         G.add_edge(0, 1)
-        
+
         with pytest.raises(ValueError, match="`edge_length` must be a positive number"):
             as_quantum_graph(G, edge_length=-1)
 
@@ -232,7 +232,7 @@ class TestAsQuantumGraph:
         """Test that invalid edge_weight raises ValueError."""
         G = nx.Graph()
         G.add_edge(0, 1)
-        
+
         with pytest.raises(ValueError, match="`edge_weight` must be a positive number"):
             as_quantum_graph(G, edge_weight="invalid")
 
@@ -244,11 +244,11 @@ class TestCompleteQuantumGraph:
         """Test basic complete graph creation."""
         objects = [1, 2, 3]
         graph = complete_quantum_graph(objects)
-        
+
         # Should be complete graph with 3 nodes, 3 edges
         assert graph.number_of_nodes() == 3
         assert graph.number_of_edges() == 3
-        
+
         # Check all edges exist
         expected_edges = [(0, 1), (0, 2), (1, 2)]
         for edge in expected_edges:
@@ -258,14 +258,10 @@ class TestCompleteQuantumGraph:
     def test_complete_quantum_graph_with_similarities(self):
         """Test complete graph with similarity matrix."""
         objects = [1, 2, 3]
-        similarities = np.array([
-            [0, 2, 3],
-            [2, 0, 1], 
-            [3, 1, 0]
-        ])
-        
+        similarities = np.array([[0, 2, 3], [2, 0, 1], [3, 1, 0]])
+
         graph = complete_quantum_graph(objects, similarities=similarities)
-        
+
         # Check edge lengths match similarities
         assert graph.get_edge_data(0, 1)["length"] == 2
         assert graph.get_edge_data(0, 2)["length"] == 3
@@ -275,9 +271,9 @@ class TestCompleteQuantumGraph:
         """Test complete graph with true labels."""
         objects = [1, 2, 3, 4]
         labels = [0, 0, 1, 1]
-        
+
         graph = complete_quantum_graph(objects, true_labels=labels)
-        
+
         # Check nodes have group attribute
         for i, expected_group in enumerate(labels):
             assert graph.nodes[i]["group"] == expected_group
@@ -302,16 +298,20 @@ class TestCompleteQuantumGraph:
         """Test that wrong similarities shape raises ValueError."""
         objects = [1, 2]
         similarities = np.array([[1, 2, 3]])  # Wrong shape
-        
-        with pytest.raises(ValueError, match="`similarities` must be a square matrix of size 2x2"):
+
+        with pytest.raises(
+            ValueError, match="`similarities` must be a square matrix of size 2x2"
+        ):
             complete_quantum_graph(objects, similarities=similarities)
 
     def test_complete_quantum_graph_negative_similarities(self):
         """Test that negative similarities raises ValueError."""
         objects = [1, 2]
         similarities = np.array([[0, -1], [1, 0]])  # Negative value
-        
-        with pytest.raises(ValueError, match="Elements of `similarities` must be non-negative"):
+
+        with pytest.raises(
+            ValueError, match="Elements of `similarities` must be non-negative"
+        ):
             complete_quantum_graph(objects, similarities=similarities)
 
     def test_complete_quantum_graph_invalid_labels_type(self):
@@ -324,14 +324,16 @@ class TestCompleteQuantumGraph:
         """Test that wrong labels length raises ValueError."""
         objects = [1, 2]
         labels = [0]  # Wrong length
-        
-        with pytest.raises(ValueError, match="`true_labels` must have the same length as `objects`"):
+
+        with pytest.raises(
+            ValueError, match="`true_labels` must have the same length as `objects`"
+        ):
             complete_quantum_graph(objects, true_labels=labels)
 
     def test_complete_quantum_graph_precomputes_distances(self):
         """Test that complete graph precomputes distances."""
         objects = [1, 2, 3]
         graph = complete_quantum_graph(objects)
-        
+
         # Should have precomputed distances
         assert graph._pairwise_nodes_distance is not None

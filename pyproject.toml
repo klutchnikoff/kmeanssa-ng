@@ -35,6 +35,10 @@ build-backend = "pdm.backend"
 [tool.pdm]
 distribution = true
 
+[tool.pdm.scripts]
+format = "ruff format"
+check = "ruff check"
+
 [tool.pdm.dev-dependencies]
 test = [
     "pytest>=7.4.0",
