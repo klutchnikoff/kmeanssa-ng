@@ -13,8 +13,6 @@ from .center import QGCenter
 from .point import QGPoint
 
 
-
-
 @njit(cache=True, fastmath=True)
 def _batch_distances_numba(
     center_edges_0: np.ndarray,
@@ -28,10 +26,10 @@ def _batch_distances_numba(
     node_dist_matrix: np.ndarray,
 ) -> np.ndarray:
     """Numba-accelerated batch distance computation.
-    
+
     Computes distances from k centers to one target point using
     the quantum graph distance formula with 4 possible paths.
-    
+
     Args:
         center_edges_0: First node of each center's edge (k,)
         center_edges_1: Second node of each center's edge (k,)
@@ -42,41 +40,45 @@ def _batch_distances_numba(
         target_pos: Position of target
         target_length: Length of target's edge
         node_dist_matrix: Precomputed node distances (n, n)
-    
+
     Returns:
         Array of distances from each center to target (k,)
     """
     k = len(center_positions)
     distances = np.empty(k, dtype=np.float64)
-    
+
     for i in range(k):
         c_edge_0 = center_edges_0[i]
         c_edge_1 = center_edges_1[i]
         c_pos = center_positions[i]
         c_length = center_lengths[i]
-        
+
         # Compute 4 possible paths
         d0 = node_dist_matrix[c_edge_0, target_edge_0] + c_pos + target_pos
         d1 = node_dist_matrix[c_edge_0, target_edge_1] + c_pos + (target_length - target_pos)
         d2 = node_dist_matrix[c_edge_1, target_edge_0] + (c_length - c_pos) + target_pos
-        d3 = node_dist_matrix[c_edge_1, target_edge_1] + (c_length - c_pos) + (target_length - target_pos)
-        
+        d3 = (
+            node_dist_matrix[c_edge_1, target_edge_1]
+            + (c_length - c_pos)
+            + (target_length - target_pos)
+        )
+
         # Take minimum
         d_min = min(d0, d1, d2, d3)
-        
+
         # Check same edge cases
-        if (c_edge_0 == target_edge_1 and c_edge_1 == target_edge_0):
+        if c_edge_0 == target_edge_1 and c_edge_1 == target_edge_0:
             d_same_rev = abs(c_length - c_pos - target_pos)
             if d_same_rev < d_min:
                 d_min = d_same_rev
-        
-        if (c_edge_0 == target_edge_0 and c_edge_1 == target_edge_1):
+
+        if c_edge_0 == target_edge_0 and c_edge_1 == target_edge_1:
             d_same = abs(c_pos - target_pos)
             if d_same < d_min:
                 d_min = d_same
-        
+
         distances[i] = d_min
-    
+
     return distances
 
 
@@ -215,13 +217,13 @@ class QuantumGraph(nx.Graph, Space):
             self._pairwise_nodes_distance = dict(
                 nx.all_pairs_dijkstra_path_length(self, weight="length")
             )
-            
+
             # Create numpy array version for Numba-accelerated computations
             node_list = list(self.nodes())
             n = len(node_list)
             self._node_to_index = {node: i for i, node in enumerate(node_list)}
             self._pairwise_nodes_distance_array = np.zeros((n, n), dtype=np.float64)
-            
+
             for i, node_i in enumerate(node_list):
                 for j, node_j in enumerate(node_list):
                     self._pairwise_nodes_distance_array[i, j] = self._pairwise_nodes_distance[
@@ -330,9 +332,7 @@ class QuantumGraph(nx.Graph, Space):
         """
         return self.quantum_path(p1, p2)["distance"]
 
-    def batch_distances_from_centers(
-        self, centers: list[QGCenter], target: QGPoint
-    ) -> np.ndarray:
+    def batch_distances_from_centers(self, centers: list[QGCenter], target: QGPoint) -> np.ndarray:
         """Compute distances from multiple centers to a single target point.
 
         This is a Numba-accelerated operation that efficiently computes distances

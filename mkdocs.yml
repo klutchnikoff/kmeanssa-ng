@@ -39,13 +39,13 @@ nav:
     - Basic Concepts: concepts.md  # Quarto-generated
   - User Guide:
     - Quantum Graphs: quantum-graphs.md  # Quarto-generated
-    - Simulated Annealing: user-guide/simulated-annealing.md  # TODO: migrate
-    - Graph Generators: user-guide/generators.md  # TODO: migrate
-    - Custom Metric Spaces: user-guide/custom-spaces.md  # TODO: migrate
+    - Simulated Annealing: simulated-annealing.md  # Quarto-generated
+    - Graph Generators: generators.md  # Quarto-generated
+    - Custom Metric Spaces: custom-spaces.md  # Quarto-generated
   - Examples:
     - Basic Clustering: basic-clustering.md  # Quarto-generated
-    - Advanced Usage: examples/advanced-usage.md  # TODO: migrate
-    - Performance Tuning: examples/performance.md  # TODO: migrate
+    - Advanced Usage: advanced-usage.md  # Quarto-generated
+    - Performance Tuning: performance.md  # Quarto-generated
   - API Reference:
     - Core: api/core.md
     - Quantum Graph: api/quantum-graph.md

@@ -1,0 +1,499 @@
+# Graph Generators
+
+Graph generators are essential for testing, benchmarking, and experimenting with clustering algorithms. This guide covers all the graph generation functions in kmeanssa-ng, from simple test cases to complex stochastic models.
+
+## Overview
+
+The library provides several types of graph generators:
+
+- **Simple graphs**: Two-cluster test cases for development
+- **Stochastic Block Models (SBM)**: Multi-cluster graphs with controllable structure
+- **NetworkX converters**: Transform existing graphs to quantum graphs
+- **Complete graphs**: Dense graphs from similarity matrices
+
+```{python}
+import numpy as np
+import networkx as nx
+from kmeanssa_ng import (
+    generate_simple_graph, 
+    generate_sbm, 
+    generate_random_sbm,
+    as_quantum_graph,
+    complete_quantum_graph
+)
+
+print("Graph generators loaded successfully!")
+```
+
+## Simple Graphs
+
+### Basic Two-Cluster Graph
+
+The simplest generator creates symmetric two-cluster graphs connected by a bridge:
+
+```{python}
+# Create a basic two-cluster graph
+simple_graph = generate_simple_graph(
+    n_a=5,              # 5 neighbors for each central node
+    n_aa=3,             # 3 second-level neighbors for each first-level node  
+    bridge_length=2.0   # Distance between clusters
+)
+
+print(f"Simple graph: {simple_graph.number_of_nodes()} nodes, {simple_graph.number_of_edges()} edges")
+print(f"Cluster A central node: A0")
+print(f"Cluster B central node: B0")
+print(f"Bridge length: {simple_graph.get_edge_data('A0', 'B0')['length']}")
+
+# Graph comes pre-computed and ready to use
+points = simple_graph.sample_points(50)
+print(f"Sampled {len(points)} points for clustering")
+```
+
+### Graph Structure Analysis
+
+```{python}
+# Examine the structure
+print("Node naming pattern:")
+print(f"A cluster nodes: {[n for n in simple_graph.nodes() if n.startswith('A')][:10]}...")
+print(f"B cluster nodes: {[n for n in simple_graph.nodes() if n.startswith('B')][:10]}...")
+
+# Check attributes
+node_weights = nx.get_node_attributes(simple_graph, 'weight')
+edge_lengths = nx.get_edge_attributes(simple_graph, 'length')
+
+print(f"\nAll nodes have weight 1: {all(w == 1 for w in node_weights.values())}")
+print(f"Most edges have length 1: {sum(1 for l in edge_lengths.values() if l == 1.0)} of {len(edge_lengths)}")
+print(f"Bridge edges: {[(u,v,d['length']) for u,v,d in simple_graph.edges(data=True) if d['length'] != 1.0]}")
+```
+
+### Parameter Effects
+
+```{python}
+# Compare different parameter settings
+configs = [
+    {"n_a": 3, "n_aa": 2, "bridge_length": 1.0},
+    {"n_a": 5, "n_aa": 3, "bridge_length": 3.0}, 
+    {"n_a": 8, "n_aa": 2, "bridge_length": 5.0}
+]
+
+for i, config in enumerate(configs):
+    graph = generate_simple_graph(**config)
+    print(f"Config {i+1}: n_a={config['n_a']}, n_aa={config['n_aa']}, bridge={config['bridge_length']}")
+    print(f"  → {graph.number_of_nodes()} nodes, {graph.number_of_edges()} edges")
+    print(f"  → Diameter: {graph.diameter:.2f}")
+```
+
+## Stochastic Block Models
+
+### Basic SBM
+
+Stochastic Block Models create multi-cluster graphs with controllable intra- and inter-cluster connectivity:
+
+```{python}
+# Create a two-block SBM
+sbm_graph = generate_sbm(
+    sizes=[40, 60],                    # 40 nodes in block 1, 60 in block 2
+    p=[[0.8, 0.1], [0.1, 0.7]]       # High intra-block, low inter-block probability
+)
+
+print(f"SBM graph: {sbm_graph.number_of_nodes()} nodes, {sbm_graph.number_of_edges()} edges")
+print(f"Expected edges within block 1: ~{40*39/2 * 0.8:.0f}")
+print(f"Expected edges within block 2: ~{60*59/2 * 0.7:.0f}")  
+print(f"Expected edges between blocks: ~{40*60 * 0.1:.0f}")
+```
+
+### Multi-Block SBM
+
+```{python}
+# Create a three-block SBM with different cluster strengths
+three_block_sbm = generate_sbm(
+    sizes=[30, 25, 35],
+    p=[[0.9, 0.05, 0.02],   # Block 1: very tight
+       [0.05, 0.7, 0.15],    # Block 2: medium, some connection to block 3
+       [0.02, 0.15, 0.8]]    # Block 3: tight, connected to block 2
+)
+
+print(f"Three-block SBM: {three_block_sbm.number_of_nodes()} nodes")
+
+# Check block assignments
+block_attr = nx.get_node_attributes(three_block_sbm, 'block')
+block_counts = {}
+for node, block in block_attr.items():
+    block_counts[block] = block_counts.get(block, 0) + 1
+
+print(f"Block sizes: {dict(sorted(block_counts.items()))}")
+```
+
+### SBM with Custom Edge Lengths
+
+```{python}
+# Create SBM with different intra/inter-cluster distances
+custom_sbm = generate_random_sbm(
+    sizes=[50, 50],
+    p=[[0.7, 0.1], [0.1, 0.7]],
+    weights=[1, 1],                    # Equal node weights
+    lengths=[[1.0, 4.0], [4.0, 1.0]]  # Long inter-cluster edges
+)
+
+print(f"Custom SBM: {custom_sbm.number_of_nodes()} nodes, {custom_sbm.number_of_edges()} edges")
+
+# Analyze edge length distribution
+edge_lengths = [d['length'] for u, v, d in custom_sbm.edges(data=True)]
+print(f"Edge lengths: min={min(edge_lengths):.1f}, max={max(edge_lengths):.1f}")
+print(f"Short edges (~1.0): {sum(1 for l in edge_lengths if l < 2)}")
+print(f"Long edges (~4.0): {sum(1 for l in edge_lengths if l > 3)}")
+```
+
+## Converting NetworkX Graphs
+
+### From Karate Club Graph
+
+```{python}
+# Convert famous Karate Club graph
+karate = nx.karate_club_graph()
+karate_qg = as_quantum_graph(
+    karate,
+    node_weight=1.0,
+    edge_length=1.5,
+    edge_weight=1.0
+)
+
+print(f"Karate Club: {karate_qg.number_of_nodes()} nodes, {karate_qg.number_of_edges()} edges")
+print(f"All edges have length 1.5: {all(d['length'] == 1.5 for u,v,d in karate_qg.edges(data=True))}")
+
+# Sample points and test clustering
+karate_points = karate_qg.sample_points(60)
+print(f"Sampled {len(karate_points)} points from Karate Club graph")
+```
+
+### From Erdős-Rényi Graph
+
+```{python}
+# Convert random graph
+er_graph = nx.erdos_renyi_graph(50, 0.1)  # 50 nodes, 10% edge probability
+er_qg = as_quantum_graph(er_graph, edge_length=2.0)
+
+print(f"Erdős-Rényi: {er_qg.number_of_nodes()} nodes, {er_qg.number_of_edges()} edges")
+print(f"Is connected: {nx.is_connected(er_qg)}")
+
+if nx.is_connected(er_qg):
+    er_qg.precomputing()
+    print(f"Graph diameter: {er_qg.diameter:.2f}")
+else:
+    # Work with largest component
+    largest_cc = max(nx.connected_components(er_qg), key=len)
+    er_subgraph = er_qg.subgraph(largest_cc).copy()
+    er_subgraph.precomputing()
+    print(f"Largest component: {len(largest_cc)} nodes, diameter: {er_subgraph.diameter:.2f}")
+```
+
+### With Edge Attributes
+
+```{python}
+# Use existing edge attributes as lengths
+weighted_graph = nx.Graph()
+weighted_graph.add_edge(0, 1, weight=0.5)
+weighted_graph.add_edge(1, 2, weight=1.2)
+weighted_graph.add_edge(2, 3, weight=0.8)
+weighted_graph.add_edge(3, 0, weight=2.0)
+
+# Convert using existing weights as lengths
+weighted_qg = as_quantum_graph(weighted_graph, edge_length=1.0)  # Default for missing weights
+
+# Manually set lengths from weights
+for u, v, data in weighted_graph.edges(data=True):
+    if 'weight' in data:
+        weighted_qg[u][v]['length'] = data['weight']
+
+weighted_qg.validate_edge_lengths()
+weighted_qg.precomputing()
+
+print(f"Weighted graph converted with edge lengths: {[d['length'] for u,v,d in weighted_qg.edges(data=True)]}")
+```
+
+## Complete Graphs from Similarity Matrices
+
+### From Distance Matrix
+
+```{python}
+# Create complete graph from pairwise distances
+objects = ['A', 'B', 'C', 'D', 'E']
+distances = np.array([
+    [0.0, 1.0, 3.0, 3.2, 3.1],  # A close to B, far from others
+    [1.0, 0.0, 3.1, 3.0, 2.9],  # B close to A, far from others  
+    [3.0, 3.1, 0.0, 1.2, 1.0],  # C close to D,E, far from A,B
+    [3.2, 3.0, 1.2, 0.0, 0.8],  # D close to C,E, far from A,B
+    [3.1, 2.9, 1.0, 0.8, 0.0]   # E close to C,D, far from A,B
+])
+
+complete_graph = complete_quantum_graph(
+    objects=objects,
+    similarities=distances,
+    true_labels=[0, 0, 1, 1, 1]  # True clustering: {A,B} vs {C,D,E}
+)
+
+print(f"Complete graph: {complete_graph.number_of_nodes()} nodes, {complete_graph.number_of_edges()} edges")
+print(f"True cluster labels: {nx.get_node_attributes(complete_graph, 'group')}")
+
+# Check some distances
+print(f"Distance A-B: {complete_graph.get_edge_data(0, 1)['length']:.1f}")
+print(f"Distance A-C: {complete_graph.get_edge_data(0, 2)['length']:.1f}")
+print(f"Distance C-D: {complete_graph.get_edge_data(2, 3)['length']:.1f}")
+```
+
+### Clustering Complete Graph
+
+```{python}
+from kmeanssa_ng import SimulatedAnnealing
+
+# Sample points from complete graph (each node gets some points)
+complete_points = complete_graph.sample_points(20)
+
+# Run clustering 
+sa = SimulatedAnnealing(complete_points, k=2)
+centers = sa.run(initialization="kpp", robust_prop=0.1)
+energy = sa.calculate_energy(centers, complete_points)
+
+print(f"Clustering energy: {energy:.3f}")
+print(f"Found {len(centers)} centers")
+```
+
+## Comparison and Evaluation
+
+### Graph Properties Comparison
+
+```{python}
+# Compare different graph types
+generators = [
+    ("Simple", lambda: generate_simple_graph(n_a=10, n_aa=5, bridge_length=3.0)),
+    ("SBM", lambda: generate_sbm(sizes=[50, 50], p=[[0.8, 0.1], [0.1, 0.8]])),
+    ("Karate", lambda: as_quantum_graph(nx.karate_club_graph(), edge_length=1.0)),
+    ("Erdős-Rényi", lambda: as_quantum_graph(nx.erdos_renyi_graph(100, 0.05), edge_length=1.0))
+]
+
+print("Graph comparison:")
+print(f"{'Type':<12} {'Nodes':<6} {'Edges':<6} {'Connected':<10} {'Diameter':<8}")
+print("-" * 50)
+
+for name, gen_func in generators:
+    graph = gen_func()
+    is_connected = nx.is_connected(graph)
+    
+    if is_connected:
+        graph.precomputing()
+        diameter = graph.diameter
+    else:
+        diameter = "N/A"
+    
+    print(f"{name:<12} {graph.number_of_nodes():<6} {graph.number_of_edges():<6} {str(is_connected):<10} {str(diameter):<8}")
+```
+
+### Clustering Performance
+
+```{python}
+# Test clustering performance on different graph types
+from kmeanssa_ng import QGSimulatedAnnealing
+
+test_graphs = [
+    ("Simple 2-cluster", generate_simple_graph(n_a=8, n_aa=4, bridge_length=5.0)),
+    ("SBM 2-block", generate_sbm(sizes=[40, 40], p=[[0.9, 0.05], [0.05, 0.9]])),
+    ("SBM 3-block", generate_sbm(sizes=[30, 30, 30], p=[[0.8, 0.1, 0.1], [0.1, 0.8, 0.1], [0.1, 0.1, 0.8]]))
+]
+
+print("Clustering performance comparison:")
+print(f"{'Graph Type':<15} {'k':<3} {'Energy':<8} {'Runtime'}")
+print("-" * 40)
+
+import time
+
+for name, graph in test_graphs:
+    points = graph.sample_points(80)
+    k = 2 if "2" in name else 3
+    
+    start_time = time.time()
+    sa = QGSimulatedAnnealing(points, k=k)
+    centers = sa.run(robust_prop=0.05, initialization="kpp") 
+    runtime = time.time() - start_time
+    
+    energy = sa.calculate_energy(centers, points)
+    
+    print(f"{name:<15} {k:<3} {energy:<8.3f} {runtime:.2f}s")
+```
+
+## Advanced Usage
+
+### Custom Node and Edge Weights
+
+```{python}
+# Create graph with custom sampling weights
+custom_graph = generate_simple_graph(n_a=6, n_aa=3, bridge_length=4.0)
+
+# Modify node weights for different sampling probabilities
+node_weights = {}
+for node in custom_graph.nodes():
+    if node.endswith('0'):  # Central nodes
+        node_weights[node] = 5.0
+    elif len(node) == 2:   # First-level nodes  
+        node_weights[node] = 3.0
+    else:                  # Second-level nodes
+        node_weights[node] = 1.0
+
+nx.set_node_attributes(custom_graph, node_weights, 'weight')
+
+# Sample points (more likely from high-weight nodes)
+weighted_points = custom_graph.sample_points(60)
+print(f"Sampled {len(weighted_points)} points with custom weights")
+
+# Check sampling distribution
+point_nodes = [p.edge[0] if p.position < 0.5 else p.edge[1] for p in weighted_points[:20]]
+central_count = sum(1 for node in point_nodes if str(node).endswith('0'))
+print(f"Points near central nodes: {central_count}/20 (should be high due to weight=5)")
+```
+
+### Graph Modification and Testing
+
+```{python}
+# Start with SBM and modify structure
+base_graph = generate_sbm(sizes=[30, 30], p=[[0.7, 0.1], [0.1, 0.7]])
+print(f"Base SBM: {base_graph.number_of_edges()} edges")
+
+# Add extra inter-cluster connections
+block_attr = nx.get_node_attributes(base_graph, 'block')
+block_0_nodes = [n for n, b in block_attr.items() if b == 0]
+block_1_nodes = [n for n, b in block_attr.items() if b == 1] 
+
+# Add 5 random connections between blocks
+import random
+for _ in range(5):
+    n1 = random.choice(block_0_nodes)
+    n2 = random.choice(block_1_nodes)
+    if not base_graph.has_edge(n1, n2):
+        base_graph.add_edge(n1, n2, length=1.0, weight=1.0)
+
+print(f"Modified SBM: {base_graph.number_of_edges()} edges")
+base_graph.precomputing()
+
+# Test clustering on modified graph
+modified_points = base_graph.sample_points(100)
+sa_modified = SimulatedAnnealing(modified_points, k=2)
+modified_centers = sa_modified.run(initialization="kpp")
+modified_energy = sa_modified.calculate_energy(modified_centers, modified_points)
+print(f"Clustering energy on modified graph: {modified_energy:.3f}")
+```
+
+## Error Handling and Validation
+
+### Parameter Validation
+
+```{python}
+# Demonstrate error handling
+test_cases = [
+    ("Negative n_a", lambda: generate_simple_graph(n_a=-1)),
+    ("Invalid bridge length", lambda: generate_simple_graph(bridge_length=0)),
+    ("Empty SBM sizes", lambda: generate_sbm(sizes=[])),
+    ("Invalid probability", lambda: generate_sbm(sizes=[10], p=[[1.5]])),
+]
+
+print("Error handling examples:")
+for description, test_func in test_cases:
+    try:
+        test_func()
+        print(f"✓ {description}: No error (unexpected)")
+    except ValueError as e:
+        print(f"✗ {description}: {str(e)[:60]}...")
+```
+
+### Graph Validation
+
+```{python}
+# Validate generated graphs
+def validate_quantum_graph(graph, name):
+    """Validate that a quantum graph is properly constructed."""
+    issues = []
+    
+    # Check connectivity
+    if not nx.is_connected(graph):
+        issues.append("Graph not connected")
+    
+    # Check edge lengths
+    try:
+        graph.validate_edge_lengths()
+    except ValueError as e:
+        issues.append(f"Edge validation failed: {e}")
+    
+    # Check node weights
+    node_weights = nx.get_node_attributes(graph, 'weight')
+    if not all(w > 0 for w in node_weights.values()):
+        issues.append("Some node weights are not positive")
+    
+    # Check if precomputing works
+    try:
+        graph.precomputing() 
+    except Exception as e:
+        issues.append(f"Precomputing failed: {e}")
+    
+    if issues:
+        print(f"⚠️  {name}: {', '.join(issues)}")
+    else:
+        print(f"✅ {name}: Valid quantum graph")
+
+# Test all generator types
+test_graphs = [
+    ("Simple graph", generate_simple_graph()),
+    ("SBM graph", generate_sbm()),
+    ("Random SBM", generate_random_sbm()),
+    ("Converted NetworkX", as_quantum_graph(nx.path_graph(5)))
+]
+
+for name, graph in test_graphs:
+    validate_quantum_graph(graph, name)
+```
+
+## Best Practices
+
+### Choosing the Right Generator
+
+```{python}
+# Guidelines for generator selection
+guidelines = {
+    "Development/Testing": "generate_simple_graph() - predictable structure",
+    "Algorithm benchmarking": "generate_sbm() - controlled clustering difficulty", 
+    "Real-world modeling": "as_quantum_graph() - convert domain-specific graphs",
+    "Dense clustering": "complete_quantum_graph() - all pairwise distances",
+    "Variable cluster sizes": "generate_random_sbm() - asymmetric blocks"
+}
+
+print("Generator selection guidelines:")
+for use_case, recommendation in guidelines.items():
+    print(f"• {use_case}: {recommendation}")
+```
+
+### Performance Considerations
+
+```{python}
+# Performance tips for large graphs
+performance_tips = [
+    "Call precomputing() immediately after generation",
+    "Use connected graphs to avoid validation issues", 
+    "Limit point sampling for very large graphs (>1000 nodes)",
+    "Consider edge weight distributions for realistic sampling",
+    "Test with small graphs first, then scale up"
+]
+
+print("\nPerformance tips:")
+for i, tip in enumerate(performance_tips, 1):
+    print(f"{i}. {tip}")
+```
+
+## Next Steps
+
+- **[Quantum Graphs](quantum-graphs.md)** - Understanding the quantum graph data structure
+- **[Simulated Annealing](simulated-annealing.md)** - Clustering algorithms for generated graphs
+- **[Custom Metric Spaces](custom-spaces.md)** - Extending beyond quantum graphs
+
+<citations>
+<document>
+<document_type>RULE</document_type>
+<document_id>/Users/nicolas/Documents/git/kmeanssa-ng/WARP.md</document_id>
+</document>
+</citations>

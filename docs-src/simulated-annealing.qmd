@@ -1,0 +1,391 @@
+# Simulated Annealing
+
+The simulated annealing algorithm is the heart of kmeanssa-ng. This guide explains how to use it effectively for clustering on quantum graphs and other metric spaces.
+
+## Understanding the Algorithm
+
+The simulated annealing approach solves the k-means problem on arbitrary metric spaces by combining:
+- **Brownian motion**: Random exploration to avoid local minima
+- **Drift toward observations**: Exploitation to find optimal cluster centers
+- **Temperature control**: Using an inhomogeneous Poisson process
+
+```{python}
+from kmeanssa_ng import generate_sbm, SimulatedAnnealing
+import numpy as np
+
+# Create a test graph with clear cluster structure
+graph = generate_sbm(
+    sizes=[30, 30], 
+    p=[[0.8, 0.1], [0.1, 0.8]]
+)
+graph.precomputing()
+
+# Sample points from the graph
+points = graph.sample_points(100)
+print(f"Created {len(points)} points on a graph with {len(graph.nodes())} nodes")
+```
+
+## Basic Usage
+
+### Simple Clustering
+
+```{python}
+# Create simulated annealing instance
+sa = SimulatedAnnealing(
+    observations=points,
+    k=2,  # Number of clusters
+    lambda_param=1,    # Poisson intensity parameter
+    beta=1.0,          # Inverse temperature parameter
+    step_size=0.1      # Time step size
+)
+
+# Run the algorithm
+centers = sa.run(
+    robust_prop=0.1,        # Use 10% of iterations for robustification
+    initialization="kpp"    # Use k-means++ initialization
+)
+
+print(f"Found {len(centers)} cluster centers")
+print(f"Centers are of type: {type(centers[0])}")
+```
+
+### Energy Evaluation
+
+```{python}
+# Calculate the clustering energy (average squared distance to nearest center)
+energy = sa.calculate_energy(centers, points)
+print(f"Final clustering energy: {energy:.3f}")
+
+# Compare with random centers
+random_centers = graph.sample_centers(2)
+random_energy = sa.calculate_energy(random_centers, points)
+print(f"Random centers energy: {random_energy:.3f}")
+print(f"Improvement: {random_energy - energy:.3f}")
+```
+
+## Algorithm Parameters
+
+### Core Parameters
+
+- **`k`**: Number of clusters (must be > 0)
+- **`lambda_param`**: Controls the intensity of the Poisson process (must be > 0)
+- **`beta`**: Inverse temperature parameter - higher values lead to faster convergence (must be > 0)
+- **`step_size`**: Time step for the algorithm (must be > 0)
+
+```{python}
+# Example with different parameter settings
+parameters = [
+    {"lambda_param": 0.5, "beta": 0.5, "step_size": 0.05},
+    {"lambda_param": 1.0, "beta": 1.0, "step_size": 0.1},
+    {"lambda_param": 2.0, "beta": 2.0, "step_size": 0.2}
+]
+
+for i, params in enumerate(parameters):
+    sa = SimulatedAnnealing(points, k=2, **params)
+    centers = sa.run(robust_prop=0.1, initialization="kpp")
+    energy = sa.calculate_energy(centers, points)
+    print(f"Config {i+1}: λ={params['lambda_param']}, β={params['beta']}, h={params['step_size']} → energy={energy:.3f}")
+```
+
+## Initialization Methods
+
+### K-means++ (Recommended)
+
+K-means++ provides smart initialization by choosing centers that are far apart:
+
+```{python}
+# K-means++ initialization (default)
+sa = SimulatedAnnealing(points, k=3)
+centers_kpp = sa.run(initialization="kpp")
+energy_kpp = sa.calculate_energy(centers_kpp, points)
+print(f"K-means++ energy: {energy_kpp:.3f}")
+```
+
+### Random Initialization
+
+```{python}
+# Random initialization
+centers_random = sa.run(initialization="random")
+energy_random = sa.calculate_energy(centers_random, points)
+print(f"Random initialization energy: {energy_random:.3f}")
+print(f"K-means++ advantage: {energy_random - energy_kpp:.3f}")
+```
+
+## Algorithm Versions
+
+The library provides two algorithm variants:
+
+### Version 1 (Default): Interleaved
+
+Version 1 interleaves Brownian motion and drift steps:
+
+```{python}
+# Run algorithm version 1 (default)
+sa = SimulatedAnnealing(points, k=2)
+centers_v1 = sa.run(algorithm_version="v1")
+energy_v1 = sa.calculate_energy(centers_v1, points)
+print(f"Algorithm v1 energy: {energy_v1:.3f}")
+```
+
+### Version 2: Sequential
+
+Version 2 performs all Brownian motion first, then drift:
+
+```{python}
+# Run algorithm version 2
+centers_v2 = sa.run(algorithm_version="v2")
+energy_v2 = sa.calculate_energy(centers_v2, points)
+print(f"Algorithm v2 energy: {energy_v2:.3f}")
+print(f"Difference: {abs(energy_v1 - energy_v2):.3f}")
+```
+
+## Robustification
+
+Robustification improves stability by averaging results from the final iterations:
+
+```{python}
+# Test different robustification levels
+robust_levels = [0.0, 0.05, 0.1, 0.2]
+energies = []
+
+for prop in robust_levels:
+    sa = SimulatedAnnealing(points, k=2)
+    centers = sa.run(robust_prop=prop, initialization="kpp")
+    energy = sa.calculate_energy(centers, points)
+    energies.append(energy)
+    print(f"Robust prop {prop:.2f}: energy={energy:.3f}")
+
+print(f"Energy variation: {max(energies) - min(energies):.3f}")
+```
+
+## Quantum Graph Specialization
+
+For quantum graphs, use `QGSimulatedAnnealing` for additional features:
+
+```{python}
+from kmeanssa_ng import QGSimulatedAnnealing
+
+# Quantum graph specific simulated annealing
+qg_sa = QGSimulatedAnnealing(points, k=2)
+
+# Standard clustering
+centers = qg_sa.run(robust_prop=0.1)
+print(f"Standard clustering: {len(centers)} centers")
+
+# Get closest nodes for interpretation
+node_ids = qg_sa.run_for_kmeans(robust_prop=0.1)
+print(f"Closest nodes: {node_ids}")
+```
+
+### Finding the Mean (k=1)
+
+```{python}
+# Find the robust mean (single center)
+mean_sa = QGSimulatedAnnealing(points, k=1)
+central_node = mean_sa.run_for_mean(robust_prop=0.1)
+print(f"Central node ID: {central_node}")
+```
+
+## Performance Optimization
+
+### For Large Datasets
+
+```{python}
+# Generate larger test case
+large_graph = generate_sbm(sizes=[100, 100, 100], p=[[0.7, 0.1, 0.1], [0.1, 0.7, 0.1], [0.1, 0.1, 0.7]])
+large_graph.precomputing()  # Essential for performance
+large_points = large_graph.sample_points(500)
+
+# Optimize parameters for larger datasets
+sa_large = SimulatedAnnealing(
+    large_points, 
+    k=3,
+    lambda_param=2,     # Higher intensity for faster convergence
+    beta=2.0,           # Higher temperature control
+    step_size=0.15      # Larger steps
+)
+
+centers_large = sa_large.run(
+    robust_prop=0.05,   # Smaller robustification for speed
+    initialization="kpp"
+)
+
+energy_large = sa_large.calculate_energy(centers_large, large_points)
+print(f"Large dataset clustering energy: {energy_large:.3f}")
+```
+
+### Memory Considerations
+
+```{python}
+# For very large graphs, work with subsets
+n_sample = min(1000, len(large_points))  # Limit sample size
+sampled_points = large_points[:n_sample]
+
+sa_memory = SimulatedAnnealing(sampled_points, k=3)
+centers_memory = sa_memory.run(robust_prop=0.05)
+print(f"Memory-optimized clustering on {len(sampled_points)} points")
+```
+
+## Practical Applications
+
+### Transportation Networks
+
+```{python}
+# Model a transportation network using generated graph
+from kmeanssa_ng import generate_simple_graph
+
+# Create a transportation-like network
+road_network = generate_simple_graph(
+    n_a=10,           # Size of each district
+    n_aa=8,           # Connections within districts
+    bridge_length=4.0 # Distance between districts
+)
+road_network.precomputing()
+
+# Sample locations (e.g., customer addresses)
+locations = road_network.sample_points(50)
+
+# Find optimal service center locations
+sa_transport = SimulatedAnnealing(locations, k=3, beta=1.5)
+service_centers = sa_transport.run(initialization="kpp")
+transport_energy = sa_transport.calculate_energy(service_centers, locations)
+
+print(f"Transportation network: {transport_energy:.3f} average distance to service centers")
+print(f"Network has {len(road_network.nodes())} nodes and {len(road_network.edges())} edges")
+```
+
+### Multi-Scale Analysis
+
+```{python}
+# Analyze clustering quality at different scales
+scales = range(2, 6)
+scale_energies = []
+
+for k in scales:
+    sa_scale = SimulatedAnnealing(points, k=k)
+    centers_scale = sa_scale.run(initialization="kpp")
+    energy_scale = sa_scale.calculate_energy(centers_scale, points)
+    scale_energies.append(energy_scale)
+    print(f"k={k}: energy={energy_scale:.3f}")
+
+# Find the "elbow" - rapid decrease followed by diminishing returns
+improvements = [scale_energies[i] - scale_energies[i+1] for i in range(len(scale_energies)-1)]
+print(f"Improvements: {[f'{imp:.3f}' for imp in improvements]}")
+```
+
+## Error Handling and Validation
+
+### Common Errors
+
+```{python}
+# Demonstrate error handling
+try:
+    # Empty observations
+    SimulatedAnnealing([], k=2)
+except ValueError as e:
+    print(f"Empty observations error: {e}")
+
+try:
+    # Invalid k
+    SimulatedAnnealing(points, k=0)
+except ValueError as e:
+    print(f"Invalid k error: {e}")
+
+try:
+    # Invalid parameters
+    SimulatedAnnealing(points, k=2, lambda_param=-1)
+except ValueError as e:
+    print(f"Invalid lambda_param error: {e}")
+```
+
+### Validation Best Practices
+
+```{python}
+def validate_clustering_setup(points, k, **params):
+    """Validate clustering setup before running."""
+    if len(points) < k:
+        raise ValueError(f"Need at least {k} points for {k} clusters, got {len(points)}")
+    
+    if k > len(points) // 2:
+        print(f"Warning: k={k} is large relative to {len(points)} points")
+    
+    # Check if all points are from the same space
+    if len(set(point.space for point in points)) > 1:
+        raise ValueError("All points must be from the same metric space")
+    
+    print("✓ Clustering setup is valid")
+
+# Validate before clustering
+validate_clustering_setup(points, k=2)
+```
+
+## Advanced Topics
+
+### Custom Robustification Points
+
+```{python}
+# Use different points for robustification evaluation
+train_points = points[:80]
+test_points = points[80:]
+
+sa_custom = SimulatedAnnealing(train_points, k=2)
+centers_custom = sa_custom.run(
+    robust_prop=0.1,
+    robust_points=test_points  # Evaluate on different points
+)
+
+train_energy = sa_custom.calculate_energy(centers_custom, train_points)  
+test_energy = sa_custom.calculate_energy(centers_custom, test_points)
+print(f"Training energy: {train_energy:.3f}")
+print(f"Test energy: {test_energy:.3f}")
+```
+
+### Hyperparameter Tuning
+
+```{python}
+# Grid search for optimal parameters
+import itertools
+
+param_grid = {
+    'lambda_param': [0.5, 1.0, 2.0],
+    'beta': [0.5, 1.0, 2.0], 
+    'step_size': [0.05, 0.1, 0.15]
+}
+
+best_energy = float('inf')
+best_params = None
+
+# Test a subset to avoid combinatorial explosion
+test_combinations = list(itertools.product(*param_grid.values()))[:9]  # First 9 combinations
+
+for lambda_p, beta_p, step_p in test_combinations:
+    sa_tune = SimulatedAnnealing(
+        points[:50],  # Use subset for speed
+        k=2,
+        lambda_param=lambda_p,
+        beta=beta_p,
+        step_size=step_p
+    )
+    centers_tune = sa_tune.run(robust_prop=0.05, initialization="kpp")
+    energy_tune = sa_tune.calculate_energy(centers_tune, points[:50])
+    
+    if energy_tune < best_energy:
+        best_energy = energy_tune
+        best_params = (lambda_p, beta_p, step_p)
+
+print(f"Best parameters: λ={best_params[0]}, β={best_params[1]}, h={best_params[2]}")
+print(f"Best energy: {best_energy:.3f}")
+```
+
+## Next Steps
+
+- **[Graph Generators](generators.md)** - Create test graphs for algorithm evaluation
+- **[Custom Metric Spaces](custom-spaces.md)** - Extend beyond quantum graphs  
+- **[Performance Guide](../examples/performance.md)** - Optimize for large-scale problems
+
+<citations>
+<document>
+<document_type>RULE</document_type>
+<document_id>/Users/nicolas/Documents/git/kmeanssa-ng/WARP.md</document_id>
+</document>
+</citations>

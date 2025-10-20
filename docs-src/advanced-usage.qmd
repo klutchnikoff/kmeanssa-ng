@@ -1,0 +1,749 @@
+# Advanced Usage
+
+This guide explores sophisticated applications and advanced techniques for using kmeanssa-ng in complex scenarios. From hierarchical clustering to multi-scale analysis, these examples demonstrate the full power of the library.
+
+## Multi-Scale and Hierarchical Clustering
+
+### Hierarchical k-means with Different Scales
+
+```{python}
+from kmeanssa_ng import generate_sbm, SimulatedAnnealing, QGSimulatedAnnealing
+import numpy as np
+import networkx as nx
+
+# Create a complex multi-scale graph
+complex_graph = generate_sbm(
+    sizes=[50, 50, 40, 40, 30, 30],  # 6 blocks of varying sizes
+    p=[[0.9, 0.7, 0.1, 0.1, 0.05, 0.05],   # Block 1: connected to 2
+       [0.7, 0.9, 0.1, 0.1, 0.05, 0.05],   # Block 2: connected to 1
+       [0.1, 0.1, 0.8, 0.6, 0.1, 0.05],    # Block 3: connected to 4
+       [0.1, 0.1, 0.6, 0.8, 0.1, 0.05],    # Block 4: connected to 3
+       [0.05, 0.05, 0.1, 0.1, 0.9, 0.7],   # Block 5: connected to 6
+       [0.05, 0.05, 0.05, 0.05, 0.7, 0.9]] # Block 6: connected to 5
+)
+
+points_complex = complex_graph.sample_points(300)
+print(f"Generated complex graph: {len(complex_graph.nodes())} nodes, {len(complex_graph.edges())} edges")
+print(f"Sampled {len(points_complex)} points for hierarchical clustering")
+```
+
+### Hierarchical Clustering Analysis
+
+```{python}
+# Perform clustering at different levels
+hierarchical_results = {}
+
+scales = [2, 3, 6]  # Coarse to fine
+for k in scales:
+    sa = QGSimulatedAnnealing(points_complex, k=k)
+    centers = sa.run(initialization="kpp", robust_prop=0.1)
+    energy = sa.calculate_energy(centers, points_complex)
+    node_clusters = sa.run_for_kmeans(robust_prop=0.1)
+    
+    hierarchical_results[k] = {
+        'centers': centers,
+        'energy': energy,
+        'node_clusters': node_clusters
+    }
+    
+    print(f"k={k}: Energy={energy:.3f}, Node clusters={node_clusters}")
+
+# Analyze hierarchy consistency
+print(f"\nHierarchical consistency:")
+print(f"Energy progression: {[hierarchical_results[k]['energy'] for k in scales]}")
+print("Expect decreasing energy as k increases")
+```
+
+### Cross-Scale Validation
+
+```{python}
+# Simplified cluster refinement analysis
+def analyze_cluster_hierarchy(hierarchical_results, block_assignments):
+    """Analyze hierarchical clustering results."""
+    
+    print("Hierarchical Clustering Analysis:")
+    
+    # Compare cluster counts with true block structure
+    n_true_blocks = len(set(block_assignments.values()))
+    print(f"True number of blocks in graph: {n_true_blocks}")
+    
+    for k in sorted(hierarchical_results.keys()):
+        result = hierarchical_results[k]
+        print(f"k={k}: Energy={result['energy']:.3f}, Node clusters={result['node_clusters']}")
+        
+        # Count unique clusters
+        unique_clusters = len(set(result['node_clusters']))
+        print(f"  Actual unique clusters found: {unique_clusters}")
+        
+        if k == n_true_blocks:
+            print(f"  ↳ Matches true block count!")
+    
+    print(f"\nEnergy decreases with more clusters (expected):")
+    energies = [hierarchical_results[k]['energy'] for k in sorted(hierarchical_results.keys())]
+    decreasing = all(energies[i] >= energies[i+1] for i in range(len(energies)-1))
+    print(f"  Energy sequence: {[f'{e:.3f}' for e in energies]}")
+    print(f"  Monotonically decreasing: {decreasing}")
+
+# Get true block assignments and analyze hierarchical structure
+block_assignments = nx.get_node_attributes(complex_graph, 'block')
+analyze_cluster_hierarchy(hierarchical_results, block_assignments)
+```
+
+## Advanced Parameter Tuning and Optimization
+
+### Grid Search for Optimal Parameters
+
+```{python}
+from itertools import product
+import time
+
+# Create a standard test case
+test_graph = generate_sbm(sizes=[40, 40, 40], p=[[0.8, 0.1, 0.1], [0.1, 0.8, 0.1], [0.1, 0.1, 0.8]])
+test_points = test_graph.sample_points(150)
+
+# Define parameter grid
+param_grid = {
+    'lambda_param': [0.5, 1.0, 2.0],
+    'beta': [0.5, 1.0, 2.0],
+    'step_size': [0.05, 0.1, 0.2],
+    'robust_prop': [0.05, 0.1, 0.15]
+}
+
+print(f"Testing {np.prod([len(v) for v in param_grid.values()])} parameter combinations...")
+
+# Grid search with performance tracking
+best_params = None
+best_energy = float('inf')
+results = []
+
+# Sample subset for faster testing
+param_combinations = list(product(*param_grid.values()))[:15]  # Test first 15 combinations
+
+for i, (lambda_p, beta_p, step_p, robust_p) in enumerate(param_combinations):
+    start_time = time.time()
+    
+    try:
+        sa = SimulatedAnnealing(
+            test_points, k=3,
+            lambda_param=lambda_p,
+            beta=beta_p,
+            step_size=step_p
+        )
+        
+        centers = sa.run(robust_prop=robust_p, initialization="kpp")
+        energy = sa.calculate_energy(centers, test_points)
+        runtime = time.time() - start_time
+        
+        results.append({
+            'lambda': lambda_p,
+            'beta': beta_p,
+            'step_size': step_p,
+            'robust_prop': robust_p,
+            'energy': energy,
+            'runtime': runtime
+        })
+        
+        if energy < best_energy:
+            best_energy = energy
+            best_params = (lambda_p, beta_p, step_p, robust_p)
+            
+        if i % 5 == 0:
+            print(f"Completed {i+1}/{len(param_combinations)}: Best energy so far: {best_energy:.3f}")
+            
+    except Exception as e:
+        print(f"Failed params {(lambda_p, beta_p, step_p, robust_p)}: {e}")
+
+print(f"\nBest parameters: λ={best_params[0]}, β={best_params[1]}, h={best_params[2]}, robust={best_params[3]}")
+print(f"Best energy: {best_energy:.3f}")
+```
+
+### Adaptive Parameter Selection
+
+```{python}
+def adaptive_parameter_selection(points, k, max_iterations=10):
+    """Adaptively select parameters based on graph properties."""
+    
+    # Start with default parameters
+    current_params = {'lambda_param': 1.0, 'beta': 1.0, 'step_size': 0.1}
+    current_energy = float('inf')
+    
+    # Graph analysis for parameter hints
+    n_points = len(points)
+    graph = points[0].space
+    
+    # Estimate graph density and complexity
+    n_nodes = len(graph.nodes())
+    n_edges = len(graph.edges())
+    density = 2 * n_edges / (n_nodes * (n_nodes - 1)) if n_nodes > 1 else 0
+    
+    print(f"Graph analysis: {n_nodes} nodes, density={density:.3f}")
+    
+    # Adaptive rules
+    if density > 0.1:  # Dense graph
+        current_params['lambda_param'] = 2.0  # Higher exploration
+        current_params['step_size'] = 0.05    # Smaller steps
+        print("Dense graph detected → increased exploration, smaller steps")
+    elif density < 0.05:  # Sparse graph
+        current_params['beta'] = 2.0          # Faster convergence
+        current_params['step_size'] = 0.15    # Larger steps
+        print("Sparse graph detected → faster convergence, larger steps")
+    
+    if n_points > 200:  # Many points
+        current_params['lambda_param'] *= 1.5
+        print(f"Many points ({n_points}) → increased exploration")
+    
+    # Test adaptive parameters
+    sa_adaptive = SimulatedAnnealing(points, k=k, **current_params)
+    centers_adaptive = sa_adaptive.run(robust_prop=0.1, initialization="kpp")
+    adaptive_energy = sa_adaptive.calculate_energy(centers_adaptive, points)
+    
+    print(f"Adaptive parameters: {current_params}")
+    print(f"Adaptive energy: {adaptive_energy:.3f}")
+    
+    return centers_adaptive, current_params
+
+# Test adaptive selection
+adaptive_centers, adaptive_params = adaptive_parameter_selection(test_points, k=3)
+adaptive_energy = SimulatedAnnealing(test_points, k=3, **adaptive_params).calculate_energy(adaptive_centers, test_points)
+
+# Compare with default parameters
+sa_default = SimulatedAnnealing(test_points, k=3)  # All defaults
+default_centers = sa_default.run(robust_prop=0.1, initialization="kpp")
+default_energy = sa_default.calculate_energy(default_centers, test_points)
+
+print(f"\nComparison:")
+print(f"Default parameters energy: {default_energy:.3f}")
+print(f"Adaptive parameters energy: {adaptive_energy:.3f}")
+print(f"Improvement: {default_energy - adaptive_energy:.3f}")
+```
+
+## Complex Graph Analysis and Preprocessing
+
+### Graph Filtering and Preprocessing
+
+```{python}
+# Create a noisy graph with weak connections
+noisy_graph = generate_sbm(
+    sizes=[50, 50], 
+    p=[[0.7, 0.3], [0.3, 0.7]]  # High noise between clusters
+)
+
+print(f"Original noisy graph: {len(noisy_graph.edges())} edges")
+
+# Add random noise edges
+import random
+nodes = list(noisy_graph.nodes())
+for _ in range(50):  # Add 50 random edges
+    u, v = random.sample(nodes, 2)
+    if not noisy_graph.has_edge(u, v):
+        noisy_graph.add_edge(u, v, length=random.uniform(0.5, 2.0), weight=1)
+
+print(f"After adding noise: {len(noisy_graph.edges())} edges")
+```
+
+### Graph Cleaning Techniques
+
+```{python}
+def clean_graph_by_centrality(graph, threshold=0.1):
+    """Remove edges with low centrality to reduce noise."""
+    # Calculate edge betweenness centrality
+    edge_centrality = nx.edge_betweenness_centrality(graph, weight='length')
+    
+    # Identify edges to remove
+    edges_to_remove = [
+        edge for edge, centrality in edge_centrality.items() 
+        if centrality < threshold
+    ]
+    
+    print(f"Removing {len(edges_to_remove)} edges with centrality < {threshold}")
+    
+    # Create cleaned graph
+    cleaned_graph = graph.copy()
+    cleaned_graph.remove_edges_from(edges_to_remove)
+    
+    # Ensure connectivity
+    if not nx.is_connected(cleaned_graph):
+        # Work with largest component
+        largest_cc = max(nx.connected_components(cleaned_graph), key=len)
+        cleaned_graph = cleaned_graph.subgraph(largest_cc).copy()
+        print(f"Keeping largest component: {len(cleaned_graph.nodes())} nodes")
+    
+    return cleaned_graph
+
+# Apply cleaning with less aggressive threshold
+cleaned_graph = clean_graph_by_centrality(noisy_graph, threshold=0.01)
+
+if len(cleaned_graph.nodes()) > 10 and len(cleaned_graph.edges()) > 5:
+    cleaned_graph.precomputing()
+    print(f"Cleaned graph: {len(cleaned_graph.nodes())} nodes, {len(cleaned_graph.edges())} edges")
+    
+    # Compare clustering quality
+    comparison_data = []
+    graphs_to_test = [("Noisy", noisy_graph), ("Cleaned", cleaned_graph)]
+    
+    for name, graph in graphs_to_test:
+        points = graph.sample_points(80)  # Reduce sample size
+        sa = SimulatedAnnealing(points, k=2)
+        centers = sa.run(initialization="kpp", robust_prop=0.1)
+        energy = sa.calculate_energy(centers, points)
+        comparison_data.append((name, energy))
+        print(f"{name} graph clustering energy: {energy:.3f}")
+    
+    print(f"Cleaning improvement: {comparison_data[0][1] - comparison_data[1][1]:.3f}")
+else:
+    print(f"Cleaning was too aggressive - cleaned graph has only {len(cleaned_graph.nodes())} nodes")
+    print("Skipping comparison with overly-cleaned graph")
+```
+
+### Graph Structure Analysis
+
+```{python}
+def analyze_graph_structure(graph, name):
+    """Analyze basic structural properties of the graph."""
+    
+    print(f"=== {name} Graph Structure ===")
+    
+    # Basic statistics
+    n_nodes = len(graph.nodes())
+    n_edges = len(graph.edges())
+    density = 2 * n_edges / (n_nodes * (n_nodes - 1)) if n_nodes > 1 else 0
+    
+    print(f"Nodes: {n_nodes}")
+    print(f"Edges: {n_edges}")
+    print(f"Density: {density:.3f}")
+    
+    # Clustering coefficient
+    clustering_coeff = nx.average_clustering(graph, weight='length')
+    print(f"Average clustering coefficient: {clustering_coeff:.3f}")
+    
+    # Degree distribution
+    degrees = [graph.degree(n) for n in graph.nodes()]
+    avg_degree = np.mean(degrees)
+    max_degree = max(degrees)
+    min_degree = min(degrees)
+    
+    print(f"Degree: avg={avg_degree:.1f}, min={min_degree}, max={max_degree}")
+    
+    # Connected components
+    n_components = nx.number_connected_components(graph)
+    if n_components == 1:
+        print("Graph is connected")
+        # Diameter (only for connected graphs)
+        try:
+            diameter = nx.diameter(graph, weight='length')
+            print(f"Diameter: {diameter:.3f}")
+        except:
+            print("Could not compute diameter")
+    else:
+        print(f"Graph has {n_components} connected components")
+    
+    print()
+
+# Analyze both graph structures
+analyze_graph_structure(noisy_graph, "Noisy")
+if len(cleaned_graph.nodes()) > 1:  # Only if cleaning didn't destroy the graph
+    analyze_graph_structure(cleaned_graph, "Cleaned")
+```
+
+## Multi-Objective and Constrained Clustering
+
+### Clustering with Size Constraints
+
+```{python}
+def constrained_clustering(points, k, min_cluster_size=None, max_cluster_size=None):
+    """Clustering with cluster size constraints."""
+    
+    if min_cluster_size is None:
+        min_cluster_size = len(points) // (k * 3)  # At least 1/3 of average
+    if max_cluster_size is None:
+        max_cluster_size = len(points) // k * 2    # At most 2x average
+    
+    print(f"Constrained clustering: {min_cluster_size} ≤ cluster size ≤ {max_cluster_size}")
+    
+    best_centers = None
+    best_score = float('inf')
+    attempts = 0
+    max_attempts = 20
+    
+    while attempts < max_attempts:
+        # Run standard clustering
+        sa = SimulatedAnnealing(points, k=k)
+        centers = sa.run(initialization="kpp", robust_prop=0.05)
+        
+        # Assign points to clusters
+        cluster_assignments = []
+        cluster_sizes = [0] * k
+        
+        for point in points:
+            distances = [point.space.distance(point, center) for center in centers]
+            closest_cluster = np.argmin(distances)
+            cluster_assignments.append(closest_cluster)
+            cluster_sizes[closest_cluster] += 1
+        
+        # Check size constraints
+        valid_clustering = all(
+            min_cluster_size <= size <= max_cluster_size 
+            for size in cluster_sizes
+        )
+        
+        if valid_clustering:
+            energy = sa.calculate_energy(centers, points)
+            if energy < best_score:
+                best_score = energy
+                best_centers = centers
+                print(f"Found valid clustering: energy={energy:.3f}, sizes={cluster_sizes}")
+                break
+        
+        attempts += 1
+    
+    if best_centers is None:
+        print(f"Warning: Could not find valid clustering in {max_attempts} attempts")
+        # Fallback to unconstrained
+        sa = SimulatedAnnealing(points, k=k)
+        best_centers = sa.run(initialization="kpp", robust_prop=0.1)
+        
+    return best_centers
+
+# Test constrained clustering
+test_points_constrained = test_graph.sample_points(120)
+constrained_centers = constrained_clustering(test_points_constrained, k=3, min_cluster_size=30, max_cluster_size=50)
+
+# Verify final cluster sizes
+final_assignments = []
+for point in test_points_constrained:
+    distances = [point.space.distance(point, center) for center in constrained_centers]
+    final_assignments.append(np.argmin(distances))
+
+final_sizes = [final_assignments.count(i) for i in range(3)]
+print(f"Final cluster sizes: {final_sizes}")
+```
+
+### Multi-Objective Optimization
+
+```{python}
+def multi_objective_clustering(points, k, objectives=['energy', 'silhouette', 'separation']):
+    """Multi-objective clustering optimization."""
+    
+    def calculate_silhouette_score(points, centers):
+        """Simple silhouette score approximation."""
+        if len(centers) < 2:
+            return 0
+        
+        scores = []
+        for point in points[:20]:  # Sample for speed
+            distances = [point.space.distance(point, center) for center in centers]
+            closest_idx = np.argmin(distances)
+            
+            # Average distance to own cluster center (approximation)
+            a = distances[closest_idx]
+            
+            # Average distance to nearest other cluster center
+            other_distances = [distances[i] for i in range(len(centers)) if i != closest_idx]
+            b = min(other_distances) if other_distances else a
+            
+            if b > a:
+                scores.append((b - a) / b)
+            else:
+                scores.append(0)
+        
+        return np.mean(scores) if scores else 0
+    
+    def calculate_separation(centers):
+        """Average separation between cluster centers."""
+        if len(centers) < 2:
+            return 0
+        
+        separations = []
+        for i, center1 in enumerate(centers):
+            for center2 in centers[i+1:]:
+                separations.append(center1.space.distance(center1, center2))
+        
+        return np.mean(separations)
+    
+    # Multiple runs with different trade-offs
+    results = []
+    weights_sets = [
+        {'energy': 1.0, 'silhouette': 0.0, 'separation': 0.0},    # Pure energy
+        {'energy': 0.7, 'silhouette': 0.3, 'separation': 0.0},   # Energy + silhouette
+        {'energy': 0.5, 'silhouette': 0.3, 'separation': 0.2},   # Balanced
+        {'energy': 0.4, 'silhouette': 0.4, 'separation': 0.2},   # Silhouette focused
+    ]
+    
+    for i, weights in enumerate(weights_sets):
+        sa = SimulatedAnnealing(points, k=k)
+        centers = sa.run(initialization="kpp", robust_prop=0.1)
+        
+        # Calculate all objectives
+        energy = sa.calculate_energy(centers, points)
+        silhouette = calculate_silhouette_score(points, centers)
+        separation = calculate_separation(centers)
+        
+        # Normalize and combine (simplified)
+        normalized_energy = energy / len(points)  # Rough normalization
+        combined_score = (weights['energy'] * normalized_energy - 
+                         weights['silhouette'] * silhouette + 
+                         weights['separation'] / separation if separation > 0 else 0)
+        
+        results.append({
+            'weights': weights,
+            'centers': centers,
+            'energy': energy,
+            'silhouette': silhouette,
+            'separation': separation,
+            'combined_score': combined_score
+        })
+        
+        print(f"Config {i+1}: Energy={energy:.3f}, Silhouette={silhouette:.3f}, Separation={separation:.3f}")
+    
+    # Find best according to combined score
+    best_result = min(results, key=lambda x: x['combined_score'])
+    print(f"\nBest multi-objective solution:")
+    print(f"Weights: {best_result['weights']}")
+    print(f"Energy: {best_result['energy']:.3f}")
+    print(f"Silhouette: {best_result['silhouette']:.3f}")
+    print(f"Separation: {best_result['separation']:.3f}")
+    
+    return best_result['centers']
+
+# Test multi-objective optimization
+multi_obj_centers = multi_objective_clustering(test_points[:80], k=3)  # Smaller subset for speed
+```
+
+## Advanced Visualization and Analysis
+
+### Dynamic Clustering Analysis
+
+```{python}
+def analyze_clustering_stability(points, k, n_runs=10):
+    """Analyze stability of clustering across multiple runs."""
+    
+    all_energies = []
+    all_center_positions = []
+    
+    print(f"Analyzing clustering stability over {n_runs} runs...")
+    
+    for run in range(n_runs):
+        sa = SimulatedAnnealing(points, k=k)
+        centers = sa.run(initialization="kpp", robust_prop=0.1)
+        energy = sa.calculate_energy(centers, points)
+        
+        all_energies.append(energy)
+        
+        # Extract center positions (for quantum graphs, get representative positions)
+        if hasattr(centers[0], 'edge') and hasattr(centers[0], 'position'):
+            center_positions = [(c.edge, c.position) for c in centers]
+        else:
+            center_positions = [str(c) for c in centers]  # Fallback representation
+        
+        all_center_positions.append(center_positions)
+        
+        if run % 3 == 0:
+            print(f"Run {run+1}/{n_runs}: Energy = {energy:.3f}")
+    
+    # Stability analysis
+    energy_mean = np.mean(all_energies)
+    energy_std = np.std(all_energies)
+    energy_cv = energy_std / energy_mean if energy_mean > 0 else 0
+    
+    print(f"\nStability Analysis:")
+    print(f"Energy: μ={energy_mean:.3f}, σ={energy_std:.3f}, CV={energy_cv:.3f}")
+    print(f"Best energy: {min(all_energies):.3f}")
+    print(f"Worst energy: {max(all_energies):.3f}")
+    
+    # Stability quality assessment
+    if energy_cv < 0.05:
+        stability = "Excellent"
+    elif energy_cv < 0.10:
+        stability = "Good"  
+    elif energy_cv < 0.20:
+        stability = "Fair"
+    else:
+        stability = "Poor"
+    
+    print(f"Stability assessment: {stability}")
+    
+    return {
+        'energies': all_energies,
+        'mean_energy': energy_mean,
+        'std_energy': energy_std,
+        'stability': stability
+    }
+
+# Analyze stability for different configurations
+stability_results = {}
+
+configs = [
+    ('Standard', {'k': 3, 'graph': test_graph}),
+    ('High k', {'k': 6, 'graph': test_graph}),
+    ('Complex graph', {'k': 3, 'graph': complex_graph})
+]
+
+for name, config in configs:
+    print(f"\n=== {name} Configuration ===")
+    test_pts = config['graph'].sample_points(100)
+    stability_results[name] = analyze_clustering_stability(test_pts, config['k'], n_runs=8)
+```
+
+### Performance Profiling
+
+```{python}
+import time
+from contextlib import contextmanager
+
+@contextmanager
+def timer(description):
+    """Context manager for timing operations."""
+    start = time.time()
+    yield
+    end = time.time()
+    print(f"{description}: {end - start:.3f} seconds")
+
+def performance_profile(points, k_values=[2, 3, 4, 5]):
+    """Profile performance across different k values and parameters."""
+    
+    print(f"Performance profiling with {len(points)} points...")
+    
+    results = {}
+    
+    for k in k_values:
+        print(f"\n--- k = {k} ---")
+        
+        # Test different algorithms and parameters
+        configs = [
+            ('Standard v1', {'algorithm_version': 'v1', 'robust_prop': 0.1}),
+            ('Standard v2', {'algorithm_version': 'v2', 'robust_prop': 0.1}),
+            ('Fast', {'robust_prop': 0.05, 'beta': 2.0, 'step_size': 0.2}),
+            ('Precise', {'robust_prop': 0.15, 'beta': 0.5, 'step_size': 0.05}),
+        ]
+        
+        k_results = {}
+        
+        for name, params in configs:
+            with timer(f"{name:>12}"):
+                sa = SimulatedAnnealing(points, k=k, **{p: v for p, v in params.items() 
+                                                       if p not in ['algorithm_version', 'robust_prop']})
+                algorithm_version = params.get('algorithm_version', 'v1')
+                robust_prop = params.get('robust_prop', 0.1)
+                
+                centers = sa.run(
+                    algorithm_version=algorithm_version,
+                    robust_prop=robust_prop,
+                    initialization="kpp"
+                )
+                energy = sa.calculate_energy(centers, points)
+            
+            k_results[name] = {'energy': energy, 'centers': centers}
+            print(f"             Energy: {energy:.3f}")
+        
+        results[k] = k_results
+    
+    # Summary of best configurations
+    print(f"\n=== Performance Summary ===")
+    for k, k_results in results.items():
+        best_config = min(k_results.items(), key=lambda x: x[1]['energy'])
+        print(f"k={k}: Best = {best_config[0]} (energy={best_config[1]['energy']:.3f})")
+    
+    return results
+
+# Run performance profiling
+if len(test_points) >= 60:  # Only if we have enough points
+    perf_results = performance_profile(test_points[:80], k_values=[2, 3, 4])
+else:
+    print("Skipping performance profiling - need more points")
+```
+
+## Integration with External Tools
+
+### Export and Import Utilities
+
+```{python}
+def export_clustering_results(centers, points, filename_base="clustering_results"):
+    """Export clustering results in multiple formats."""
+    
+    # Assign points to clusters
+    assignments = []
+    for point in points:
+        distances = [point.space.distance(point, center) for center in centers]
+        assignments.append(np.argmin(distances))
+    
+    # Create results dictionary
+    results = {
+        'n_points': len(points),
+        'n_clusters': len(centers),
+        'cluster_assignments': assignments,
+        'cluster_sizes': [assignments.count(i) for i in range(len(centers))]
+    }
+    
+    # Export basic statistics
+    print(f"Clustering Results Export:")
+    print(f"Points: {results['n_points']}")
+    print(f"Clusters: {results['n_clusters']}")
+    print(f"Cluster sizes: {results['cluster_sizes']}")
+    
+    # Calculate clustering quality metrics
+    total_energy = sum(
+        min(point.space.distance(point, center)**2 for center in centers)
+        for point in points
+    )
+    avg_energy = total_energy / len(points)
+    
+    results['total_energy'] = total_energy
+    results['average_energy'] = avg_energy
+    
+    print(f"Average energy per point: {avg_energy:.3f}")
+    
+    return results
+
+def compare_with_baseline(points, k, baseline_method="random"):
+    """Compare clustering results with baseline methods."""
+    
+    # Our method
+    sa = SimulatedAnnealing(points, k=k)
+    our_centers = sa.run(initialization="kpp", robust_prop=0.1)
+    our_energy = sa.calculate_energy(our_centers, points)
+    
+    # Baseline methods
+    baseline_results = {}
+    
+    if baseline_method == "random":
+        # Random clustering
+        random_centers = points[0].space.sample_centers(k)
+        random_energy = sa.calculate_energy(random_centers, points)
+        baseline_results['random'] = random_energy
+    
+    # K-means++ initialization only (no optimization)
+    kpp_centers = points[0].space.sample_kpp_centers(k)
+    kpp_energy = sa.calculate_energy(kpp_centers, points)
+    baseline_results['kpp_only'] = kpp_energy
+    
+    print(f"Method Comparison (lower is better):")
+    print(f"Our SA method:     {our_energy:.3f}")
+    for method, energy in baseline_results.items():
+        improvement = energy - our_energy
+        improvement_pct = (improvement / energy) * 100 if energy > 0 else 0
+        print(f"{method:>15}: {energy:.3f} (improvement: {improvement:+.3f}, {improvement_pct:.1f}%)")
+    
+    return our_centers, baseline_results
+
+# Export results and compare methods with simple test case
+if len(test_points) >= 40:
+    # Use test_points that match the test_graph
+    simple_sa = SimulatedAnnealing(test_points[:60], k=3)
+    simple_centers = simple_sa.run(initialization="kpp", robust_prop=0.1)
+    
+    export_results = export_clustering_results(simple_centers, test_points[:60])
+    final_centers, baselines = compare_with_baseline(test_points[:60], k=3)
+```
+
+## Next Steps
+
+- **[Performance Tuning](performance.md)** - Optimize for speed and memory usage
+- **[Custom Metric Spaces](custom-spaces.md)** - Extend to specialized domains
+- **[API Reference](../api/core.md)** - Detailed technical documentation
+
+<citations>
+<document>
+<document_type>RULE</document_type>
+<document_id>/Users/nicolas/Documents/git/kmeanssa-ng/WARP.md</document_id>
+</document>
+</citations>
