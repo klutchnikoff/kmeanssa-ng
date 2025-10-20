@@ -35,17 +35,17 @@ nav:
   - Home: index.md
   - Getting Started:
     - Installation: getting-started/installation.md
-    - Quick Start: getting-started/quickstart.md
-    - Basic Concepts: getting-started/concepts.md
+    - Quick Start: quickstart.md  # Quarto-generated
+    - Basic Concepts: concepts.md  # Quarto-generated
   - User Guide:
-    - Quantum Graphs: user-guide/quantum-graphs.md
-    - Simulated Annealing: user-guide/simulated-annealing.md
-    - Graph Generators: user-guide/generators.md
-    - Custom Metric Spaces: user-guide/custom-spaces.md
+    - Quantum Graphs: quantum-graphs.md  # Quarto-generated
+    - Simulated Annealing: user-guide/simulated-annealing.md  # TODO: migrate
+    - Graph Generators: user-guide/generators.md  # TODO: migrate
+    - Custom Metric Spaces: user-guide/custom-spaces.md  # TODO: migrate
   - Examples:
-    - Basic Clustering: examples/basic-clustering.md
-    - Advanced Usage: examples/advanced-usage.md
-    - Performance Tuning: examples/performance.md
+    - Basic Clustering: basic-clustering.md  # Quarto-generated
+    - Advanced Usage: examples/advanced-usage.md  # TODO: migrate
+    - Performance Tuning: examples/performance.md  # TODO: migrate
   - API Reference:
     - Core: api/core.md
     - Quantum Graph: api/quantum-graph.md

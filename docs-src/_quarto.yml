@@ -1,0 +1,14 @@
+project:
+  type: website
+  output-dir: ../docs
+
+format:
+  md:
+    variant: gfm
+    wrap: preserve
+    fig-format: png
+    fig-dpi: 150
+
+execute:
+  freeze: auto
+  cache: false

@@ -1,6 +1,7 @@
 stages:
   - lint
   - test
+  - render-docs
   - deploy
 
 variables:
@@ -46,9 +47,28 @@ test-coverage:
     expire_in: 1 week
   allow_failure: false
 
+# Quarto documentation rendering
+render-quarto:
+  stage: render-docs
+  image: ghcr.io/quarto-dev/quarto:latest
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install pdm
+    - pdm install
+  script:
+    - quarto render docs-src/ --to md --output-dir docs/
+  artifacts:
+    paths:
+      - docs/
+    expire_in: 1 hour
+  only:
+    - main
+
 # Documentation deployment
 pages:
   stage: deploy
+  dependencies:
+    - render-quarto
   script:
     - pdm run mkdocs build --site-dir public
   artifacts:

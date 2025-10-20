@@ -140,6 +140,13 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# Quarto
+# Generated markdown files (rendered from docs-src/)
+docs/
+# Quarto cache and freeze
+.quarto/
+_freeze/
+
 # mypy
 .mypy_cache/
 .dmypy.json

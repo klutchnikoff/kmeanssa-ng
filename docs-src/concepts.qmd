@@ -1,0 +1,308 @@
+---
+title: "Core Concepts"
+format: 
+  md:
+    variant: gfm
+execute:
+  eval: true
+  echo: true
+---
+
+Understanding the fundamental concepts behind kmeanssa-ng will help you use the library effectively and extend it for your own research.
+
+## What are Quantum Graphs?
+
+A **quantum graph** is a metric graph where:
+
+- **Nodes** are connected by **edges** with positive lengths
+- **Points** can exist anywhere on edges, not just at nodes  
+- **Distance** is measured along the graph (geodesic distance)
+
+```{python}
+from kmeanssa_ng import QuantumGraph, QGPoint
+
+# Create a simple triangle graph
+graph = QuantumGraph()
+graph.add_edge(0, 1, length=1.0)
+graph.add_edge(1, 2, length=1.5) 
+graph.add_edge(2, 0, length=2.0)
+
+print(f"Triangle graph: {graph.number_of_nodes()} nodes, {graph.number_of_edges()} edges")
+```
+
+```{python}
+# Points can be anywhere on edges
+point_a = QGPoint(graph, edge=(0, 1), position=0.3)  # 30% along edge (0,1)
+point_b = QGPoint(graph, edge=(1, 2), position=0.8)  # 80% along edge (1,2)
+
+print(f"Point A: {point_a}")
+print(f"Point B: {point_b}")
+
+# Distance is measured along the graph
+graph.precomputing()  # Essential for distance calculations
+distance = graph.distance(point_a, point_b)
+print(f"Distance between points: {distance:.3f}")
+```
+
+### Why Quantum Graphs?
+
+Traditional clustering algorithms assume points live in Euclidean spaces (like 2D or 3D). But many real-world scenarios involve:
+
+- **Road networks** - GPS coordinates along roads
+- **Neural networks** - Signals propagating along connections  
+- **Social networks** - Information spreading through connections
+- **River networks** - Pollution or species distribution along waterways
+
+## Simulated Annealing for K-means
+
+The core algorithm combines two processes:
+
+### 1. Brownian Motion (Exploration)
+
+Centers perform random walks to explore the space:
+
+**Purpose**: Avoid getting stuck in local minima by exploring widely.
+
+### 2. Drift (Exploitation)  
+
+Centers move toward their nearest data points:
+
+**Purpose**: Refine center positions based on actual data.
+
+Let's see this in action:
+
+```{python}
+from kmeanssa_ng import generate_sbm, QGSimulatedAnnealing, SimulatedAnnealing
+
+# Create a simple 2-cluster graph for demonstration
+demo_graph = generate_sbm(sizes=[20, 20], p=[[0.8, 0.1], [0.1, 0.8]])
+demo_graph.precomputing()
+demo_points = demo_graph.sample_points(50)
+
+print(f"Demo graph: {demo_graph.number_of_nodes()} nodes, {len(demo_points)} points")
+```
+
+### Temperature Control
+
+The balance between exploration and exploitation is controlled by **temperature**:
+
+- **High temperature** → More Brownian motion (exploration)
+- **Low temperature** → More drift (exploitation)
+
+```{python}
+# High temperature (more exploration)
+high_temp_sa = QGSimulatedAnnealing(demo_points, k=2, lambda_param=3.0, beta=0.5)
+high_temp_centers = high_temp_sa.run_for_kmeans(robust_prop=0.1)
+
+# Low temperature (more exploitation)
+low_temp_sa = QGSimulatedAnnealing(demo_points, k=2, lambda_param=0.5, beta=2.0)
+low_temp_centers = low_temp_sa.run_for_kmeans(robust_prop=0.1)
+
+print(f"High temperature centers: {high_temp_centers}")
+print(f"Low temperature centers: {low_temp_centers}")
+```
+
+Temperature decreases over time using an **inhomogeneous Poisson process**.
+
+## Algorithm Variants
+
+### Version 1 (v1) - Interleaved
+For each iteration: `brownian_motion()` → `drift_step()`
+
+### Version 2 (v2) - Sequential  
+First half iterations: pure exploration, second half: pure exploitation
+
+```{python}
+# Compare algorithm versions
+v1_sa = SimulatedAnnealing(demo_points, k=2)
+v1_centers = v1_sa.run(algorithm_version="v1", initialization="kpp")
+
+v2_sa = SimulatedAnnealing(demo_points, k=2)  
+v2_centers = v2_sa.run(algorithm_version="v2", initialization="kpp")
+
+print(f"Version 1 found {len(v1_centers)} centers")
+print(f"Version 2 found {len(v2_centers)} centers")
+```
+
+Choose based on your problem:
+- **v1**: Balanced for most cases
+- **v2**: Better when you need distinct exploration/exploitation phases
+
+## Robustification
+
+Instead of using just the final result, kmeanssa-ng averages the last few iterations:
+
+```{python}
+# Compare different robustification levels
+robust_levels = [0.05, 0.1, 0.2]  # 5%, 10%, 20%
+
+print("Robustification comparison:")
+for prop in robust_levels:
+    sa = QGSimulatedAnnealing(demo_points, k=2)
+    centers = sa.run_for_kmeans(robust_prop=prop)
+    print(f"  {prop*100:2.0f}% robustification: {centers}")
+```
+
+**Benefits**:
+- Reduces sensitivity to random fluctuations
+- More stable and reproducible results
+- Better convergence in noisy scenarios
+
+## Key Parameters
+
+### Algorithm Parameters
+
+- **`k`**: Number of clusters (like standard k-means)
+- **`lambda_param`**: Temperature parameter (higher = more exploration)
+- **`beta`**: Drift strength (higher = stronger attraction to data)  
+- **`step_size`**: Random walk step size
+
+### Tuning Guidelines
+
+```{python}
+# Parameter sensitivity analysis
+params_to_test = [
+    {"lambda_param": 2.0, "beta": 0.5, "name": "Conservative (more exploration)"},
+    {"lambda_param": 1.0, "beta": 1.0, "name": "Balanced"},
+    {"lambda_param": 0.5, "beta": 2.0, "name": "Aggressive (more exploitation)"},
+]
+
+print("Parameter tuning results:")
+for params in params_to_test:
+    sa = QGSimulatedAnnealing(demo_points, k=2, 
+                             lambda_param=params["lambda_param"], 
+                             beta=params["beta"])
+    centers = sa.run_for_kmeans(robust_prop=0.1)
+    print(f"  {params['name']}: {centers}")
+```
+
+```{python}
+# Fine-grained control with step size
+step_sizes = [0.05, 0.1, 0.2]
+print("\nStep size comparison:")
+for step_size in step_sizes:
+    sa = QGSimulatedAnnealing(demo_points, k=2, step_size=step_size)
+    centers = sa.run_for_kmeans(robust_prop=0.1)
+    print(f"  Step size {step_size}: {centers}")
+```
+
+## Initialization Strategies
+
+### Random vs k-means++ Initialization
+
+```{python}
+# Compare initialization strategies
+init_methods = ["random", "kpp"]
+print("Initialization comparison:")
+
+for method in init_methods:
+    sa = SimulatedAnnealing(demo_points, k=2)
+    centers = sa.run(initialization=method, robust_prop=0.1)
+    energy = sa.calculate_energy(centers, demo_points)
+    print(f"  {method:6s}: energy = {energy:.3f}")
+```
+
+k-means++ spreads initial centers apart, leading to:
+- Faster convergence
+- Better final results
+- More consistent outcomes
+
+## Distance Computation
+
+Quantum graphs use **geodesic distance** - the shortest path along the graph:
+
+```{python}
+# Demonstrate distance calculation
+# Create two points on different edges
+point1 = QGPoint(demo_graph, edge=(0, 1), position=0.2)
+point2 = QGPoint(demo_graph, edge=(5, 8), position=0.7)
+
+distance = demo_graph.distance(point1, point2)
+print(f"Geodesic distance between points on different edges: {distance:.3f}")
+
+# Compare with points on same edge
+point3 = QGPoint(demo_graph, edge=(0, 1), position=0.8)
+same_edge_distance = demo_graph.distance(point1, point3)
+print(f"Distance between points on same edge: {same_edge_distance:.3f}")
+```
+
+**Performance tip**: Always call `graph.precomputing()` to cache shortest paths between all node pairs.
+
+## Quantum Graph Specific Features
+
+The `QGSimulatedAnnealing` class provides quantum graph specific methods:
+
+```{python}
+# Quantum graph specific clustering
+qg_sa = QGSimulatedAnnealing(demo_points, k=2)
+
+# Get results as node IDs (more interpretable)
+node_centers = qg_sa.run_for_kmeans(robust_prop=0.1)
+print(f"Centers near nodes: {node_centers}")
+
+# Find overall mean (k=1 case)
+mean_sa = QGSimulatedAnnealing(demo_points, k=1)
+mean_node = mean_sa.run_for_mean(robust_prop=0.1)
+print(f"Overall mean near node: {mean_node}")
+
+# Compare with exact positions
+regular_sa = SimulatedAnnealing(demo_points, k=2)
+exact_centers = regular_sa.run(initialization="kpp")
+print(f"Exact center positions: {[str(c) for c in exact_centers]}")
+```
+
+## Extending to New Spaces
+
+The three-layer architecture makes it easy to add new metric spaces:
+
+```python
+from kmeanssa_ng.core import Space, Point, Center
+
+class MySpace(Space):
+    def distance(self, p1: Point, p2: Point) -> float:
+        # Implement your distance function
+        pass
+    
+    def sample_points(self, n: int) -> list[Point]:
+        # Implement point sampling  
+        pass
+    
+    # ... implement other required methods
+
+# Use the same SimulatedAnnealing algorithm
+sa = SimulatedAnnealing(my_points, k=3)
+centers = sa.run()
+```
+
+## Performance Considerations
+
+```{python}
+# Performance tips demonstration
+import time
+
+# Without precomputing (slower)
+slow_graph = generate_sbm(sizes=[15, 15], p=[[0.8, 0.1], [0.1, 0.8]])
+slow_points = slow_graph.sample_points(30)
+
+start_time = time.time()
+# Note: This would be much slower on larger graphs without precomputing
+distance_without_cache = slow_graph.distance(slow_points[0], slow_points[1])
+time_without_cache = time.time() - start_time
+
+# With precomputing (faster)
+slow_graph.precomputing()
+start_time = time.time()
+distance_with_cache = slow_graph.distance(slow_points[0], slow_points[1])
+time_with_cache = time.time() - start_time
+
+print(f"Distance calculation:")
+print(f"  Without precomputing: {distance_without_cache:.3f} (time: {time_without_cache:.6f}s)")
+print(f"  With precomputing: {distance_with_cache:.3f} (time: {time_with_cache:.6f}s)")
+print(f"  Speedup: {time_without_cache / time_with_cache:.1f}x faster")
+```
+
+## Next Steps
+
+- **Quantum Graphs Guide** - Deep dive into quantum graph features
+- **Simulated Annealing Guide** - Algorithm details and tuning
+- **Custom Spaces Guide** - Implement your own metric spaces

@@ -1,0 +1,450 @@
+---
+title: "Quantum Graphs"
+format: 
+  md:
+    variant: gfm
+execute:
+  eval: true
+  echo: true
+---
+
+Quantum graphs are the foundation of kmeanssa-ng. This guide provides everything you need to know about working with quantum graphs effectively.
+
+## What Makes Quantum Graphs Special?
+
+Unlike traditional graphs where vertices represent discrete entities, quantum graphs treat edges as **first-class citizens**:
+
+- Points can exist **anywhere** on an edge, not just at vertices
+- Distance is measured along the graph structure (**geodesic distance**)
+- Each edge has a **length** attribute representing physical distance
+- The graph must be **connected** for distance computation
+
+```{python}
+from kmeanssa_ng import QuantumGraph, QGPoint
+
+# Create a quantum graph manually
+graph = QuantumGraph()
+graph.add_edge(0, 1, length=2.0)  # Edge with length 2
+graph.add_edge(1, 2, length=1.5)  # Edge with length 1.5
+graph.add_edge(2, 0, length=3.0)  # Edge with length 3
+
+print(f"Manual graph: {graph.number_of_nodes()} nodes, {graph.number_of_edges()} edges")
+```
+
+```{python}
+# Points can be positioned anywhere on edges
+point_a = QGPoint(graph, edge=(0, 1), position=0.25)  # 25% along edge (0,1)
+point_b = QGPoint(graph, edge=(1, 2), position=0.80)  # 80% along edge (1,2)
+
+print(f"Point A: {point_a}")
+print(f"Point B: {point_b}")
+
+# Distance is computed along the graph
+graph.precomputing()  # Essential for distance computation
+distance = graph.distance(point_a, point_b)
+print(f"Distance: {distance:.3f}")
+```
+
+## Creating Quantum Graphs
+
+### Method 1: From Scratch
+
+```{python}
+# Create a more complex graph from scratch
+custom_graph = QuantumGraph()
+
+# Add edges with lengths
+custom_graph.add_edge('A', 'B', length=1.0)
+custom_graph.add_edge('B', 'C', length=2.5)
+custom_graph.add_edge('C', 'D', length=1.8)
+custom_graph.add_edge('D', 'A', length=2.2)
+
+print(f"Custom graph: {custom_graph.number_of_nodes()} nodes, {custom_graph.number_of_edges()} edges")
+
+# Always validate and precompute
+try:
+    custom_graph.validate()  # Checks connectivity and edge lengths
+    custom_graph.precomputing()  # Caches shortest paths
+    print("Graph validation successful!")
+except Exception as e:
+    print(f"Graph validation failed: {e}")
+```
+
+### Method 2: From NetworkX Graphs
+
+```{python}
+import networkx as nx
+from kmeanssa_ng import as_quantum_graph
+
+# Start with any NetworkX graph
+G = nx.erdos_renyi_graph(20, 0.3)
+print(f"NetworkX graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
+
+# Convert with uniform edge lengths
+quantum_graph_uniform = as_quantum_graph(G, edge_length=1.0)
+quantum_graph_uniform.precomputing()
+print(f"Converted quantum graph: {quantum_graph_uniform.number_of_nodes()} nodes")
+```
+
+```{python}
+# Or use existing edge attributes with custom weighting
+G_custom = nx.karate_club_graph()
+print(f"Karate club graph: {G_custom.number_of_nodes()} nodes, {G_custom.number_of_edges()} edges")
+
+# Convert to quantum graph first
+karate_quantum = as_quantum_graph(G_custom, edge_length=1.0)
+
+# Add custom lengths based on some property
+for (u, v) in karate_quantum.edges():
+    custom_length = 1.0 + (u + v) * 0.1  # Example weighting
+    karate_quantum[u][v]['length'] = custom_length
+
+karate_quantum.precomputing()
+print(f"Custom weighted karate graph created")
+```
+
+### Method 3: Using Generators
+
+```{python}
+from kmeanssa_ng import generate_sbm, generate_simple_graph
+
+# Stochastic Block Model - great for testing clustering
+sbm_graph = generate_sbm(
+    sizes=[25, 25, 30],  # Three clusters
+    p=[[0.8, 0.1, 0.05],  # Within and between cluster probabilities
+       [0.1, 0.9, 0.1],
+       [0.05, 0.1, 0.85]]
+)
+
+print(f"SBM graph: {sbm_graph.number_of_nodes()} nodes, {sbm_graph.number_of_edges()} edges")
+
+# Simple symmetric graph - good for development
+simple_graph = generate_simple_graph(
+    n_a=10,          # Size of each cluster
+    n_aa=5,          # Extra edges within clusters
+    bridge_length=5.0 # Distance between clusters
+)
+
+print(f"Simple graph: {simple_graph.number_of_nodes()} nodes, {simple_graph.number_of_edges()} edges")
+```
+
+## Working with Points and Centers
+
+### QGPoint - Data Points
+
+Points represent data locations on the quantum graph:
+
+```{python}
+# Create points at specific locations using the SBM graph
+# First, let's see what edges are available
+available_edges = list(sbm_graph.edges())[:5]  # Get first 5 edges
+print(f"Some available edges: {available_edges}")
+
+# Create points using existing edges
+point1 = QGPoint(sbm_graph, edge=available_edges[0], position=0.3)
+point2 = QGPoint(sbm_graph, edge=available_edges[1], position=0.7)
+
+# Points are immutable and hashable
+print(f"Point 1: {point1}")
+print(f"Point 2: {point2}")
+print(f"Hash of point1: {hash(point1)}")  # Can be used in sets/dicts
+
+# Access properties
+print(f"Point1 edge: {point1.edge}")
+print(f"Point1 position: {point1.position}")
+```
+
+### QGCenter - Cluster Centers
+
+Centers can move during the clustering process:
+
+```{python}
+from kmeanssa_ng import QGCenter
+
+# Create a center from a QGPoint using an existing edge
+simple_edges = list(simple_graph.edges())[:3]
+print(f"Simple graph edges: {simple_edges}")
+
+initial_point = QGPoint(simple_graph, edge=simple_edges[0], position=0.5)
+center = QGCenter(initial_point)
+print(f"Initial center: {center}")
+
+# Centers can perform operations (these modify the center in place)
+h = 0.1  # Step size for Brownian motion
+center.brownian_motion(h)
+print(f"After Brownian motion: {center}")
+
+# Get the closest node (useful for interpretation)
+closest_node = center._closest_node()
+print(f"Center closest to node: {closest_node}")
+```
+
+## Distance Computation
+
+Understanding how distances are computed is crucial for effective use:
+
+### Same Edge Distance
+
+```{python}
+# Two points on the same edge
+first_edge = available_edges[0]
+same_edge_point1 = QGPoint(sbm_graph, edge=first_edge, position=0.2)  # 20% along edge
+same_edge_point2 = QGPoint(sbm_graph, edge=first_edge, position=0.8)  # 80% along edge
+
+# Distance = |0.8 - 0.2| * edge_length
+same_edge_distance = sbm_graph.distance(same_edge_point1, same_edge_point2)
+edge_length = sbm_graph[first_edge[0]][first_edge[1]]['length']
+expected_distance = abs(0.8 - 0.2) * edge_length
+
+print(f"Same edge distance: {same_edge_distance:.3f}")
+print(f"Expected distance: {expected_distance:.3f}")
+print(f"Edge length: {edge_length:.3f}")
+```
+
+### Different Edge Distance
+
+For points on different edges, the algorithm finds the shortest path:
+
+```{python}
+# Points on different edges
+diff_edge_point1 = QGPoint(sbm_graph, edge=available_edges[0], position=0.3)
+diff_edge_point2 = QGPoint(sbm_graph, edge=available_edges[2], position=0.7)
+
+# Complex geodesic distance computation
+diff_edge_distance = sbm_graph.distance(diff_edge_point1, diff_edge_point2)
+print(f"Different edges distance: {diff_edge_distance:.3f}")
+
+# This involves finding shortest paths between nodes and combining distances
+```
+
+### Performance: Precomputing
+
+Always call `precomputing()` before intensive distance calculations:
+
+```{python}
+import time
+from kmeanssa_ng import generate_sbm
+
+# Create a test graph for timing
+timing_graph = generate_sbm(sizes=[15, 15], p=[[0.8, 0.1], [0.1, 0.8]])
+timing_points = timing_graph.sample_points(20)
+
+# Without precomputing (slower)
+start_time = time.time()
+distance_no_cache = timing_graph.distance(timing_points[0], timing_points[1])
+time_no_cache = time.time() - start_time
+
+# With precomputing (faster)
+timing_graph.precomputing()
+start_time = time.time()
+distance_with_cache = timing_graph.distance(timing_points[0], timing_points[1])
+time_with_cache = time.time() - start_time
+
+print(f"Without precomputing: {distance_no_cache:.3f} (time: {time_no_cache:.6f}s)")
+print(f"With precomputing: {distance_with_cache:.3f} (time: {time_with_cache:.6f}s)")
+speedup = time_no_cache / time_with_cache if time_with_cache > 0 else float('inf')
+print(f"Speedup: {speedup:.1f}x faster")
+```
+
+## Sampling Points
+
+### Uniform Sampling
+
+```{python}
+# Sample points uniformly across all edges
+sample_points = sbm_graph.sample_points(100)
+print(f"Sampled {len(sample_points)} points from SBM graph")
+
+# Each edge gets points proportional to its length
+# Show first few points
+for i, point in enumerate(sample_points[:5]):
+    print(f"  Point {i+1}: {point}")
+```
+
+### Custom Sampling (Advanced)
+
+```{python}
+# If you need custom sampling, implement it manually
+import random
+
+def custom_sample_points(graph, n_points):
+    points = []
+    edges = list(graph.edges())
+    
+    for _ in range(n_points):
+        # Choose edge (you can customize this distribution)
+        edge = random.choice(edges)
+        
+        # Choose position on edge
+        position = random.random()
+        
+        points.append(QGPoint(graph, edge=edge, position=position))
+    
+    return points
+
+custom_points = custom_sample_points(simple_graph, 20)
+print(f"Custom sampled {len(custom_points)} points")
+print(f"Sample custom points: {custom_points[:3]}")
+```
+
+## Validation and Debugging
+
+### Graph Validation
+
+```{python}
+# Check if your graphs are valid (basic connectivity and structure)
+test_graphs = [("SBM", sbm_graph), ("Simple", simple_graph), ("Custom", custom_graph)]
+
+for name, test_graph in test_graphs:
+    # Check basic properties
+    n_nodes = test_graph.number_of_nodes()
+    n_edges = test_graph.number_of_edges()
+    is_connected = nx.is_connected(test_graph)
+    
+    print(f"{name} graph: {n_nodes} nodes, {n_edges} edges, connected: {is_connected}")
+    
+    # Check if edges have length attributes
+    has_lengths = all('length' in test_graph[u][v] for u, v in test_graph.edges())
+    print(f"  All edges have length attribute: {has_lengths}")
+```
+
+### Connectivity Check
+
+```{python}
+# Check connectivity of our graphs
+graphs_to_check = [("SBM", sbm_graph), ("Simple", simple_graph), ("Custom", custom_graph)]
+
+for name, graph_to_check in graphs_to_check:
+    if nx.is_connected(graph_to_check):
+        print(f"{name} graph is connected")
+    else:
+        n_components = nx.number_connected_components(graph_to_check)
+        print(f"{name} graph has {n_components} components")
+        if n_components > 1:
+            # Find the largest component
+            largest_cc = max(nx.connected_components(graph_to_check), key=len)
+            print(f"  Largest component has {len(largest_cc)} nodes")
+```
+
+### Distance Debugging
+
+```{python}
+# Debug distance computation
+debug_point1 = QGPoint(sbm_graph, edge=available_edges[0], position=0.5)
+debug_point2 = QGPoint(sbm_graph, edge=available_edges[1], position=0.5)
+
+print(f"Debug Point 1: {debug_point1}")
+print(f"Debug Point 2: {debug_point2}")
+print(f"Distance: {sbm_graph.distance(debug_point1, debug_point2):.3f}")
+
+# Check if precomputing is working (examine internal shortest paths)
+print(f"Graph has precomputed shortest paths: {hasattr(sbm_graph, 'shortest_distance')}")
+```
+
+## Clustering with Quantum Graph Features
+
+### Using QGSimulatedAnnealing
+
+```{python}
+from kmeanssa_ng import QGSimulatedAnnealing, SimulatedAnnealing
+
+# Sample points from SBM graph for clustering
+clustering_points = sbm_graph.sample_points(100)
+
+# Use quantum graph specific clustering
+qg_sa = QGSimulatedAnnealing(clustering_points, k=3)
+node_centers = qg_sa.run_for_kmeans(robust_prop=0.1)
+print(f"QG centers near nodes: {node_centers}")
+
+# Compare with exact positions
+regular_sa = SimulatedAnnealing(clustering_points, k=3)
+exact_centers = regular_sa.run(initialization="kpp")
+print(f"Found {len(exact_centers)} exact centers")
+```
+
+### Multi-Scale Analysis
+
+```{python}
+# Analyze clustering at different scales
+print("Multi-scale clustering analysis:")
+for k in [2, 3, 4]:
+    sa = SimulatedAnnealing(clustering_points, k=k)
+    centers = sa.run(initialization="kpp")
+    energy = sa.calculate_energy(centers, clustering_points)
+    print(f"  k={k}: energy={energy:.3f}")
+```
+
+## Real-World Applications
+
+### Transportation Networks
+
+```{python}
+# Model a city road network
+city_graph = QuantumGraph()
+
+# Add roads with travel times as lengths (in minutes)
+roads = [
+    ('MainSt_1st', 'MainSt_2nd', 2.5),
+    ('MainSt_2nd', 'MainSt_3rd', 3.0),
+    ('MainSt_3rd', 'Oak_Ave', 1.8),
+    ('Oak_Ave', 'MainSt_1st', 4.2)
+]
+
+for start, end, travel_time in roads:
+    city_graph.add_edge(start, end, length=travel_time)
+
+city_graph.precomputing()
+
+# Points represent locations (GPS coordinates mapped to roads)
+restaurant = QGPoint(city_graph, edge=('MainSt_1st', 'MainSt_2nd'), position=0.3)
+school = QGPoint(city_graph, edge=('MainSt_2nd', 'MainSt_3rd'), position=0.8)
+
+travel_time = city_graph.distance(restaurant, school)
+print(f"Travel time from restaurant to school: {travel_time:.2f} minutes")
+```
+
+### Performance Optimization
+
+```{python}
+# Optimize for large graphs
+large_graph = generate_sbm(sizes=[50, 50], p=[[0.7, 0.1], [0.1, 0.7]])
+large_graph.precomputing()  # Essential!
+
+# Limit point sampling for performance
+n_points = min(200, len(large_graph.edges()) * 5)
+large_points = large_graph.sample_points(n_points)
+
+print(f"Large graph: {large_graph.number_of_nodes()} nodes, {len(large_points)} points")
+
+# Use quantum graph clustering with optimized parameters
+large_qg_sa = QGSimulatedAnnealing(large_points, k=2, step_size=0.2)
+large_centers = large_qg_sa.run_for_kmeans(robust_prop=0.05)
+print(f"Large graph clustering centers: {large_centers}")
+```
+
+## Common Patterns
+
+### Graph Comparison
+
+```{python}
+# Compare clustering quality across different graphs
+test_graphs = [
+    ("SBM", generate_sbm(sizes=[20, 20], p=[[0.8, 0.1], [0.1, 0.8]])),
+    ("Simple", generate_simple_graph(n_a=20, n_aa=8, bridge_length=2.0))
+]
+
+print("Graph comparison:")
+for name, graph in test_graphs:
+    graph.precomputing()
+    points = graph.sample_points(60)
+    sa = SimulatedAnnealing(points, k=2)
+    centers = sa.run(initialization="kpp")
+    energy = sa.calculate_energy(centers, points)
+    print(f"  {name} graph energy: {energy:.3f}")
+```
+
+## Next Steps
+
+- **Simulated Annealing Guide** - Master the clustering algorithm
+- **Graph Generators** - Create test graphs for your research
+- **Custom Metric Spaces** - Extend beyond quantum graphs

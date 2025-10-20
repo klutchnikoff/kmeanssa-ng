@@ -44,11 +44,6 @@ test = [
 lint = [
     "ruff>=0.1.0",
 ]
-docs = [
-    "mkdocs>=1.5.0",
-    "mkdocs-material>=9.4.0",
-    "mkdocstrings[python]>=0.24.0",
-]
 
 [tool.ruff]
 line-length = 100
@@ -99,4 +94,15 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
     "@abstractmethod",
+]
+
+[dependency-groups]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.4.0",
+    "mkdocstrings[python]>=0.24.0",
+    "jupyter>=1.1.1",
+    "nbformat>=5.10.4",
+    "nbclient>=0.10.2",
+    "jupyter-cache>=1.0.1",
 ]
