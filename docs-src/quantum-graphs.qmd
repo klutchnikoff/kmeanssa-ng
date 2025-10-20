@@ -1,8 +1,5 @@
 ---
 title: "Quantum Graphs"
-format: 
-  md:
-    variant: gfm
 execute:
   eval: true
   echo: true

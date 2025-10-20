@@ -791,9 +791,9 @@ print(f"  Time-constrained: optimize parameters for >200 points")
 
 ## Next Steps
 
-- **[Custom Metric Spaces](custom-spaces.md)** - Optimize performance for specialized domains
-- **[Advanced Usage](advanced-usage.md)** - Complex scenarios and techniques
-- **[API Reference](../api/core.md)** - Technical implementation details
+- **[Custom Metric Spaces](custom-spaces.qmd)** - Optimize performance for specialized domains
+- **[Advanced Usage](advanced-usage.qmd)** - Complex scenarios and techniques
+- **[API Reference](../api/core.qmd)** - Technical implementation details
 
 <citations>
 <document>

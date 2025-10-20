@@ -1,0 +1,289 @@
+---
+title: "Basic Clustering Examples"
+format: 
+  html:
+    code-fold: false
+    toc: true
+execute:
+  eval: false
+---
+
+This guide provides practical examples of using kmeanssa-ng for various clustering scenarios.
+
+## Example 1: Two-Cluster Stochastic Block Model
+
+The most basic scenario - clustering points on a graph with clear community structure:
+
+```{python}
+from kmeanssa_ng import generate_sbm, SimulatedAnnealing
+import matplotlib.pyplot as plt
+
+# Generate a graph with two distinct communities
+graph = generate_sbm(
+    sizes=[40, 40],       # Two communities of 40 nodes each
+    p=[[0.8, 0.1],        # High intra-community connectivity  
+       [0.1, 0.8]],       # Low inter-community connectivity
+)
+
+# Essential: precompute shortest paths
+graph.precomputing()
+
+# Sample points uniformly across the graph
+points = graph.sample_points(150)
+
+# Run simulated annealing
+sa = SimulatedAnnealing(
+    points=points,
+    k=2,                  # We know there are 2 clusters
+    lambda_param=1.0,     # Standard temperature
+    beta=1.0,            # Standard drift strength
+    step_size=0.1        # Standard step size
+)
+
+# Get cluster centers with k-means++ initialization
+centers = sa.run(
+    robust_prop=0.1,          # Average last 10% of iterations
+    initialization="kpp",     # Smart initialization
+    algorithm_version="v1"    # Balanced exploration/exploitation
+)
+
+# Compute cluster assignments
+graph.compute_clusters(centers)
+
+print(f"Found {len(centers)} centers:")
+for i, center in enumerate(centers):
+    print(f"  Cluster {i+1}: {center}")
+
+# Access cluster assignments (if needed for analysis)
+for point in points[:5]:  # Show first 5 points
+    cluster_id = point.cluster_id if hasattr(point, 'cluster_id') else 'unassigned'
+    print(f"Point {point} -> Cluster {cluster_id}")
+```
+
+## Example 2: Multi-Cluster Complex Graph
+
+Handling more complex scenarios with multiple clusters:
+
+```{python}
+from kmeanssa_ng import generate_sbm, SimulatedAnnealing
+
+# Create a 4-cluster graph with varying connectivity
+graph = generate_sbm(
+    sizes=[20, 30, 25, 35],  # Different cluster sizes
+    p=[[0.9, 0.1, 0.05, 0.02],  # Strong within-cluster connectivity
+       [0.1, 0.8, 0.15, 0.05],  # Moderate cross-cluster connections
+       [0.05, 0.15, 0.85, 0.1], 
+       [0.02, 0.05, 0.1, 0.9]]
+)
+
+graph.precomputing()
+points = graph.sample_points(200)
+
+# For more clusters, you might need more exploration
+sa = SimulatedAnnealing(
+    points=points,
+    k=4,
+    lambda_param=1.5,     # Slightly higher temperature for exploration
+    beta=0.8,            # Slightly lower drift for broader search
+    step_size=0.15       # Slightly larger steps
+)
+
+centers = sa.run(robust_prop=0.15, initialization="kpp")
+graph.compute_clusters(centers)
+
+print(f"4-cluster result: {len(centers)} centers found")
+```
+
+## Example 3: Using Existing NetworkX Graphs
+
+Convert real-world networks to quantum graphs:
+
+```{python}
+import networkx as nx
+from kmeanssa_ng import as_quantum_graph, SimulatedAnnealing
+
+# Start with a well-known network
+G = nx.karate_club_graph()
+
+# Convert to quantum graph with uniform edge lengths
+graph = as_quantum_graph(G, edge_length=1.0)
+graph.precomputing()
+
+# Sample points and cluster
+points = graph.sample_points(50)
+sa = SimulatedAnnealing(points, k=2)  # Karate club has 2 known communities
+centers = sa.run(initialization="kpp")
+
+print(f"Karate club clustering: {len(centers)} centers")
+
+# You can also use custom edge lengths based on graph properties
+G_weighted = nx.karate_club_graph()
+
+# Add custom weights (e.g., inverse of edge betweenness)
+betweenness = nx.edge_betweenness_centrality(G_weighted)
+for (u, v), centrality in betweenness.items():
+    G_weighted[u][v]['length'] = 1.0 / (centrality + 0.01)  # Avoid division by zero
+
+# Convert with custom lengths
+graph_weighted = as_quantum_graph(G_weighted, length_attr='length')
+```
+
+## Example 4: Parameter Sensitivity Analysis
+
+Understanding how parameters affect clustering:
+
+```{python}
+from kmeanssa_ng import generate_simple_graph, SimulatedAnnealing
+
+# Create a symmetric test graph
+graph = generate_simple_graph(n_a=10, n_aa=5, bridge_length=3.0)
+graph.precomputing()
+points = graph.sample_points(50)
+
+# Test different parameter combinations
+parameters = [
+    {"lambda_param": 0.5, "beta": 2.0, "name": "Low exploration, high drift"},
+    {"lambda_param": 1.0, "beta": 1.0, "name": "Balanced"},
+    {"lambda_param": 2.0, "beta": 0.5, "name": "High exploration, low drift"},
+]
+
+results = []
+for params in parameters:
+    sa = SimulatedAnnealing(
+        points, k=2, 
+        lambda_param=params["lambda_param"], 
+        beta=params["beta"]
+    )
+    centers = sa.run(initialization="kpp")
+    energy = sa._compute_energy(centers)  # Lower is better
+    
+    results.append({
+        "name": params["name"],
+        "energy": energy,
+        "centers": centers
+    })
+
+# Compare results
+for result in results:
+    print(f"{result['name']}: Energy = {result['energy']:.3f}")
+```
+
+## Example 5: Quantum Graph Specific Features
+
+Using features specific to quantum graphs:
+
+```{python}
+from kmeanssa_ng import generate_sbm, QGSimulatedAnnealing
+
+graph = generate_sbm(sizes=[30, 30], p=[[0.8, 0.1], [0.1, 0.8]])
+graph.precomputing()
+points = graph.sample_points(100)
+
+# Use quantum graph specific methods
+qg_sa = QGSimulatedAnnealing(points, k=2)
+
+# Get node-based results (useful for interpretation)
+node_centers = qg_sa.run_for_kmeans(robust_prop=0.1)
+print(f"Centers near nodes: {node_centers}")
+
+# For finding the overall mean (k=1 case)  
+mean_sa = QGSimulatedAnnealing(points, k=1)
+mean_node = mean_sa.run_for_mean(robust_prop=0.1)
+print(f"Mean center near node: {mean_node}")
+
+# Compare with standard centers
+regular_sa = SimulatedAnnealing(points, k=2)
+regular_centers = regular_sa.run(initialization="kpp")
+print(f"Regular centers: {regular_centers}")
+```
+
+## Example 6: Batch Processing and Reproducibility
+
+Processing multiple graphs and ensuring reproducible results:
+
+```{python}
+import numpy as np
+from kmeanssa_ng import generate_random_sbm, SimulatedAnnealing
+
+# Set random seed for reproducibility
+np.random.seed(42)
+
+# Process multiple random graphs
+results = []
+for trial in range(5):
+    # Generate random SBM with different edge lengths
+    graph = generate_random_sbm(
+        sizes=[25, 25], 
+        p=[[0.8, 0.1], [0.1, 0.8]],
+        lengths=[[1.0, 3.0], [3.0, 1.0]]  # Different intra/inter lengths
+    )
+    
+    graph.precomputing()
+    points = graph.sample_points(80)
+    
+    sa = SimulatedAnnealing(points, k=2)
+    centers = sa.run(initialization="kpp")
+    energy = sa._compute_energy(centers)
+    
+    results.append({
+        "trial": trial + 1,
+        "energy": energy,
+        "num_centers": len(centers)
+    })
+
+# Analyze results
+energies = [r["energy"] for r in results]
+print(f"Energy statistics:")
+print(f"  Mean: {np.mean(energies):.3f}")
+print(f"  Std:  {np.std(energies):.3f}")
+print(f"  Min:  {np.min(energies):.3f}")
+print(f"  Max:  {np.max(energies):.3f}")
+```
+
+## Performance Tips
+
+### Quick Setup for Large Graphs
+
+```{python}
+# For large graphs, optimize for speed
+graph.precomputing()  # Always do this first!
+
+# Use larger steps and less robustification
+sa = SimulatedAnnealing(points, k=3, step_size=0.2)
+centers = sa.run(robust_prop=0.05, initialization="kpp")
+```
+
+### Memory Considerations
+
+```{python}
+# For very large graphs, be careful with point sampling
+n_points = min(1000, len(graph.edges()) * 10)  # Reasonable limit
+points = graph.sample_points(n_points)
+```
+
+### Debugging Clustering Issues
+
+```{python}
+# If clustering seems poor, try these diagnostics:
+
+# 1. Check graph connectivity
+import networkx as nx
+print(f"Graph connected: {nx.is_connected(graph)}")
+print(f"Number of components: {nx.number_connected_components(graph)}")
+
+# 2. Visualize energy over time (if you modify the algorithm)
+# energies = sa.run_with_history()  # Custom method you could add
+
+# 3. Try different initializations
+for init in ["random", "kpp"]:
+    sa = SimulatedAnnealing(points, k=2)
+    centers = sa.run(initialization=init)
+    energy = sa._compute_energy(centers)
+    print(f"Initialization {init}: energy = {energy:.3f}")
+```
+
+## Next Steps
+
+- **[Advanced Usage](advanced-usage.md)** - More sophisticated clustering scenarios
+- **[Performance Tuning](performance.md)** - Optimize for speed and accuracy  
+- **[User Guide](../user-guide/quantum-graphs.md)** - Deep dive into quantum graph features

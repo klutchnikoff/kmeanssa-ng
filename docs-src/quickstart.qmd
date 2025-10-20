@@ -1,8 +1,5 @@
 ---
 title: "Quick Start"
-format: 
-  md:
-    variant: gfm
 execute:
   eval: true
   echo: true

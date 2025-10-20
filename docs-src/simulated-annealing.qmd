@@ -379,10 +379,9 @@ print(f"Best energy: {best_energy:.3f}")
 
 ## Next Steps
 
-- **[Graph Generators](generators.md)** - Create test graphs for algorithm evaluation
-- **[Custom Metric Spaces](custom-spaces.md)** - Extend beyond quantum graphs  
-- **[Performance Guide](../examples/performance.md)** - Optimize for large-scale problems
-
+- **[Graph Generators](generators.qmd)** - Create test graphs for algorithm evaluation
+- **[Custom Metric Spaces](custom-spaces.qmd)** - Extend beyond quantum graphs
+- **[Performance Guide](../examples/performance.qmd)** - Optimize for large-scale problems
 <citations>
 <document>
 <document_type>RULE</document_type>

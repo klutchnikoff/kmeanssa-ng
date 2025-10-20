@@ -721,9 +721,9 @@ for domain, description in application_examples.items():
 
 ## Next Steps
 
-- **[Quantum Graphs](quantum-graphs.md)** - Learn about the built-in quantum graph implementation
-- **[Simulated Annealing](simulated-annealing.md)** - Understanding the clustering algorithm
-- **[Graph Generators](generators.md)** - Creating test cases for your custom spaces
+- **[Quantum Graphs](quantum-graphs.qmd)** - Learn about the built-in quantum graph implementation
+- **[Simulated Annealing](simulated-annealing.qmd)** - Understanding the clustering algorithm
+- **[Graph Generators](generators.qmd)** - Creating test cases for your custom spaces
 
 <citations>
 <document>

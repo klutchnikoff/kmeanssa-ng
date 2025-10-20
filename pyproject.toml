@@ -44,65 +44,7 @@ test = [
 lint = [
     "ruff>=0.1.0",
 ]
-
-[tool.ruff]
-line-length = 100
-target-version = "py39"
-
-[tool.ruff.lint]
-select = [
-    "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings
-    "F",   # pyflakes
-    "I",   # isort
-    "B",   # flake8-bugbear
-    "C4",  # flake8-comprehensions
-    "UP",  # pyupgrade
-    "NPY", # numpy-specific rules
-]
-ignore = [
-    "E501",  # line too long (handled by formatter)
-    "E731",  # lambda assignment (needed for closures in generators)
-]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = [
-    "--cov=kmeanssa_ng",
-    "--cov-report=term-missing",
-    "--cov-report=html",
-    "--strict-markers",
-]
-
-[tool.coverage.run]
-source = ["src"]
-omit = ["*/tests/*", "*/__pycache__/*"]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
-    "@abstractmethod",
-]
-
-[dependency-groups]
 docs = [
-    "mkdocs>=1.5.0",
-    "mkdocs-material>=9.4.0",
-    "mkdocstrings[python]>=0.24.0",
-    "jupyter>=1.1.1",
-    "nbformat>=5.10.4",
-    "nbclient>=0.10.2",
-    "jupyter-cache>=1.0.1",
+    "quarto-cli>=1.4.550",
+    "quartodoc>=0.8.3",
 ]

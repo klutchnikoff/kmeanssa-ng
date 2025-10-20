@@ -487,9 +487,9 @@ for i, tip in enumerate(performance_tips, 1):
 
 ## Next Steps
 
-- **[Quantum Graphs](quantum-graphs.md)** - Understanding the quantum graph data structure
-- **[Simulated Annealing](simulated-annealing.md)** - Clustering algorithms for generated graphs
-- **[Custom Metric Spaces](custom-spaces.md)** - Extending beyond quantum graphs
+- **[Quantum Graphs](quantum-graphs.qmd)** - Understanding the quantum graph data structure
+- **[Simulated Annealing](simulated-annealing.qmd)** - Clustering algorithms for generated graphs
+- **[Custom Metric Spaces](custom-spaces.qmd)** - Extending beyond quantum graphs
 
 <citations>
 <document>

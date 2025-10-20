@@ -737,9 +737,9 @@ if len(test_points) >= 40:
 
 ## Next Steps
 
-- **[Performance Tuning](performance.md)** - Optimize for speed and memory usage
-- **[Custom Metric Spaces](custom-spaces.md)** - Extend to specialized domains
-- **[API Reference](../api/core.md)** - Detailed technical documentation
+- **[Performance Tuning](performance.qmd)** - Optimize for speed and memory usage
+- **[Custom Metric Spaces](custom-spaces.qmd)** - Extend to specialized domains
+- **[API Reference](../api/core.qmd)** - Detailed technical documentation
 
 <citations>
 <document>

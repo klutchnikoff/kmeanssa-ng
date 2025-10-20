@@ -1,8 +1,5 @@
 ---
 title: "Core Concepts"
-format: 
-  md:
-    variant: gfm
 execute:
   eval: true
   echo: true
@@ -72,7 +69,7 @@ Centers move toward their nearest data points:
 Let's see this in action:
 
 ```{python}
-from kmeanssa_ng import generate_sbm, QGSimulatedAnnealing, SimulatedAnnealing
+from kmeanssa_ng import generate_sbm, QGSimulatedAnnealing, SimulatedAnnealing, QGPoint
 
 # Create a simple 2-cluster graph for demonstration
 demo_graph = generate_sbm(sizes=[20, 20], p=[[0.8, 0.1], [0.1, 0.8]])
@@ -213,15 +210,19 @@ Quantum graphs use **geodesic distance** - the shortest path along the graph:
 
 ```{python}
 # Demonstrate distance calculation
+# To ensure the example is robust, pick existing edges from the random graph
+edge1 = list(demo_graph.edges)[0]
+edge2 = list(demo_graph.edges)[-1] # Pick the last edge to increase chance of being different
+
 # Create two points on different edges
-point1 = QGPoint(demo_graph, edge=(0, 1), position=0.2)
-point2 = QGPoint(demo_graph, edge=(5, 8), position=0.7)
+point1 = QGPoint(demo_graph, edge=edge1, position=0.2)
+point2 = QGPoint(demo_graph, edge=edge2, position=0.7)
 
 distance = demo_graph.distance(point1, point2)
 print(f"Geodesic distance between points on different edges: {distance:.3f}")
 
 # Compare with points on same edge
-point3 = QGPoint(demo_graph, edge=(0, 1), position=0.8)
+point3 = QGPoint(demo_graph, edge=edge1, position=0.8)
 same_edge_distance = demo_graph.distance(point1, point3)
 print(f"Distance between points on same edge: {same_edge_distance:.3f}")
 ```
