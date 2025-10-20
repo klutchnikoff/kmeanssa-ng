@@ -1,2 +1,3 @@
-# Quarto output
-docs-src/_site/
+
+# Coverage reports
+.coverage

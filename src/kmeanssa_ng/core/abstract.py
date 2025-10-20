@@ -27,7 +27,7 @@ class Point(ABC):
         Returns:
             The Space instance containing this point.
         """
-        pass
+        raise NotImplementedError
 
 
 class Center(Point):
@@ -49,7 +49,7 @@ class Center(Point):
             time_to_travel: Time parameter controlling the magnitude of motion.
                 Typical distance traveled is proportional to sqrt(time_to_travel).
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def drift(self, target_point: Point, prop_to_travel: float) -> None:
@@ -60,7 +60,7 @@ class Center(Point):
             prop_to_travel: Proportion of the distance to travel (between 0 and 1).
                 0 means no movement, 1 means move all the way to target.
         """
-        pass
+        raise NotImplementedError
 
 
 class Space(ABC):
@@ -83,7 +83,7 @@ class Space(ABC):
         Returns:
             The distance between p1 and p2.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def sample_points(self, n: int) -> list[Point]:
@@ -95,7 +95,7 @@ class Space(ABC):
         Returns:
             List of n randomly sampled points.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def sample_centers(self, k: int) -> list[Center]:
@@ -107,7 +107,7 @@ class Space(ABC):
         Returns:
             List of k randomly sampled centers.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def compute_clusters(self, centers: list[Center]) -> None:
@@ -119,7 +119,7 @@ class Space(ABC):
         Args:
             centers: List of cluster centers.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def calculate_energy_graph(self, centers: list[Center]) -> float:
@@ -134,4 +134,4 @@ class Space(ABC):
         Returns:
             The total energy (sum of squared distances).
         """
-        pass
+        raise NotImplementedError

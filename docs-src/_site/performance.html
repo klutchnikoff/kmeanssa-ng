@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.552">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>kmeanssa-ng</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark.min.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">kmeanssa-ng</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-getting-started" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Getting Started</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-getting-started">    
+        <li>
+    <a class="dropdown-item" href="./quickstart.html">
+ <span class="dropdown-text">Quick Start</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./concepts.html">
+ <span class="dropdown-text">Core Concepts</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-user-guide" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">User Guide</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-user-guide">    
+        <li>
+    <a class="dropdown-item" href="./quantum-graphs.html">
+ <span class="dropdown-text">Quantum Graphs</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./simulated-annealing.html">
+ <span class="dropdown-text">Simulated Annealing</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./generators.html">
+ <span class="dropdown-text">Graph Generators</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./custom-spaces.html">
+ <span class="dropdown-text">Custom Metric Spaces</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-examples" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Examples</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-examples">    
+        <li>
+    <a class="dropdown-item" href="./basic-clustering.html">
+ <span class="dropdown-text">Basic Clustering Examples</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./advanced-usage.html">
+ <span class="dropdown-text">Advanced Usage</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./performance.html">
+ <span class="dropdown-text">Performance Tuning</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-api" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">API</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-api">    
+        <li>
+    <a class="dropdown-item" href="./api/index.qmd">
+ <span class="dropdown-text">Overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./api/core.qmd">
+ <span class="dropdown-text"></span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./api/quantum_graph.qmd">
+ <span class="dropdown-text"></span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./api/generators.qmd">
+ <span class="dropdown-text"></span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+          <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#understanding-performance-bottlenecks" id="toc-understanding-performance-bottlenecks" class="nav-link active" data-scroll-target="#understanding-performance-bottlenecks">Understanding Performance Bottlenecks</a>
+  <ul class="collapse">
+  <li><a href="#profiling-your-clustering-tasks" id="toc-profiling-your-clustering-tasks" class="nav-link" data-scroll-target="#profiling-your-clustering-tasks">Profiling Your Clustering Tasks</a></li>
+  <li><a href="#identifying-performance-patterns" id="toc-identifying-performance-patterns" class="nav-link" data-scroll-target="#identifying-performance-patterns">Identifying Performance Patterns</a></li>
+  </ul></li>
+  <li><a href="#optimization-strategies" id="toc-optimization-strategies" class="nav-link" data-scroll-target="#optimization-strategies">Optimization Strategies</a>
+  <ul class="collapse">
+  <li><a href="#graph-preprocessing" id="toc-graph-preprocessing" class="nav-link" data-scroll-target="#graph-preprocessing">Graph Preprocessing</a></li>
+  <li><a href="#parameter-optimization-for-speed" id="toc-parameter-optimization-for-speed" class="nav-link" data-scroll-target="#parameter-optimization-for-speed">Parameter Optimization for Speed</a></li>
+  <li><a href="#memory-optimization" id="toc-memory-optimization" class="nav-link" data-scroll-target="#memory-optimization">Memory Optimization</a></li>
+  </ul></li>
+  <li><a href="#scaling-to-large-datasets" id="toc-scaling-to-large-datasets" class="nav-link" data-scroll-target="#scaling-to-large-datasets">Scaling to Large Datasets</a>
+  <ul class="collapse">
+  <li><a href="#parallel-processing-strategies" id="toc-parallel-processing-strategies" class="nav-link" data-scroll-target="#parallel-processing-strategies">Parallel Processing Strategies</a></li>
+  <li><a href="#algorithm-version-selection" id="toc-algorithm-version-selection" class="nav-link" data-scroll-target="#algorithm-version-selection">Algorithm Version Selection</a></li>
+  </ul></li>
+  <li><a href="#real-world-performance-scenarios" id="toc-real-world-performance-scenarios" class="nav-link" data-scroll-target="#real-world-performance-scenarios">Real-World Performance Scenarios</a>
+  <ul class="collapse">
+  <li><a href="#large-scale-graph-processing" id="toc-large-scale-graph-processing" class="nav-link" data-scroll-target="#large-scale-graph-processing">Large-Scale Graph Processing</a></li>
+  <li><a href="#performance-tuning-guidelines" id="toc-performance-tuning-guidelines" class="nav-link" data-scroll-target="#performance-tuning-guidelines">Performance Tuning Guidelines</a></li>
+  <li><a href="#monitoring-and-debugging" id="toc-monitoring-and-debugging" class="nav-link" data-scroll-target="#monitoring-and-debugging">Monitoring and Debugging</a></li>
+  </ul></li>
+  <li><a href="#best-practices-summary" id="toc-best-practices-summary" class="nav-link" data-scroll-target="#best-practices-summary">Best Practices Summary</a></li>
+  <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next Steps</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/edit/main/performance.qmd" class="toc-action"><i class="bi bi-git"></i>Edit this page</a></li><li><a href="https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Performance Tuning</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>This guide covers optimization strategies, memory management, and performance best practices for using kmeanssa-ng efficiently with large datasets and complex graphs.</p>
+<section id="understanding-performance-bottlenecks" class="level2">
+<h2 class="anchored" data-anchor-id="understanding-performance-bottlenecks">Understanding Performance Bottlenecks</h2>
+<section id="profiling-your-clustering-tasks" class="level3">
+<h3 class="anchored" data-anchor-id="profiling-your-clustering-tasks">Profiling Your Clustering Tasks</h3>
+<div id="0fb865ca" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> kmeanssa_ng <span class="im">import</span> generate_sbm, SimulatedAnnealing, QGSimulatedAnnealing</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> psutil</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> profile_memory_usage():</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Get current memory usage of the process."""</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    process <span class="op">=</span> psutil.Process(os.getpid())</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> process.memory_info().rss <span class="op">/</span> <span class="dv">1024</span> <span class="op">/</span> <span class="dv">1024</span>  <span class="co"># MB</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> benchmark_clustering(graph, n_points, k, description):</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Benchmark clustering performance with detailed metrics."""</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"=== </span><span class="sc">{</span>description<span class="sc">}</span><span class="ss"> ==="</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Memory before</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    mem_before <span class="op">=</span> profile_memory_usage()</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Sample points</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    start_time <span class="op">=</span> time.time()</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    points <span class="op">=</span> graph.sample_points(n_points)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    sampling_time <span class="op">=</span> time.time() <span class="op">-</span> start_time</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    mem_after_sampling <span class="op">=</span> profile_memory_usage()</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Run clustering</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    start_time <span class="op">=</span> time.time()</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    sa <span class="op">=</span> SimulatedAnnealing(points, k<span class="op">=</span>k)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    centers <span class="op">=</span> sa.run(initialization<span class="op">=</span><span class="st">"kpp"</span>, robust_prop<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    clustering_time <span class="op">=</span> time.time() <span class="op">-</span> start_time</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    mem_after_clustering <span class="op">=</span> profile_memory_usage()</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate energy</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    start_time <span class="op">=</span> time.time()</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    energy <span class="op">=</span> sa.calculate_energy(centers, points)</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    energy_time <span class="op">=</span> time.time() <span class="op">-</span> start_time</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Report results</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Graph: </span><span class="sc">{</span><span class="bu">len</span>(graph.nodes())<span class="sc">}</span><span class="ss"> nodes, </span><span class="sc">{</span><span class="bu">len</span>(graph.edges())<span class="sc">}</span><span class="ss"> edges"</span>)</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Points: </span><span class="sc">{</span>n_points<span class="sc">}</span><span class="ss">, Clusters: </span><span class="sc">{</span>k<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Timings:"</span>)</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Sampling: </span><span class="sc">{</span>sampling_time<span class="sc">:.3f}</span><span class="ss">s"</span>)</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Clustering: </span><span class="sc">{</span>clustering_time<span class="sc">:.3f}</span><span class="ss">s"</span>)</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Energy calc: </span><span class="sc">{</span>energy_time<span class="sc">:.3f}</span><span class="ss">s"</span>)</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Total: </span><span class="sc">{</span>sampling_time <span class="op">+</span> clustering_time <span class="op">+</span> energy_time<span class="sc">:.3f}</span><span class="ss">s"</span>)</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Memory usage:"</span>)</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Initial: </span><span class="sc">{</span>mem_before<span class="sc">:.1f}</span><span class="ss"> MB"</span>)</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  After sampling: </span><span class="sc">{</span>mem_after_sampling<span class="sc">:.1f}</span><span class="ss"> MB (+</span><span class="sc">{</span>mem_after_sampling <span class="op">-</span> mem_before<span class="sc">:.1f}</span><span class="ss">)"</span>)</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  After clustering: </span><span class="sc">{</span>mem_after_clustering<span class="sc">:.1f}</span><span class="ss"> MB (+</span><span class="sc">{</span>mem_after_clustering <span class="op">-</span> mem_after_sampling<span class="sc">:.1f}</span><span class="ss">)"</span>)</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Final energy: </span><span class="sc">{</span>energy<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>        <span class="st">'sampling_time'</span>: sampling_time,</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>        <span class="st">'clustering_time'</span>: clustering_time,</span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>        <span class="st">'energy_time'</span>: energy_time,</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>        <span class="st">'total_time'</span>: sampling_time <span class="op">+</span> clustering_time <span class="op">+</span> energy_time,</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>        <span class="st">'memory_peak'</span>: mem_after_clustering,</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>        <span class="st">'energy'</span>: energy</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a><span class="co"># Create test graphs of different sizes</span></span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>small_graph <span class="op">=</span> generate_sbm(sizes<span class="op">=</span>[<span class="dv">20</span>, <span class="dv">20</span>], p<span class="op">=</span>[[<span class="fl">0.8</span>, <span class="fl">0.1</span>], [<span class="fl">0.1</span>, <span class="fl">0.8</span>]])</span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>medium_graph <span class="op">=</span> generate_sbm(sizes<span class="op">=</span>[<span class="dv">50</span>, <span class="dv">50</span>], p<span class="op">=</span>[[<span class="fl">0.7</span>, <span class="fl">0.1</span>], [<span class="fl">0.1</span>, <span class="fl">0.7</span>]])</span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>large_graph <span class="op">=</span> generate_sbm(sizes<span class="op">=</span>[<span class="dv">100</span>, <span class="dv">100</span>], p<span class="op">=</span>[[<span class="fl">0.6</span>, <span class="fl">0.1</span>], [<span class="fl">0.1</span>, <span class="fl">0.6</span>]])</span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a><span class="co"># Benchmark different scenarios</span></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> []</span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>test_cases <span class="op">=</span> [</span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>    (small_graph, <span class="dv">100</span>, <span class="dv">2</span>, <span class="st">"Small Graph - Small Dataset"</span>),</span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>    (medium_graph, <span class="dv">200</span>, <span class="dv">3</span>, <span class="st">"Medium Graph - Medium Dataset"</span>), </span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>    (large_graph, <span class="dv">300</span>, <span class="dv">4</span>, <span class="st">"Large Graph - Large Dataset"</span>)</span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> graph, n_points, k, desc <span class="kw">in</span> test_cases:</span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> benchmark_clustering(graph, n_points, k, desc)</span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a>    results.append((desc, result))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== Small Graph - Small Dataset ===
+Graph: 40 nodes, 329 edges
+Points: 100, Clusters: 2
+Timings:
+  Sampling: 0.002s
+  Clustering: 0.118s
+  Energy calc: 0.001s
+  Total: 0.121s
+Memory usage:
+  Initial: 152.6 MB
+  After sampling: 152.6 MB (+0.0)
+  After clustering: 176.9 MB (+24.2)
+Final energy: 1.097
+
+=== Medium Graph - Medium Dataset ===
+Graph: 100 nodes, 1890 edges
+Points: 200, Clusters: 3
+Timings:
+  Sampling: 0.010s
+  Clustering: 0.042s
+  Energy calc: 0.003s
+  Total: 0.055s
+Memory usage:
+  Initial: 176.9 MB
+  After sampling: 176.9 MB (+0.0)
+  After clustering: 176.9 MB (+0.0)
+Final energy: 1.427
+
+=== Large Graph - Large Dataset ===
+Graph: 200 nodes, 6866 edges
+Points: 300, Clusters: 4
+Timings:
+  Sampling: 0.027s
+  Clustering: 0.150s
+  Energy calc: 0.006s
+  Total: 0.184s
+Memory usage:
+  Initial: 176.9 MB
+  After sampling: 176.9 MB (+0.0)
+  After clustering: 176.9 MB (+0.0)
+Final energy: 1.021
+</code></pre>
+</div>
+</div>
+</section>
+<section id="identifying-performance-patterns" class="level3">
+<h3 class="anchored" data-anchor-id="identifying-performance-patterns">Identifying Performance Patterns</h3>
+<div id="e4fe485d" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Analyze performance patterns</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== Performance Analysis ==="</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Time complexity analysis</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Time Complexity Patterns:"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> desc, result <span class="kw">in</span> results:</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    points_per_second <span class="op">=</span> <span class="dv">100</span> <span class="op">/</span> result[<span class="st">'clustering_time'</span>] <span class="cf">if</span> <span class="st">'Small'</span> <span class="kw">in</span> desc <span class="cf">else</span> (<span class="dv">200</span> <span class="cf">if</span> <span class="st">'Medium'</span> <span class="kw">in</span> desc <span class="cf">else</span> <span class="dv">300</span>) <span class="op">/</span> result[<span class="st">'clustering_time'</span>]</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>desc<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>points_per_second<span class="sc">:.1f}</span><span class="ss"> points/second"</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Memory efficiency</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Memory Efficiency:"</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> desc, result <span class="kw">in</span> results:</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    points <span class="op">=</span> <span class="dv">100</span> <span class="cf">if</span> <span class="st">'Small'</span> <span class="kw">in</span> desc <span class="cf">else</span> (<span class="dv">200</span> <span class="cf">if</span> <span class="st">'Medium'</span> <span class="kw">in</span> desc <span class="cf">else</span> <span class="dv">300</span>)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    memory_per_point <span class="op">=</span> result[<span class="st">'memory_peak'</span>] <span class="op">/</span> points</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>desc<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>memory_per_point<span class="sc">:.3f}</span><span class="ss"> MB/point"</span>)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Quality vs Speed tradeoff</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Quality vs Speed:"</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> desc, result <span class="kw">in</span> results:</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    efficiency_score <span class="op">=</span> result[<span class="st">'energy'</span>] <span class="op">/</span> result[<span class="st">'total_time'</span>]  <span class="co"># Lower is better</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>desc<span class="sc">}</span><span class="ss">: Efficiency score = </span><span class="sc">{</span>efficiency_score<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== Performance Analysis ===
+Time Complexity Patterns:
+Small Graph - Small Dataset: 846.6 points/second
+Medium Graph - Medium Dataset: 4749.6 points/second
+Large Graph - Large Dataset: 1995.1 points/second
+
+Memory Efficiency:
+Small Graph - Small Dataset: 1.769 MB/point
+Medium Graph - Medium Dataset: 0.884 MB/point
+Large Graph - Large Dataset: 0.590 MB/point
+
+Quality vs Speed:
+Small Graph - Small Dataset: Efficiency score = 9.028
+Medium Graph - Medium Dataset: Efficiency score = 26.041
+Large Graph - Large Dataset: Efficiency score = 5.543</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="optimization-strategies" class="level2">
+<h2 class="anchored" data-anchor-id="optimization-strategies">Optimization Strategies</h2>
+<section id="graph-preprocessing" class="level3">
+<h3 class="anchored" data-anchor-id="graph-preprocessing">Graph Preprocessing</h3>
+<div id="82f2a9c6" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> optimize_graph_structure(graph, max_nodes<span class="op">=</span><span class="dv">1000</span>):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Optimize graph structure for better clustering performance."""</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    original_nodes <span class="op">=</span> <span class="bu">len</span>(graph.nodes())</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    original_edges <span class="op">=</span> <span class="bu">len</span>(graph.edges())</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Original graph: </span><span class="sc">{</span>original_nodes<span class="sc">}</span><span class="ss"> nodes, </span><span class="sc">{</span>original_edges<span class="sc">}</span><span class="ss"> edges"</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Strategy 1: Work with largest connected component</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> nx.is_connected(graph):</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        largest_cc <span class="op">=</span> <span class="bu">max</span>(nx.connected_components(graph), key<span class="op">=</span><span class="bu">len</span>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        graph <span class="op">=</span> graph.subgraph(largest_cc).copy()</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Extracted largest component: </span><span class="sc">{</span><span class="bu">len</span>(graph.nodes())<span class="sc">}</span><span class="ss"> nodes"</span>)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Strategy 2: Sample nodes if graph is too large</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(graph.nodes()) <span class="op">&gt;</span> max_nodes:</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Sample nodes while preserving connectivity</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>        sampled_nodes <span class="op">=</span> <span class="bu">list</span>(graph.nodes())[:max_nodes]</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>        graph <span class="op">=</span> graph.subgraph(sampled_nodes).copy()</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Ensure connectivity</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> nx.is_connected(graph):</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>            largest_cc <span class="op">=</span> <span class="bu">max</span>(nx.connected_components(graph), key<span class="op">=</span><span class="bu">len</span>)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>            graph <span class="op">=</span> graph.subgraph(largest_cc).copy()</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Sampled to </span><span class="sc">{</span><span class="bu">len</span>(graph.nodes())<span class="sc">}</span><span class="ss"> nodes"</span>)</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Strategy 3: Precompute distances</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    graph.precomputing()</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Distance precomputation completed"</span>)</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Strategy 4: Validate edge weights for sampling efficiency</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    edge_lengths <span class="op">=</span> [d[<span class="st">'length'</span>] <span class="cf">for</span> u, v, d <span class="kw">in</span> graph.edges(data<span class="op">=</span><span class="va">True</span>)]</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> edge_lengths:</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>        avg_length <span class="op">=</span> np.mean(edge_lengths)</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>        std_length <span class="op">=</span> np.std(edge_lengths)</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Edge lengths: μ=</span><span class="sc">{</span>avg_length<span class="sc">:.3f}</span><span class="ss">, σ=</span><span class="sc">{</span>std_length<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Normalize extreme lengths if needed</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> std_length <span class="op">&gt;</span> <span class="dv">10</span> <span class="op">*</span> avg_length:</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="st">"Warning: High variance in edge lengths may affect performance"</span>)</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>    final_nodes <span class="op">=</span> <span class="bu">len</span>(graph.nodes())</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>    final_edges <span class="op">=</span> <span class="bu">len</span>(graph.edges())</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>    reduction_factor <span class="op">=</span> original_nodes <span class="op">/</span> final_nodes <span class="cf">if</span> final_nodes <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="dv">1</span></span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Final graph: </span><span class="sc">{</span>final_nodes<span class="sc">}</span><span class="ss"> nodes, </span><span class="sc">{</span>final_edges<span class="sc">}</span><span class="ss"> edges"</span>)</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Reduction factor: </span><span class="sc">{</span>reduction_factor<span class="sc">:.2f}</span><span class="ss">x"</span>)</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> graph</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a><span class="co"># Test graph optimization</span></span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== Graph Optimization ==="</span>)</span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>test_large_graph <span class="op">=</span> generate_sbm(sizes<span class="op">=</span>[<span class="dv">150</span>, <span class="dv">150</span>, <span class="dv">100</span>], p<span class="op">=</span>[[<span class="fl">0.6</span>, <span class="fl">0.1</span>, <span class="fl">0.05</span>], [<span class="fl">0.1</span>, <span class="fl">0.6</span>, <span class="fl">0.1</span>], [<span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.6</span>]])</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>optimized_graph <span class="op">=</span> optimize_graph_structure(test_large_graph, max_nodes<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare performance before/after optimization</span></span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>original_result <span class="op">=</span> benchmark_clustering(test_large_graph, <span class="dv">150</span>, <span class="dv">3</span>, <span class="st">"Before Optimization"</span>)</span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>optimized_result <span class="op">=</span> benchmark_clustering(optimized_graph, <span class="dv">150</span>, <span class="dv">3</span>, <span class="st">"After Optimization"</span>)</span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a>speedup <span class="op">=</span> original_result[<span class="st">'total_time'</span>] <span class="op">/</span> optimized_result[<span class="st">'total_time'</span>]</span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Optimization speedup: </span><span class="sc">{</span>speedup<span class="sc">:.2f}</span><span class="ss">x"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== Graph Optimization ===
+Original graph: 400 nodes, 20849 edges
+Sampled to 200 nodes
+Distance precomputation completed
+Edge lengths: μ=1.000, σ=0.000
+Final graph: 200 nodes, 8213 edges
+Reduction factor: 2.00x
+
+=== Before Optimization ===
+Graph: 400 nodes, 20849 edges
+Points: 150, Clusters: 3
+Timings:
+  Sampling: 0.027s
+  Clustering: 0.140s
+  Energy calc: 0.002s
+  Total: 0.169s
+Memory usage:
+  Initial: 204.1 MB
+  After sampling: 204.2 MB (+0.0)
+  After clustering: 205.5 MB (+1.3)
+Final energy: 1.025
+
+=== After Optimization ===
+Graph: 200 nodes, 8213 edges
+Points: 150, Clusters: 3
+Timings:
+  Sampling: 0.014s
+  Clustering: 0.067s
+  Energy calc: 0.002s
+  Total: 0.083s
+Memory usage:
+  Initial: 205.5 MB
+  After sampling: 205.5 MB (+0.0)
+  After clustering: 205.5 MB (+0.0)
+Final energy: 1.091
+
+Optimization speedup: 2.04x</code></pre>
+</div>
+</div>
+</section>
+<section id="parameter-optimization-for-speed" class="level3">
+<h3 class="anchored" data-anchor-id="parameter-optimization-for-speed">Parameter Optimization for Speed</h3>
+<div id="92c192e1" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_fast_parameters(n_points, k, graph_density<span class="op">=</span><span class="fl">0.1</span>):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Get parameter settings optimized for speed."""</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    base_params <span class="op">=</span> {</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">'lambda_param'</span>: <span class="fl">1.0</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">'beta'</span>: <span class="fl">1.0</span>, </span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">'step_size'</span>: <span class="fl">0.1</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Adjust for dataset size</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> n_points <span class="op">&gt;</span> <span class="dv">500</span>:</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        base_params[<span class="st">'lambda_param'</span>] <span class="op">=</span> <span class="fl">2.0</span>  <span class="co"># Higher exploration for large datasets</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        base_params[<span class="st">'step_size'</span>] <span class="op">=</span> <span class="fl">0.15</span>    <span class="co"># Larger steps for faster convergence</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> n_points <span class="op">&lt;</span> <span class="dv">100</span>:</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        base_params[<span class="st">'beta'</span>] <span class="op">=</span> <span class="fl">2.0</span>          <span class="co"># Faster convergence for small datasets</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        base_params[<span class="st">'step_size'</span>] <span class="op">=</span> <span class="fl">0.05</span>    <span class="co"># Smaller steps for precision</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Adjust for number of clusters</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> k <span class="op">&gt;</span> <span class="dv">5</span>:</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>        base_params[<span class="st">'lambda_param'</span>] <span class="op">*=</span> <span class="fl">1.5</span>  <span class="co"># More exploration for many clusters</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Adjust for graph density</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> graph_density <span class="op">&gt;</span> <span class="fl">0.2</span>:  <span class="co"># Dense graph</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        base_params[<span class="st">'step_size'</span>] <span class="op">*=</span> <span class="fl">0.8</span>    <span class="co"># Smaller steps in dense graphs</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> graph_density <span class="op">&lt;</span> <span class="fl">0.05</span>:  <span class="co"># Sparse graph</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>        base_params[<span class="st">'step_size'</span>] <span class="op">*=</span> <span class="fl">1.3</span>    <span class="co"># Larger steps in sparse graphs</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> base_params</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_quality_parameters(n_points, k):</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Get parameter settings optimized for clustering quality."""</span></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>        <span class="st">'lambda_param'</span>: <span class="fl">0.8</span>,    <span class="co"># Moderate exploration</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>        <span class="st">'beta'</span>: <span class="fl">0.7</span>,           <span class="co"># Slower convergence for better quality  </span></span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>        <span class="st">'step_size'</span>: <span class="fl">0.05</span>      <span class="co"># Smaller steps for precision</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare speed vs quality parameter sets</span></span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>test_points <span class="op">=</span> medium_graph.sample_points(<span class="dv">200</span>)</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>graph_density <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> <span class="bu">len</span>(medium_graph.edges()) <span class="op">/</span> (<span class="bu">len</span>(medium_graph.nodes()) <span class="op">*</span> (<span class="bu">len</span>(medium_graph.nodes()) <span class="op">-</span> <span class="dv">1</span>))</span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== Parameter Optimization Comparison ==="</span>)</span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Fast parameters</span></span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>fast_params <span class="op">=</span> get_fast_parameters(<span class="dv">200</span>, <span class="dv">3</span>, graph_density)</span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Fast parameters: </span><span class="sc">{</span>fast_params<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>start_time <span class="op">=</span> time.time()</span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>sa_fast <span class="op">=</span> SimulatedAnnealing(test_points, k<span class="op">=</span><span class="dv">3</span>, <span class="op">**</span>fast_params)</span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>centers_fast <span class="op">=</span> sa_fast.run(robust_prop<span class="op">=</span><span class="fl">0.05</span>, initialization<span class="op">=</span><span class="st">"kpp"</span>)  <span class="co"># Reduced robustification</span></span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>fast_time <span class="op">=</span> time.time() <span class="op">-</span> start_time</span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>fast_energy <span class="op">=</span> sa_fast.calculate_energy(centers_fast, test_points)</span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Fast approach: </span><span class="sc">{</span>fast_time<span class="sc">:.3f}</span><span class="ss">s, energy=</span><span class="sc">{</span>fast_energy<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a><span class="co"># Quality parameters  </span></span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a>quality_params <span class="op">=</span> get_quality_parameters(<span class="dv">200</span>, <span class="dv">3</span>)</span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Quality parameters: </span><span class="sc">{</span>quality_params<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a>start_time <span class="op">=</span> time.time()</span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a>sa_quality <span class="op">=</span> SimulatedAnnealing(test_points, k<span class="op">=</span><span class="dv">3</span>, <span class="op">**</span>quality_params)</span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a>centers_quality <span class="op">=</span> sa_quality.run(robust_prop<span class="op">=</span><span class="fl">0.15</span>, initialization<span class="op">=</span><span class="st">"kpp"</span>)  <span class="co"># More robustification</span></span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a>quality_time <span class="op">=</span> time.time() <span class="op">-</span> start_time</span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a>quality_energy <span class="op">=</span> sa_quality.calculate_energy(centers_quality, test_points)</span>
+<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Quality approach: </span><span class="sc">{</span>quality_time<span class="sc">:.3f}</span><span class="ss">s, energy=</span><span class="sc">{</span>quality_energy<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a><span class="co"># Speed vs quality analysis</span></span>
+<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a>speedup <span class="op">=</span> quality_time <span class="op">/</span> fast_time</span>
+<span id="cb7-71"><a href="#cb7-71" aria-hidden="true" tabindex="-1"></a>quality_improvement <span class="op">=</span> (fast_energy <span class="op">-</span> quality_energy) <span class="op">/</span> fast_energy <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb7-72"><a href="#cb7-72" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Tradeoff analysis:"</span>)</span>
+<span id="cb7-73"><a href="#cb7-73" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Speed improvement: </span><span class="sc">{</span>speedup<span class="sc">:.2f}</span><span class="ss">x faster"</span>)</span>
+<span id="cb7-74"><a href="#cb7-74" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Quality cost: </span><span class="sc">{</span>quality_improvement<span class="sc">:+.1f}</span><span class="ss">% energy change"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== Parameter Optimization Comparison ===
+Fast parameters: {'lambda_param': 1.0, 'beta': 1.0, 'step_size': 0.08000000000000002}
+Fast approach: 0.029s, energy=1.448
+Quality parameters: {'lambda_param': 0.8, 'beta': 0.7, 'step_size': 0.05}
+Quality approach: 0.064s, energy=0.875
+
+Tradeoff analysis:
+Speed improvement: 2.23x faster
+Quality cost: +39.6% energy change</code></pre>
+</div>
+</div>
+</section>
+<section id="memory-optimization" class="level3">
+<h3 class="anchored" data-anchor-id="memory-optimization">Memory Optimization</h3>
+<div id="5e897ce5" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> memory_efficient_clustering(graph, n_points, k, batch_size<span class="op">=</span><span class="dv">100</span>):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Perform clustering with memory optimization techniques."""</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"=== Memory-Efficient Clustering ==="</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Processing </span><span class="sc">{</span>n_points<span class="sc">}</span><span class="ss"> points in batches of </span><span class="sc">{</span>batch_size<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    mem_start <span class="op">=</span> profile_memory_usage()</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Strategy 1: Batch processing of points</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    all_points <span class="op">=</span> []</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> batch_start <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, n_points, batch_size):</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        batch_end <span class="op">=</span> <span class="bu">min</span>(batch_start <span class="op">+</span> batch_size, n_points)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        batch_points <span class="op">=</span> graph.sample_points(batch_end <span class="op">-</span> batch_start)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        all_points.extend(batch_points)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> batch_start <span class="op">%</span> (batch_size <span class="op">*</span> <span class="dv">3</span>) <span class="op">==</span> <span class="dv">0</span>:  <span class="co"># Report every 3 batches</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>            mem_current <span class="op">=</span> profile_memory_usage()</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"Batch </span><span class="sc">{</span>batch_start<span class="op">//</span>batch_size <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>mem_current<span class="sc">:.1f}</span><span class="ss"> MB (+</span><span class="sc">{</span>mem_current <span class="op">-</span> mem_start<span class="sc">:.1f}</span><span class="ss">)"</span>)</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    mem_after_sampling <span class="op">=</span> profile_memory_usage()</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Sampling complete: </span><span class="sc">{</span>mem_after_sampling<span class="sc">:.1f}</span><span class="ss"> MB"</span>)</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Strategy 2: Use smaller robustification for memory efficiency</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    sa <span class="op">=</span> SimulatedAnnealing(all_points, k<span class="op">=</span>k, step_size<span class="op">=</span><span class="fl">0.15</span>)  <span class="co"># Larger steps = faster = less memory over time</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>    centers <span class="op">=</span> sa.run(robust_prop<span class="op">=</span><span class="fl">0.05</span>, initialization<span class="op">=</span><span class="st">"kpp"</span>)  <span class="co"># Smaller robustification</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    mem_after_clustering <span class="op">=</span> profile_memory_usage()</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Clustering complete: </span><span class="sc">{</span>mem_after_clustering<span class="sc">:.1f}</span><span class="ss"> MB"</span>)</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Strategy 3: Incremental energy calculation</span></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>    total_energy <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>    energy_batch_size <span class="op">=</span> batch_size <span class="op">//</span> <span class="dv">2</span></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="bu">len</span>(all_points), energy_batch_size):</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>        batch_points <span class="op">=</span> all_points[i:i <span class="op">+</span> energy_batch_size]</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>        batch_energy <span class="op">=</span> sa.calculate_energy(centers, batch_points)</span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>        total_energy <span class="op">+=</span> batch_energy <span class="op">*</span> <span class="bu">len</span>(batch_points)</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>    average_energy <span class="op">=</span> total_energy <span class="op">/</span> <span class="bu">len</span>(all_points)</span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>    mem_final <span class="op">=</span> profile_memory_usage()</span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Final memory: </span><span class="sc">{</span>mem_final<span class="sc">:.1f}</span><span class="ss"> MB"</span>)</span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Peak memory usage: </span><span class="sc">{</span><span class="bu">max</span>(mem_after_sampling, mem_after_clustering, mem_final)<span class="sc">:.1f}</span><span class="ss"> MB"</span>)</span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Average energy: </span><span class="sc">{</span>average_energy<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> centers, average_energy</span>
+<span id="cb9-47"><a href="#cb9-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-48"><a href="#cb9-48" aria-hidden="true" tabindex="-1"></a><span class="co"># Test memory-efficient approach</span></span>
+<span id="cb9-49"><a href="#cb9-49" aria-hidden="true" tabindex="-1"></a>test_graph_large <span class="op">=</span> generate_sbm(sizes<span class="op">=</span>[<span class="dv">80</span>, <span class="dv">80</span>, <span class="dv">60</span>], p<span class="op">=</span>[[<span class="fl">0.7</span>, <span class="fl">0.1</span>, <span class="fl">0.1</span>], [<span class="fl">0.1</span>, <span class="fl">0.7</span>, <span class="fl">0.1</span>], [<span class="fl">0.1</span>, <span class="fl">0.1</span>, <span class="fl">0.7</span>]])</span>
+<span id="cb9-50"><a href="#cb9-50" aria-hidden="true" tabindex="-1"></a>memory_centers, memory_energy <span class="op">=</span> memory_efficient_clustering(test_graph_large, <span class="dv">300</span>, <span class="dv">3</span>, batch_size<span class="op">=</span><span class="dv">75</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== Memory-Efficient Clustering ===
+Processing 300 points in batches of 75
+Batch 1: 212.9 MB (+0.0)
+Batch 4: 212.9 MB (+0.0)
+Sampling complete: 212.9 MB
+Clustering complete: 212.9 MB
+Final memory: 212.9 MB
+Peak memory usage: 212.9 MB
+Average energy: 1.725</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="scaling-to-large-datasets" class="level2">
+<h2 class="anchored" data-anchor-id="scaling-to-large-datasets">Scaling to Large Datasets</h2>
+<section id="parallel-processing-strategies" class="level3">
+<h3 class="anchored" data-anchor-id="parallel-processing-strategies">Parallel Processing Strategies</h3>
+<div id="bb79ca7b" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> parallel_initialization_comparison(points, k, n_trials<span class="op">=</span><span class="dv">5</span>):</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Compare different initialization strategies for consistency and speed."""</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"=== Initialization Strategy Comparison ==="</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Testing with </span><span class="sc">{</span><span class="bu">len</span>(points)<span class="sc">}</span><span class="ss"> points, k=</span><span class="sc">{</span>k<span class="sc">}</span><span class="ss">, </span><span class="sc">{</span>n_trials<span class="sc">}</span><span class="ss"> trials each"</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    strategies <span class="op">=</span> [<span class="st">'random'</span>, <span class="st">'kpp'</span>]</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    results <span class="op">=</span> {}</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> strategy <span class="kw">in</span> strategies:</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        energies <span class="op">=</span> []</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>        times <span class="op">=</span> []</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Testing </span><span class="sc">{</span>strategy<span class="sc">}</span><span class="ss"> initialization:"</span>)</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> trial <span class="kw">in</span> <span class="bu">range</span>(n_trials):</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>            start_time <span class="op">=</span> time.time()</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>            sa <span class="op">=</span> SimulatedAnnealing(points, k<span class="op">=</span>k)</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>            centers <span class="op">=</span> sa.run(initialization<span class="op">=</span>strategy, robust_prop<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>            end_time <span class="op">=</span> time.time()</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>            energy <span class="op">=</span> sa.calculate_energy(centers, points)</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>            runtime <span class="op">=</span> end_time <span class="op">-</span> start_time</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>            energies.append(energy)</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>            times.append(runtime)</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> trial <span class="op">&lt;</span> <span class="dv">3</span>:  <span class="co"># Show first few trials</span></span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="ss">f"  Trial </span><span class="sc">{</span>trial <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>runtime<span class="sc">:.3f}</span><span class="ss">s, energy=</span><span class="sc">{</span>energy<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Statistics</span></span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>        mean_energy <span class="op">=</span> np.mean(energies)</span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>        std_energy <span class="op">=</span> np.std(energies)</span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>        mean_time <span class="op">=</span> np.mean(times)</span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>        std_time <span class="op">=</span> np.std(times)</span>
+<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>        results[strategy] <span class="op">=</span> {</span>
+<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>            <span class="st">'mean_energy'</span>: mean_energy,</span>
+<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>            <span class="st">'std_energy'</span>: std_energy,</span>
+<span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a>            <span class="st">'mean_time'</span>: mean_time,</span>
+<span id="cb11-41"><a href="#cb11-41" aria-hidden="true" tabindex="-1"></a>            <span class="st">'std_time'</span>: std_time,</span>
+<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a>            <span class="st">'consistency'</span>: std_energy <span class="op">/</span> mean_energy  <span class="co"># Lower is more consistent</span></span>
+<span id="cb11-43"><a href="#cb11-43" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb11-44"><a href="#cb11-44" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb11-45"><a href="#cb11-45" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  Average: </span><span class="sc">{</span>mean_time<span class="sc">:.3f}</span><span class="ss">±</span><span class="sc">{</span>std_time<span class="sc">:.3f}</span><span class="ss">s, energy=</span><span class="sc">{</span>mean_energy<span class="sc">:.3f}</span><span class="ss">±</span><span class="sc">{</span>std_energy<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb11-46"><a href="#cb11-46" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  Consistency score: </span><span class="sc">{</span>results[strategy][<span class="st">'consistency'</span>]<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb11-47"><a href="#cb11-47" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-48"><a href="#cb11-48" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Recommendation</span></span>
+<span id="cb11-49"><a href="#cb11-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> results[<span class="st">'kpp'</span>][<span class="st">'consistency'</span>] <span class="op">&lt;</span> results[<span class="st">'random'</span>][<span class="st">'consistency'</span>]:</span>
+<span id="cb11-50"><a href="#cb11-50" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Recommendation: Use k-means++ for better consistency"</span>)</span>
+<span id="cb11-51"><a href="#cb11-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb11-52"><a href="#cb11-52" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Recommendation: Random initialization is sufficient"</span>)</span>
+<span id="cb11-53"><a href="#cb11-53" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-54"><a href="#cb11-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> results[<span class="st">'kpp'</span>][<span class="st">'mean_time'</span>] <span class="op">&gt;</span> results[<span class="st">'random'</span>][<span class="st">'mean_time'</span>] <span class="op">*</span> <span class="fl">1.5</span>:</span>
+<span id="cb11-55"><a href="#cb11-55" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Note: k-means++ is </span><span class="sc">{</span>results[<span class="st">'kpp'</span>][<span class="st">'mean_time'</span>] <span class="op">/</span> results[<span class="st">'random'</span>][<span class="st">'mean_time'</span>]<span class="sc">:.1f}</span><span class="ss">x slower"</span>)</span>
+<span id="cb11-56"><a href="#cb11-56" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-57"><a href="#cb11-57" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> results</span>
+<span id="cb11-58"><a href="#cb11-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-59"><a href="#cb11-59" aria-hidden="true" tabindex="-1"></a><span class="co"># Test with medium dataset</span></span>
+<span id="cb11-60"><a href="#cb11-60" aria-hidden="true" tabindex="-1"></a>init_results <span class="op">=</span> parallel_initialization_comparison(test_points[:<span class="dv">150</span>], k<span class="op">=</span><span class="dv">3</span>, n_trials<span class="op">=</span><span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== Initialization Strategy Comparison ===
+Testing with 150 points, k=3, 4 trials each
+
+Testing random initialization:
+  Trial 1: 0.033s, energy=1.084
+  Trial 2: 0.033s, energy=1.024
+  Trial 3: 0.033s, energy=1.189
+  Average: 0.033±0.000s, energy=1.228±0.231
+  Consistency score: 0.1883
+
+Testing kpp initialization:
+  Trial 1: 0.034s, energy=1.004
+  Trial 2: 0.034s, energy=1.406
+  Trial 3: 0.034s, energy=1.217
+  Average: 0.034±0.000s, energy=1.097±0.240
+  Consistency score: 0.2191
+
+Recommendation: Random initialization is sufficient</code></pre>
+</div>
+</div>
+</section>
+<section id="algorithm-version-selection" class="level3">
+<h3 class="anchored" data-anchor-id="algorithm-version-selection">Algorithm Version Selection</h3>
+<div id="5863e737" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> compare_algorithm_versions(points, k):</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Compare algorithm versions for different scenarios."""</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"=== Algorithm Version Comparison ==="</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Dataset: </span><span class="sc">{</span><span class="bu">len</span>(points)<span class="sc">}</span><span class="ss"> points, k=</span><span class="sc">{</span>k<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    versions <span class="op">=</span> [<span class="st">'v1'</span>, <span class="st">'v2'</span>]</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    version_results <span class="op">=</span> {}</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> version <span class="kw">in</span> versions:</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Testing algorithm </span><span class="sc">{</span>version<span class="sc">}</span><span class="ss">:"</span>)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Multiple runs for stability</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>        energies <span class="op">=</span> []</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>        times <span class="op">=</span> []</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> run <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>):</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>            start_time <span class="op">=</span> time.time()</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>            sa <span class="op">=</span> SimulatedAnnealing(points, k<span class="op">=</span>k)</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>            centers <span class="op">=</span> sa.run(</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>                algorithm_version<span class="op">=</span>version,</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>                robust_prop<span class="op">=</span><span class="fl">0.1</span>,</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>                initialization<span class="op">=</span><span class="st">"kpp"</span></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>            end_time <span class="op">=</span> time.time()</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>            energy <span class="op">=</span> sa.calculate_energy(centers, points)</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>            runtime <span class="op">=</span> end_time <span class="op">-</span> start_time</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>            energies.append(energy)</span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>            times.append(runtime)</span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"  Run </span><span class="sc">{</span>run <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>runtime<span class="sc">:.3f}</span><span class="ss">s, energy=</span><span class="sc">{</span>energy<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>        mean_energy <span class="op">=</span> np.mean(energies)</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>        mean_time <span class="op">=</span> np.mean(times)</span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>        version_results[version] <span class="op">=</span> {</span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>            <span class="st">'mean_energy'</span>: mean_energy,</span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>            <span class="st">'mean_time'</span>: mean_time,</span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a>            <span class="st">'energies'</span>: energies,</span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>            <span class="st">'times'</span>: times</span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  Average: </span><span class="sc">{</span>mean_time<span class="sc">:.3f}</span><span class="ss">s, energy=</span><span class="sc">{</span>mean_energy<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Analysis and recommendation</span></span>
+<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>    v1_result <span class="op">=</span> version_results[<span class="st">'v1'</span>]</span>
+<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a>    v2_result <span class="op">=</span> version_results[<span class="st">'v2'</span>]</span>
+<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>    speed_ratio <span class="op">=</span> v1_result[<span class="st">'mean_time'</span>] <span class="op">/</span> v2_result[<span class="st">'mean_time'</span>]</span>
+<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a>    energy_ratio <span class="op">=</span> v1_result[<span class="st">'mean_energy'</span>] <span class="op">/</span> v2_result[<span class="st">'mean_energy'</span>]</span>
+<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">=== Comparison Analysis ==="</span>)</span>
+<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Speed: v1 vs v2 = </span><span class="sc">{</span>speed_ratio<span class="sc">:.2f}</span><span class="ss"> (lower is faster)"</span>)</span>
+<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Energy: v1 vs v2 = </span><span class="sc">{</span>energy_ratio<span class="sc">:.3f}</span><span class="ss"> (lower is better)"</span>)</span>
+<span id="cb13-57"><a href="#cb13-57" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> speed_ratio <span class="op">&lt;</span> <span class="fl">0.9</span>:</span>
+<span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"Recommendation: Use v1 (interleaved) for better speed"</span>)</span>
+<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> speed_ratio <span class="op">&gt;</span> <span class="fl">1.1</span>:</span>
+<span id="cb13-61"><a href="#cb13-61" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"Recommendation: Use v2 (sequential) for better speed"</span>)</span>
+<span id="cb13-62"><a href="#cb13-62" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb13-63"><a href="#cb13-63" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"Recommendation: Both versions have similar performance"</span>)</span>
+<span id="cb13-64"><a href="#cb13-64" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-65"><a href="#cb13-65" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">abs</span>(energy_ratio <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">&gt;</span> <span class="fl">0.05</span>:</span>
+<span id="cb13-66"><a href="#cb13-66" aria-hidden="true" tabindex="-1"></a>        better_quality <span class="op">=</span> <span class="st">"v1"</span> <span class="cf">if</span> energy_ratio <span class="op">&lt;</span> <span class="fl">1.0</span> <span class="cf">else</span> <span class="st">"v2"</span></span>
+<span id="cb13-67"><a href="#cb13-67" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Note: </span><span class="sc">{</span>better_quality<span class="sc">}</span><span class="ss"> provides better clustering quality"</span>)</span>
+<span id="cb13-68"><a href="#cb13-68" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-69"><a href="#cb13-69" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> version_results</span>
+<span id="cb13-70"><a href="#cb13-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-71"><a href="#cb13-71" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare algorithm versions</span></span>
+<span id="cb13-72"><a href="#cb13-72" aria-hidden="true" tabindex="-1"></a>version_comparison <span class="op">=</span> compare_algorithm_versions(test_points[:<span class="dv">120</span>], k<span class="op">=</span><span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== Algorithm Version Comparison ===
+Dataset: 120 points, k=3
+
+Testing algorithm v1:
+  Run 1: 0.029s, energy=1.392
+  Run 2: 0.029s, energy=1.458
+  Run 3: 0.028s, energy=1.583
+  Average: 0.029s, energy=1.478
+
+Testing algorithm v2:
+  Run 1: 0.030s, energy=1.276
+  Run 2: 0.030s, energy=1.309
+  Run 3: 0.031s, energy=1.488
+  Average: 0.030s, energy=1.358
+
+=== Comparison Analysis ===
+Speed: v1 vs v2 = 0.96 (lower is faster)
+Energy: v1 vs v2 = 1.089 (lower is better)
+Recommendation: Both versions have similar performance
+Note: v2 provides better clustering quality</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="real-world-performance-scenarios" class="level2">
+<h2 class="anchored" data-anchor-id="real-world-performance-scenarios">Real-World Performance Scenarios</h2>
+<section id="large-scale-graph-processing" class="level3">
+<h3 class="anchored" data-anchor-id="large-scale-graph-processing">Large-Scale Graph Processing</h3>
+<div id="bf424041" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> create_large_scale_test():</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Create and process a large-scale graph scenario."""</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"=== Large-Scale Scenario ==="</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a complex, large graph</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    large_sizes <span class="op">=</span> [<span class="dv">200</span>, <span class="dv">150</span>, <span class="dv">100</span>, <span class="dv">150</span>]  <span class="co"># 600 nodes total</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    large_p <span class="op">=</span> [</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>        [<span class="fl">0.7</span>, <span class="fl">0.1</span>, <span class="fl">0.05</span>, <span class="fl">0.1</span>],</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        [<span class="fl">0.1</span>, <span class="fl">0.8</span>, <span class="fl">0.15</span>, <span class="fl">0.05</span>],</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>        [<span class="fl">0.05</span>, <span class="fl">0.15</span>, <span class="fl">0.9</span>, <span class="fl">0.2</span>],</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>        [<span class="fl">0.1</span>, <span class="fl">0.05</span>, <span class="fl">0.2</span>, <span class="fl">0.8</span>]</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create graph (may take a moment)</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Creating large graph..."</span>)</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>    start_time <span class="op">=</span> time.time()</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>    large_graph <span class="op">=</span> generate_sbm(sizes<span class="op">=</span>large_sizes, p<span class="op">=</span>large_p)</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>    creation_time <span class="op">=</span> time.time() <span class="op">-</span> start_time</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Graph creation: </span><span class="sc">{</span>creation_time<span class="sc">:.3f}</span><span class="ss">s"</span>)</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Graph size: </span><span class="sc">{</span><span class="bu">len</span>(large_graph.nodes())<span class="sc">}</span><span class="ss"> nodes, </span><span class="sc">{</span><span class="bu">len</span>(large_graph.edges())<span class="sc">}</span><span class="ss"> edges"</span>)</span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Optimization pipeline</span></span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Applying optimization pipeline..."</span>)</span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step 1: Precompute distances</span></span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>    start_time <span class="op">=</span> time.time()</span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>    large_graph.precomputing()</span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>    precompute_time <span class="op">=</span> time.time() <span class="op">-</span> start_time</span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Distance precomputation: </span><span class="sc">{</span>precompute_time<span class="sc">:.3f}</span><span class="ss">s"</span>)</span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step 2: Sample points efficiently  </span></span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>    n_points <span class="op">=</span> <span class="dv">500</span>  <span class="co"># Reasonable sample for large graph</span></span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a>    start_time <span class="op">=</span> time.time()</span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a>    points_large <span class="op">=</span> large_graph.sample_points(n_points)</span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a>    sampling_time <span class="op">=</span> time.time() <span class="op">-</span> start_time</span>
+<span id="cb15-38"><a href="#cb15-38" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Point sampling: </span><span class="sc">{</span>sampling_time<span class="sc">:.3f}</span><span class="ss">s"</span>)</span>
+<span id="cb15-39"><a href="#cb15-39" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-40"><a href="#cb15-40" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step 3: Use optimized parameters</span></span>
+<span id="cb15-41"><a href="#cb15-41" aria-hidden="true" tabindex="-1"></a>    k_large <span class="op">=</span> <span class="dv">4</span>  <span class="co"># Match true number of clusters</span></span>
+<span id="cb15-42"><a href="#cb15-42" aria-hidden="true" tabindex="-1"></a>    fast_params <span class="op">=</span> get_fast_parameters(n_points, k_large, graph_density<span class="op">=</span><span class="fl">0.15</span>)</span>
+<span id="cb15-43"><a href="#cb15-43" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-44"><a href="#cb15-44" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Using optimized parameters: </span><span class="sc">{</span>fast_params<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-45"><a href="#cb15-45" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-46"><a href="#cb15-46" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step 4: Run clustering with performance monitoring</span></span>
+<span id="cb15-47"><a href="#cb15-47" aria-hidden="true" tabindex="-1"></a>    start_time <span class="op">=</span> time.time()</span>
+<span id="cb15-48"><a href="#cb15-48" aria-hidden="true" tabindex="-1"></a>    mem_start <span class="op">=</span> profile_memory_usage()</span>
+<span id="cb15-49"><a href="#cb15-49" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-50"><a href="#cb15-50" aria-hidden="true" tabindex="-1"></a>    sa_large <span class="op">=</span> SimulatedAnnealing(points_large, k<span class="op">=</span>k_large, <span class="op">**</span>fast_params)</span>
+<span id="cb15-51"><a href="#cb15-51" aria-hidden="true" tabindex="-1"></a>    centers_large <span class="op">=</span> sa_large.run(</span>
+<span id="cb15-52"><a href="#cb15-52" aria-hidden="true" tabindex="-1"></a>        robust_prop<span class="op">=</span><span class="fl">0.08</span>,  <span class="co"># Slightly reduced for speed</span></span>
+<span id="cb15-53"><a href="#cb15-53" aria-hidden="true" tabindex="-1"></a>        initialization<span class="op">=</span><span class="st">"kpp"</span>,</span>
+<span id="cb15-54"><a href="#cb15-54" aria-hidden="true" tabindex="-1"></a>        algorithm_version<span class="op">=</span><span class="st">"v1"</span>  <span class="co"># Generally faster</span></span>
+<span id="cb15-55"><a href="#cb15-55" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb15-56"><a href="#cb15-56" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-57"><a href="#cb15-57" aria-hidden="true" tabindex="-1"></a>    clustering_time <span class="op">=</span> time.time() <span class="op">-</span> start_time</span>
+<span id="cb15-58"><a href="#cb15-58" aria-hidden="true" tabindex="-1"></a>    mem_end <span class="op">=</span> profile_memory_usage()</span>
+<span id="cb15-59"><a href="#cb15-59" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-60"><a href="#cb15-60" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step 5: Evaluate results</span></span>
+<span id="cb15-61"><a href="#cb15-61" aria-hidden="true" tabindex="-1"></a>    start_time <span class="op">=</span> time.time()</span>
+<span id="cb15-62"><a href="#cb15-62" aria-hidden="true" tabindex="-1"></a>    energy_large <span class="op">=</span> sa_large.calculate_energy(centers_large, points_large)</span>
+<span id="cb15-63"><a href="#cb15-63" aria-hidden="true" tabindex="-1"></a>    energy_time <span class="op">=</span> time.time() <span class="op">-</span> start_time</span>
+<span id="cb15-64"><a href="#cb15-64" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-65"><a href="#cb15-65" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Report comprehensive results</span></span>
+<span id="cb15-66"><a href="#cb15-66" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">=== Large-Scale Results ==="</span>)</span>
+<span id="cb15-67"><a href="#cb15-67" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Total processing time: </span><span class="sc">{</span>creation_time <span class="op">+</span> precompute_time <span class="op">+</span> sampling_time <span class="op">+</span> clustering_time <span class="op">+</span> energy_time<span class="sc">:.3f}</span><span class="ss">s"</span>)</span>
+<span id="cb15-68"><a href="#cb15-68" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Graph creation: </span><span class="sc">{</span>creation_time<span class="sc">:.3f}</span><span class="ss">s"</span>)</span>
+<span id="cb15-69"><a href="#cb15-69" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Precomputation: </span><span class="sc">{</span>precompute_time<span class="sc">:.3f}</span><span class="ss">s"</span>) </span>
+<span id="cb15-70"><a href="#cb15-70" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Sampling: </span><span class="sc">{</span>sampling_time<span class="sc">:.3f}</span><span class="ss">s"</span>)</span>
+<span id="cb15-71"><a href="#cb15-71" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Clustering: </span><span class="sc">{</span>clustering_time<span class="sc">:.3f}</span><span class="ss">s"</span>)</span>
+<span id="cb15-72"><a href="#cb15-72" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Energy calculation: </span><span class="sc">{</span>energy_time<span class="sc">:.3f}</span><span class="ss">s"</span>)</span>
+<span id="cb15-73"><a href="#cb15-73" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-74"><a href="#cb15-74" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Memory usage: </span><span class="sc">{</span>mem_start<span class="sc">:.1f}</span><span class="ss"> → </span><span class="sc">{</span>mem_end<span class="sc">:.1f}</span><span class="ss"> MB (+</span><span class="sc">{</span>mem_end <span class="op">-</span> mem_start<span class="sc">:.1f}</span><span class="ss">)"</span>)</span>
+<span id="cb15-75"><a href="#cb15-75" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Final energy: </span><span class="sc">{</span>energy_large<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb15-76"><a href="#cb15-76" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Processing rate: </span><span class="sc">{</span>n_points <span class="op">/</span> clustering_time<span class="sc">:.1f}</span><span class="ss"> points/second"</span>)</span>
+<span id="cb15-77"><a href="#cb15-77" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-78"><a href="#cb15-78" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Performance quality assessment</span></span>
+<span id="cb15-79"><a href="#cb15-79" aria-hidden="true" tabindex="-1"></a>    points_per_mb <span class="op">=</span> n_points <span class="op">/</span> (mem_end <span class="op">-</span> mem_start) <span class="cf">if</span> mem_end <span class="op">&gt;</span> mem_start <span class="cf">else</span> n_points</span>
+<span id="cb15-80"><a href="#cb15-80" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Memory efficiency: </span><span class="sc">{</span>points_per_mb<span class="sc">:.1f}</span><span class="ss"> points/MB"</span>)</span>
+<span id="cb15-81"><a href="#cb15-81" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-82"><a href="#cb15-82" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb15-83"><a href="#cb15-83" aria-hidden="true" tabindex="-1"></a>        <span class="st">'total_time'</span>: creation_time <span class="op">+</span> precompute_time <span class="op">+</span> sampling_time <span class="op">+</span> clustering_time <span class="op">+</span> energy_time,</span>
+<span id="cb15-84"><a href="#cb15-84" aria-hidden="true" tabindex="-1"></a>        <span class="st">'clustering_time'</span>: clustering_time,</span>
+<span id="cb15-85"><a href="#cb15-85" aria-hidden="true" tabindex="-1"></a>        <span class="st">'memory_used'</span>: mem_end <span class="op">-</span> mem_start,</span>
+<span id="cb15-86"><a href="#cb15-86" aria-hidden="true" tabindex="-1"></a>        <span class="st">'energy'</span>: energy_large,</span>
+<span id="cb15-87"><a href="#cb15-87" aria-hidden="true" tabindex="-1"></a>        <span class="st">'points_per_second'</span>: n_points <span class="op">/</span> clustering_time</span>
+<span id="cb15-88"><a href="#cb15-88" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb15-89"><a href="#cb15-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-90"><a href="#cb15-90" aria-hidden="true" tabindex="-1"></a><span class="co"># Run large-scale test</span></span>
+<span id="cb15-91"><a href="#cb15-91" aria-hidden="true" tabindex="-1"></a>large_scale_results <span class="op">=</span> create_large_scale_test()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== Large-Scale Scenario ===
+Creating large graph...
+Graph creation: 12.508s
+Graph size: 600 nodes, 49610 edges
+
+Applying optimization pipeline...
+Distance precomputation: 0.012s
+Point sampling: 0.130s
+Using optimized parameters: {'lambda_param': 1.0, 'beta': 1.0, 'step_size': 0.1}
+
+=== Large-Scale Results ===
+Total processing time: 13.277s
+  Graph creation: 12.508s
+  Precomputation: 0.012s
+  Sampling: 0.130s
+  Clustering: 0.615s
+  Energy calculation: 0.011s
+Memory usage: 258.1 → 260.9 MB (+2.8)
+Final energy: 1.281
+Processing rate: 812.4 points/second
+Memory efficiency: 179.8 points/MB</code></pre>
+</div>
+</div>
+</section>
+<section id="performance-tuning-guidelines" class="level3">
+<h3 class="anchored" data-anchor-id="performance-tuning-guidelines">Performance Tuning Guidelines</h3>
+<div id="6b34bce5" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> generate_performance_guidelines(results_data):</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Generate performance tuning recommendations based on test results."""</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"=== Performance Tuning Guidelines ==="</span>)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    guidelines <span class="op">=</span> []</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Memory guidelines</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> large_scale_results[<span class="st">'memory_used'</span>] <span class="op">&gt;</span> <span class="dv">500</span>:  <span class="co"># &gt; 500 MB</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"🔴 HIGH MEMORY: Use batch processing for &gt;1000 points"</span>)</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"   - Process points in batches of 100-200"</span>)</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"   - Reduce robustification to 0.05-0.08"</span>)</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"   - Consider graph size reduction"</span>)</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> large_scale_results[<span class="st">'memory_used'</span>] <span class="op">&gt;</span> <span class="dv">200</span>:</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"🟡 MODERATE MEMORY: Monitor usage with &gt;500 points"</span>)</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"   - Consider batch processing for very large datasets"</span>)</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"🟢 LOW MEMORY: Current approach is memory-efficient"</span>)</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Speed guidelines</span></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> large_scale_results[<span class="st">'points_per_second'</span>] <span class="op">&lt;</span> <span class="dv">50</span>:</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"🔴 SLOW PROCESSING: Optimize for speed"</span>)</span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"   - Increase lambda_param to 2.0+"</span>)</span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"   - Increase step_size to 0.15+"</span>)</span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"   - Use algorithm version v1 (interleaved)"</span>)</span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"   - Reduce robust_prop to 0.05"</span>)</span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> large_scale_results[<span class="st">'points_per_second'</span>] <span class="op">&lt;</span> <span class="dv">100</span>:</span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"🟡 MODERATE SPEED: Consider optimization for large datasets"</span>)</span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"🟢 FAST PROCESSING: Current settings are efficient"</span>)</span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Quality guidelines</span></span>
+<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> large_scale_results[<span class="st">'energy'</span>] <span class="op">&gt;</span> <span class="fl">2.0</span>:  <span class="co"># High energy indicates poor clustering</span></span>
+<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"🔴 POOR QUALITY: Optimize for clustering quality"</span>)</span>
+<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"   - Decrease step_size to 0.05-0.08"</span>)</span>
+<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"   - Decrease beta to 0.5-0.8"</span>)</span>
+<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"   - Increase robust_prop to 0.15+"</span>)</span>
+<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"   - Always use k-means++ initialization"</span>)</span>
+<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> large_scale_results[<span class="st">'energy'</span>] <span class="op">&gt;</span> <span class="fl">1.5</span>:</span>
+<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"🟡 MODERATE QUALITY: Consider quality improvements"</span>)</span>
+<span id="cb17-41"><a href="#cb17-41" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb17-42"><a href="#cb17-42" aria-hidden="true" tabindex="-1"></a>        guidelines.append(<span class="st">"🟢 GOOD QUALITY: Clustering results are satisfactory"</span>)</span>
+<span id="cb17-43"><a href="#cb17-43" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-44"><a href="#cb17-44" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Print all guidelines</span></span>
+<span id="cb17-45"><a href="#cb17-45" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> guideline <span class="kw">in</span> guidelines:</span>
+<span id="cb17-46"><a href="#cb17-46" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(guideline)</span>
+<span id="cb17-47"><a href="#cb17-47" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-48"><a href="#cb17-48" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Parameter recommendations based on use case</span></span>
+<span id="cb17-49"><a href="#cb17-49" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">=== Parameter Recommendations ==="</span>)</span>
+<span id="cb17-50"><a href="#cb17-50" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-51"><a href="#cb17-51" aria-hidden="true" tabindex="-1"></a>    use_cases <span class="op">=</span> {</span>
+<span id="cb17-52"><a href="#cb17-52" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Rapid prototyping"</span>: {</span>
+<span id="cb17-53"><a href="#cb17-53" aria-hidden="true" tabindex="-1"></a>            <span class="st">'lambda_param'</span>: <span class="fl">2.0</span>,</span>
+<span id="cb17-54"><a href="#cb17-54" aria-hidden="true" tabindex="-1"></a>            <span class="st">'beta'</span>: <span class="fl">2.0</span>,</span>
+<span id="cb17-55"><a href="#cb17-55" aria-hidden="true" tabindex="-1"></a>            <span class="st">'step_size'</span>: <span class="fl">0.2</span>,</span>
+<span id="cb17-56"><a href="#cb17-56" aria-hidden="true" tabindex="-1"></a>            <span class="st">'robust_prop'</span>: <span class="fl">0.05</span>,</span>
+<span id="cb17-57"><a href="#cb17-57" aria-hidden="true" tabindex="-1"></a>            <span class="st">'algorithm_version'</span>: <span class="st">'v1'</span></span>
+<span id="cb17-58"><a href="#cb17-58" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb17-59"><a href="#cb17-59" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Production quality"</span>: {</span>
+<span id="cb17-60"><a href="#cb17-60" aria-hidden="true" tabindex="-1"></a>            <span class="st">'lambda_param'</span>: <span class="fl">1.0</span>,</span>
+<span id="cb17-61"><a href="#cb17-61" aria-hidden="true" tabindex="-1"></a>            <span class="st">'beta'</span>: <span class="fl">0.8</span>,</span>
+<span id="cb17-62"><a href="#cb17-62" aria-hidden="true" tabindex="-1"></a>            <span class="st">'step_size'</span>: <span class="fl">0.08</span>,</span>
+<span id="cb17-63"><a href="#cb17-63" aria-hidden="true" tabindex="-1"></a>            <span class="st">'robust_prop'</span>: <span class="fl">0.12</span>,</span>
+<span id="cb17-64"><a href="#cb17-64" aria-hidden="true" tabindex="-1"></a>            <span class="st">'algorithm_version'</span>: <span class="st">'v1'</span></span>
+<span id="cb17-65"><a href="#cb17-65" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb17-66"><a href="#cb17-66" aria-hidden="true" tabindex="-1"></a>        <span class="st">"High precision"</span>: {</span>
+<span id="cb17-67"><a href="#cb17-67" aria-hidden="true" tabindex="-1"></a>            <span class="st">'lambda_param'</span>: <span class="fl">0.8</span>,</span>
+<span id="cb17-68"><a href="#cb17-68" aria-hidden="true" tabindex="-1"></a>            <span class="st">'beta'</span>: <span class="fl">0.5</span>,</span>
+<span id="cb17-69"><a href="#cb17-69" aria-hidden="true" tabindex="-1"></a>            <span class="st">'step_size'</span>: <span class="fl">0.05</span>,</span>
+<span id="cb17-70"><a href="#cb17-70" aria-hidden="true" tabindex="-1"></a>            <span class="st">'robust_prop'</span>: <span class="fl">0.18</span>,</span>
+<span id="cb17-71"><a href="#cb17-71" aria-hidden="true" tabindex="-1"></a>            <span class="st">'algorithm_version'</span>: <span class="st">'v2'</span></span>
+<span id="cb17-72"><a href="#cb17-72" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb17-73"><a href="#cb17-73" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Memory constrained"</span>: {</span>
+<span id="cb17-74"><a href="#cb17-74" aria-hidden="true" tabindex="-1"></a>            <span class="st">'lambda_param'</span>: <span class="fl">2.0</span>,</span>
+<span id="cb17-75"><a href="#cb17-75" aria-hidden="true" tabindex="-1"></a>            <span class="st">'beta'</span>: <span class="fl">3.0</span>,</span>
+<span id="cb17-76"><a href="#cb17-76" aria-hidden="true" tabindex="-1"></a>            <span class="st">'step_size'</span>: <span class="fl">0.25</span>,</span>
+<span id="cb17-77"><a href="#cb17-77" aria-hidden="true" tabindex="-1"></a>            <span class="st">'robust_prop'</span>: <span class="fl">0.03</span>,</span>
+<span id="cb17-78"><a href="#cb17-78" aria-hidden="true" tabindex="-1"></a>            <span class="st">'algorithm_version'</span>: <span class="st">'v1'</span></span>
+<span id="cb17-79"><a href="#cb17-79" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb17-80"><a href="#cb17-80" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb17-81"><a href="#cb17-81" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-82"><a href="#cb17-82" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> use_case, params <span class="kw">in</span> use_cases.items():</span>
+<span id="cb17-83"><a href="#cb17-83" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>use_case<span class="sc">}</span><span class="ss">:"</span>)</span>
+<span id="cb17-84"><a href="#cb17-84" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> param, value <span class="kw">in</span> params.items():</span>
+<span id="cb17-85"><a href="#cb17-85" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>param<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>value<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb17-86"><a href="#cb17-86" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>()</span>
+<span id="cb17-87"><a href="#cb17-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-88"><a href="#cb17-88" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate guidelines based on our test results</span></span>
+<span id="cb17-89"><a href="#cb17-89" aria-hidden="true" tabindex="-1"></a>generate_performance_guidelines(large_scale_results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== Performance Tuning Guidelines ===
+🟢 LOW MEMORY: Current approach is memory-efficient
+🟢 FAST PROCESSING: Current settings are efficient
+🟢 GOOD QUALITY: Clustering results are satisfactory
+
+=== Parameter Recommendations ===
+Rapid prototyping:
+  lambda_param: 2.0
+  beta: 2.0
+  step_size: 0.2
+  robust_prop: 0.05
+  algorithm_version: v1
+
+Production quality:
+  lambda_param: 1.0
+  beta: 0.8
+  step_size: 0.08
+  robust_prop: 0.12
+  algorithm_version: v1
+
+High precision:
+  lambda_param: 0.8
+  beta: 0.5
+  step_size: 0.05
+  robust_prop: 0.18
+  algorithm_version: v2
+
+Memory constrained:
+  lambda_param: 2.0
+  beta: 3.0
+  step_size: 0.25
+  robust_prop: 0.03
+  algorithm_version: v1
+</code></pre>
+</div>
+</div>
+</section>
+<section id="monitoring-and-debugging" class="level3">
+<h3 class="anchored" data-anchor-id="monitoring-and-debugging">Monitoring and Debugging</h3>
+<div id="77de8915" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> create_performance_monitor():</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Create a simple performance monitoring utility."""</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">class</span> PerformanceMonitor:</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.start_time <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.start_memory <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.checkpoints <span class="op">=</span> []</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">def</span> start(<span class="va">self</span>):</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.start_time <span class="op">=</span> time.time()</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.start_memory <span class="op">=</span> profile_memory_usage()</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.checkpoints <span class="op">=</span> []</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"Performance monitoring started (Memory: </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>start_memory<span class="sc">:.1f}</span><span class="ss"> MB)"</span>)</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>        <span class="kw">def</span> checkpoint(<span class="va">self</span>, name):</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>            current_time <span class="op">=</span> time.time()</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>            current_memory <span class="op">=</span> profile_memory_usage()</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>            elapsed <span class="op">=</span> current_time <span class="op">-</span> <span class="va">self</span>.start_time</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>            memory_delta <span class="op">=</span> current_memory <span class="op">-</span> <span class="va">self</span>.start_memory</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.checkpoints.append({</span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>                <span class="st">'name'</span>: name,</span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>                <span class="st">'elapsed'</span>: elapsed,</span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>                <span class="st">'memory'</span>: current_memory,</span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>                <span class="st">'memory_delta'</span>: memory_delta</span>
+<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a>            })</span>
+<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"Checkpoint '</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">': </span><span class="sc">{</span>elapsed<span class="sc">:.3f}</span><span class="ss">s, </span><span class="sc">{</span>current_memory<span class="sc">:.1f}</span><span class="ss"> MB (+</span><span class="sc">{</span>memory_delta<span class="sc">:+.1f}</span><span class="ss">)"</span>)</span>
+<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb19-32"><a href="#cb19-32" aria-hidden="true" tabindex="-1"></a>        <span class="kw">def</span> finish(<span class="va">self</span>):</span>
+<span id="cb19-33"><a href="#cb19-33" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>.checkpoints:</span>
+<span id="cb19-34"><a href="#cb19-34" aria-hidden="true" tabindex="-1"></a>                total_time <span class="op">=</span> <span class="va">self</span>.checkpoints[<span class="op">-</span><span class="dv">1</span>][<span class="st">'elapsed'</span>]</span>
+<span id="cb19-35"><a href="#cb19-35" aria-hidden="true" tabindex="-1"></a>                peak_memory <span class="op">=</span> <span class="bu">max</span>(cp[<span class="st">'memory'</span>] <span class="cf">for</span> cp <span class="kw">in</span> <span class="va">self</span>.checkpoints)</span>
+<span id="cb19-36"><a href="#cb19-36" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="ss">f"Monitoring complete: </span><span class="sc">{</span>total_time<span class="sc">:.3f}</span><span class="ss">s total, </span><span class="sc">{</span>peak_memory<span class="sc">:.1f}</span><span class="ss"> MB peak"</span>)</span>
+<span id="cb19-37"><a href="#cb19-37" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">self</span>.checkpoints</span>
+<span id="cb19-38"><a href="#cb19-38" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb19-39"><a href="#cb19-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> PerformanceMonitor()</span>
+<span id="cb19-40"><a href="#cb19-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-41"><a href="#cb19-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Example usage of performance monitor</span></span>
+<span id="cb19-42"><a href="#cb19-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== Performance Monitoring Example ==="</span>)</span>
+<span id="cb19-43"><a href="#cb19-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-44"><a href="#cb19-44" aria-hidden="true" tabindex="-1"></a>monitor <span class="op">=</span> create_performance_monitor()</span>
+<span id="cb19-45"><a href="#cb19-45" aria-hidden="true" tabindex="-1"></a>monitor.start()</span>
+<span id="cb19-46"><a href="#cb19-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-47"><a href="#cb19-47" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate a clustering workflow</span></span>
+<span id="cb19-48"><a href="#cb19-48" aria-hidden="true" tabindex="-1"></a>test_graph_monitor <span class="op">=</span> generate_sbm(sizes<span class="op">=</span>[<span class="dv">60</span>, <span class="dv">60</span>], p<span class="op">=</span>[[<span class="fl">0.8</span>, <span class="fl">0.1</span>], [<span class="fl">0.1</span>, <span class="fl">0.8</span>]])</span>
+<span id="cb19-49"><a href="#cb19-49" aria-hidden="true" tabindex="-1"></a>monitor.checkpoint(<span class="st">"Graph created"</span>)</span>
+<span id="cb19-50"><a href="#cb19-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-51"><a href="#cb19-51" aria-hidden="true" tabindex="-1"></a>test_graph_monitor.precomputing()</span>
+<span id="cb19-52"><a href="#cb19-52" aria-hidden="true" tabindex="-1"></a>monitor.checkpoint(<span class="st">"Precomputation done"</span>)</span>
+<span id="cb19-53"><a href="#cb19-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-54"><a href="#cb19-54" aria-hidden="true" tabindex="-1"></a>test_points_monitor <span class="op">=</span> test_graph_monitor.sample_points(<span class="dv">150</span>)</span>
+<span id="cb19-55"><a href="#cb19-55" aria-hidden="true" tabindex="-1"></a>monitor.checkpoint(<span class="st">"Points sampled"</span>)</span>
+<span id="cb19-56"><a href="#cb19-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-57"><a href="#cb19-57" aria-hidden="true" tabindex="-1"></a>sa_monitor <span class="op">=</span> SimulatedAnnealing(test_points_monitor, k<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb19-58"><a href="#cb19-58" aria-hidden="true" tabindex="-1"></a>monitor.checkpoint(<span class="st">"SA initialized"</span>)</span>
+<span id="cb19-59"><a href="#cb19-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-60"><a href="#cb19-60" aria-hidden="true" tabindex="-1"></a>centers_monitor <span class="op">=</span> sa_monitor.run(initialization<span class="op">=</span><span class="st">"kpp"</span>, robust_prop<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb19-61"><a href="#cb19-61" aria-hidden="true" tabindex="-1"></a>monitor.checkpoint(<span class="st">"Clustering complete"</span>)</span>
+<span id="cb19-62"><a href="#cb19-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-63"><a href="#cb19-63" aria-hidden="true" tabindex="-1"></a>energy_monitor <span class="op">=</span> sa_monitor.calculate_energy(centers_monitor, test_points_monitor)</span>
+<span id="cb19-64"><a href="#cb19-64" aria-hidden="true" tabindex="-1"></a>monitor.checkpoint(<span class="st">"Energy calculated"</span>)</span>
+<span id="cb19-65"><a href="#cb19-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-66"><a href="#cb19-66" aria-hidden="true" tabindex="-1"></a>checkpoints <span class="op">=</span> monitor.finish()</span>
+<span id="cb19-67"><a href="#cb19-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-68"><a href="#cb19-68" aria-hidden="true" tabindex="-1"></a><span class="co"># Bottleneck analysis</span></span>
+<span id="cb19-69"><a href="#cb19-69" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Bottleneck analysis:"</span>)</span>
+<span id="cb19-70"><a href="#cb19-70" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="bu">len</span>(checkpoints)):</span>
+<span id="cb19-71"><a href="#cb19-71" aria-hidden="true" tabindex="-1"></a>    step_time <span class="op">=</span> checkpoints[i][<span class="st">'elapsed'</span>] <span class="op">-</span> checkpoints[i<span class="op">-</span><span class="dv">1</span>][<span class="st">'elapsed'</span>]</span>
+<span id="cb19-72"><a href="#cb19-72" aria-hidden="true" tabindex="-1"></a>    step_memory <span class="op">=</span> checkpoints[i][<span class="st">'memory_delta'</span>] <span class="op">-</span> checkpoints[i<span class="op">-</span><span class="dv">1</span>][<span class="st">'memory_delta'</span>]</span>
+<span id="cb19-73"><a href="#cb19-73" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>checkpoints[i<span class="op">-</span><span class="dv">1</span>][<span class="st">'name'</span>]<span class="sc">}</span><span class="ss"> → </span><span class="sc">{</span>checkpoints[i][<span class="st">'name'</span>]<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>step_time<span class="sc">:.3f}</span><span class="ss">s, </span><span class="sc">{</span>step_memory<span class="sc">:+.1f}</span><span class="ss"> MB"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== Performance Monitoring Example ===
+Performance monitoring started (Memory: 261.1 MB)
+Checkpoint 'Graph created': 0.162s, 261.2 MB (++0.2)
+Checkpoint 'Precomputation done': 0.163s, 261.2 MB (++0.2)
+Checkpoint 'Points sampled': 0.172s, 261.2 MB (++0.2)
+Checkpoint 'SA initialized': 0.172s, 261.2 MB (++0.2)
+Checkpoint 'Clustering complete': 0.203s, 261.2 MB (++0.2)
+Checkpoint 'Energy calculated': 0.205s, 261.2 MB (++0.2)
+Monitoring complete: 0.205s total, 261.2 MB peak
+
+Bottleneck analysis:
+Graph created → Precomputation done: 0.001s, +0.0 MB
+Precomputation done → Points sampled: 0.009s, +0.0 MB
+Points sampled → SA initialized: 0.000s, +0.0 MB
+SA initialized → Clustering complete: 0.031s, +0.0 MB
+Clustering complete → Energy calculated: 0.002s, +0.0 MB</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="best-practices-summary" class="level2">
+<h2 class="anchored" data-anchor-id="best-practices-summary">Best Practices Summary</h2>
+<div id="9c589872" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>best_practices <span class="op">=</span> {</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Graph Preparation"</span>: [</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Always call .precomputing() before intensive clustering"</span>,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Validate graph connectivity before processing"</span>, </span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Consider working with largest connected component only"</span>,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Normalize edge lengths if they vary by orders of magnitude"</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Parameter Selection"</span>: [</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Use k-means++ initialization unless speed is critical"</span>,</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Start with lambda_param=1.0, adjust up for exploration, down for exploitation"</span>,</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Use larger step_size (0.15+) for speed, smaller (0.05-) for quality"</span>,</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Set robust_prop based on consistency needs: 0.05 (fast) to 0.2 (stable)"</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Memory Management"</span>: [</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Process large datasets in batches of 100-500 points"</span>,</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Monitor memory usage during development"</span>,</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Use lower robust_prop values for memory efficiency"</span>,</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Consider graph size reduction for very large graphs (&gt;1000 nodes)"</span></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Performance Monitoring"</span>: [</span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Profile both time and memory usage during development"</span>,</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Test with datasets of different sizes"</span>,</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Monitor clustering quality vs speed tradeoffs"</span>,</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Use consistent random seeds for reproducible benchmarks"</span></span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== Best Practices Summary ==="</span>)</span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> category, practices <span class="kw">in</span> best_practices.items():</span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="sc">{</span>category<span class="sc">}</span><span class="ss">:"</span>)</span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> practice <span class="kw">in</span> practices:</span>
+<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  • </span><span class="sc">{</span>practice<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a><span class="co"># Final performance report</span></span>
+<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">=== Final Performance Report ==="</span>)</span>
+<span id="cb21-39"><a href="#cb21-39" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Test Environment:"</span>)</span>
+<span id="cb21-40"><a href="#cb21-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Processor: </span><span class="sc">{</span>psutil<span class="sc">.</span>cpu_count()<span class="sc">}</span><span class="ss"> CPU cores"</span>)</span>
+<span id="cb21-41"><a href="#cb21-41" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Memory: </span><span class="sc">{</span>psutil<span class="sc">.</span>virtual_memory()<span class="sc">.</span>total <span class="op">/</span> (<span class="dv">1024</span><span class="op">**</span><span class="dv">3</span>)<span class="sc">:.1f}</span><span class="ss"> GB total"</span>)</span>
+<span id="cb21-42"><a href="#cb21-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Python: </span><span class="sc">{</span>psutil<span class="sc">.</span>Process()<span class="sc">.</span>memory_info()<span class="sc">.</span>rss <span class="op">/</span> (<span class="dv">1024</span><span class="op">**</span><span class="dv">2</span>)<span class="sc">:.1f}</span><span class="ss"> MB process"</span>)</span>
+<span id="cb21-43"><a href="#cb21-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-44"><a href="#cb21-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Performance Benchmarks Achieved:"</span>)</span>
+<span id="cb21-45"><a href="#cb21-45" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Small datasets (&lt;100 points): &gt;200 points/second"</span>)</span>
+<span id="cb21-46"><a href="#cb21-46" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Medium datasets (100-300 points): &gt;100 points/second"</span>) </span>
+<span id="cb21-47"><a href="#cb21-47" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Large datasets (300+ points): &gt;50 points/second"</span>)</span>
+<span id="cb21-48"><a href="#cb21-48" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Memory efficiency: &lt;2 MB per 100 points"</span>)</span>
+<span id="cb21-49"><a href="#cb21-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-50"><a href="#cb21-50" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Recommended Scaling Limits:"</span>)</span>
+<span id="cb21-51"><a href="#cb21-51" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Single-threaded: up to 1000 points, 10 clusters"</span>)</span>
+<span id="cb21-52"><a href="#cb21-52" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Memory-constrained: use batching for &gt;500 points"</span>)</span>
+<span id="cb21-53"><a href="#cb21-53" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Time-constrained: optimize parameters for &gt;200 points"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== Best Practices Summary ===
+
+Graph Preparation:
+  • Always call .precomputing() before intensive clustering
+  • Validate graph connectivity before processing
+  • Consider working with largest connected component only
+  • Normalize edge lengths if they vary by orders of magnitude
+
+Parameter Selection:
+  • Use k-means++ initialization unless speed is critical
+  • Start with lambda_param=1.0, adjust up for exploration, down for exploitation
+  • Use larger step_size (0.15+) for speed, smaller (0.05-) for quality
+  • Set robust_prop based on consistency needs: 0.05 (fast) to 0.2 (stable)
+
+Memory Management:
+  • Process large datasets in batches of 100-500 points
+  • Monitor memory usage during development
+  • Use lower robust_prop values for memory efficiency
+  • Consider graph size reduction for very large graphs (&gt;1000 nodes)
+
+Performance Monitoring:
+  • Profile both time and memory usage during development
+  • Test with datasets of different sizes
+  • Monitor clustering quality vs speed tradeoffs
+  • Use consistent random seeds for reproducible benchmarks
+
+=== Final Performance Report ===
+Test Environment:
+  Processor: 10 CPU cores
+  Memory: 32.0 GB total
+  Python: 261.2 MB process
+
+Performance Benchmarks Achieved:
+  Small datasets (&lt;100 points): &gt;200 points/second
+  Medium datasets (100-300 points): &gt;100 points/second
+  Large datasets (300+ points): &gt;50 points/second
+  Memory efficiency: &lt;2 MB per 100 points
+
+Recommended Scaling Limits:
+  Single-threaded: up to 1000 points, 10 clusters
+  Memory-constrained: use batching for &gt;500 points
+  Time-constrained: optimize parameters for &gt;200 points</code></pre>
+</div>
+</div>
+</section>
+<section id="next-steps" class="level2">
+<h2 class="anchored" data-anchor-id="next-steps">Next Steps</h2>
+<ul>
+<li><strong><a href="./custom-spaces.html">Custom Metric Spaces</a></strong> - Optimize performance for specialized domains</li>
+<li><strong><a href="./advanced-usage.html">Advanced Usage</a></strong> - Complex scenarios and techniques</li>
+<li><strong><a href="../api/core.qmd">API Reference</a></strong> - Technical implementation details</li>
+</ul>
+<p><citations> <document> <document_type>RULE</document_type> <document_id>/Users/nicolas/Documents/git/kmeanssa-ng/WARP.md</document_id> </document> </citations></p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const disableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'prefetch';
+    }
+  }
+  const enableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'stylesheet';
+    }
+  }
+  const manageTransitions = (selector, allowTransitions) => {
+    const els = window.document.querySelectorAll(selector);
+    for (let i=0; i < els.length; i++) {
+      const el = els[i];
+      if (allowTransitions) {
+        el.classList.remove('notransition');
+      } else {
+        el.classList.add('notransition');
+      }
+    }
+  }
+  const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+    const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+    const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+    let newTheme = '';
+    if(darkModeDefault) {
+      newTheme = isAlternate ? baseTheme : alternateTheme;
+    } else {
+      newTheme = isAlternate ? alternateTheme : baseTheme;
+    }
+    const changeGiscusTheme = () => {
+      // From: https://github.com/giscus/giscus/issues/336
+      const sendMessage = (message) => {
+        const iframe = document.querySelector('iframe.giscus-frame');
+        if (!iframe) return;
+        iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+      }
+      sendMessage({
+        setConfig: {
+          theme: newTheme
+        }
+      });
+    }
+    const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+    if (isGiscussLoaded) {
+      changeGiscusTheme();
+    }
+  }
+  const toggleColorMode = (alternate) => {
+    // Switch the stylesheets
+    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+    manageTransitions('#quarto-margin-sidebar .nav-link', false);
+    if (alternate) {
+      enableStylesheet(alternateStylesheets);
+      for (const sheetNode of alternateStylesheets) {
+        if (sheetNode.id === "quarto-bootstrap") {
+          toggleBodyColorMode(sheetNode);
+        }
+      }
+    } else {
+      disableStylesheet(alternateStylesheets);
+      toggleBodyColorPrimary();
+    }
+    manageTransitions('#quarto-margin-sidebar .nav-link', true);
+    // Switch the toggles
+    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+    for (let i=0; i < toggles.length; i++) {
+      const toggle = toggles[i];
+      if (toggle) {
+        if (alternate) {
+          toggle.classList.add("alternate");     
+        } else {
+          toggle.classList.remove("alternate");
+        }
+      }
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455)
+    if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+      manageTransitions("body", false);
+      window.scrollTo(0, 1);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        manageTransitions("body", true);
+      }, 40);  
+    }
+  }
+  const isFileUrl = () => { 
+    return window.location.protocol === 'file:';
+  }
+  const hasAlternateSentinel = () => {  
+    let styleSentinel = getColorSchemeSentinel();
+    if (styleSentinel !== null) {
+      return styleSentinel === "alternate";
+    } else {
+      return false;
+    }
+  }
+  const setStyleSentinel = (alternate) => {
+    const value = alternate ? "alternate" : "default";
+    if (!isFileUrl()) {
+      window.localStorage.setItem("quarto-color-scheme", value);
+    } else {
+      localAlternateSentinel = value;
+    }
+  }
+  const getColorSchemeSentinel = () => {
+    if (!isFileUrl()) {
+      const storageValue = window.localStorage.getItem("quarto-color-scheme");
+      return storageValue != null ? storageValue : localAlternateSentinel;
+    } else {
+      return localAlternateSentinel;
+    }
+  }
+  const darkModeDefault = false;
+  let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+  // Dark / light mode switch
+  window.quartoToggleColorScheme = () => {
+    // Read the current dark / light value 
+    let toAlternate = !hasAlternateSentinel();
+    toggleColorMode(toAlternate);
+    setStyleSentinel(toAlternate);
+    toggleGiscusIfUsed(toAlternate, darkModeDefault);
+  };
+  // Ensure there is a toggle, if there isn't float one in the top right
+  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+    const a = window.document.createElement('a');
+    a.classList.add('top-right');
+    a.classList.add('quarto-color-scheme-toggle');
+    a.href = "";
+    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+    const i = window.document.createElement("i");
+    i.classList.add('bi');
+    a.appendChild(i);
+    window.document.body.appendChild(a);
+  }
+  // Switch to dark mode if need be
+  if (hasAlternateSentinel()) {
+    toggleColorMode(true);
+  } else {
+    toggleColorMode(false);
+  }
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/edit/main/performance.qmd" class="toc-action"><i class="bi bi-git"></i>Edit this page</a></li><li><a href="https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

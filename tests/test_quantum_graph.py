@@ -48,6 +48,38 @@ class TestQuantumGraph:
         length = graph.get_edge_length(0, 1)
         assert length == 2.5
 
+    def test_calculate_energy_with_no_observations(self):
+        """Test energy calculation with how='obs' and no observations."""
+        # Create a minimal graph that has no 'nb_obs' attributes set
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.precomputing()
+
+        centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
+
+        # When how="obs" and no nodes have `nb_obs`, total_obs should be 0
+        energy = graph.calculate_energy_graph(centers, how="obs")
+        assert energy == 0.0
+
+    def test_batch_distances_special_cases(self):
+        """Test batch_distances for same-edge and reversed-edge cases."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 2, length=2.0)
+        graph.precomputing()
+
+        # Case 1: Center and target on the same edge
+        c1 = QGCenter(QGPoint(graph, (0, 1), 0.2))
+        p1 = QGPoint(graph, (0, 1), 0.8)
+        dist1 = graph.batch_distances_from_centers([c1], p1)
+        assert np.isclose(dist1[0], 0.6)
+
+        # Case 2: Center and target on reversed edge
+        c2 = QGCenter(QGPoint(graph, (0, 1), 0.2))
+        p2 = QGPoint(graph, (1, 0), 0.2) # Same as (0, 1) at 0.8
+        dist2 = graph.batch_distances_from_centers([c2], p2)
+        assert np.isclose(dist2[0], 0.6)
+
 
 class TestQGPoint:
     """Tests for QGPoint class."""

@@ -1,8 +1,6 @@
 stages:
   - lint
   - test
-  - render-docs
-  - deploy
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -12,13 +10,13 @@ cache:
     - .cache/pip
     - .venv/
 
-# Use Python 3.9+ image
-image: python:3.9
+# Use Python 3.11 image
+image: python:3.11
 
 before_script:
   - python -m pip install --upgrade pip
   - pip install pdm
-  - pdm install
+  - pdm install --no-lock
 
 # Code quality checks
 ruff-check:
@@ -46,46 +44,3 @@ test-coverage:
         path: coverage.xml
     expire_in: 1 week
   allow_failure: false
-
-# Quarto documentation rendering
-render-quarto:
-  stage: render-docs
-  image: ghcr.io/quarto-dev/quarto:latest
-  before_script:
-    - python -m pip install --upgrade pip
-    - pip install pdm
-    - pdm install
-  script:
-    - quarto render docs-src/ --to md --output-dir docs/
-  artifacts:
-    paths:
-      - docs/
-    expire_in: 1 hour
-  only:
-    - main
-
-# Documentation deployment
-pages:
-  stage: deploy
-  dependencies:
-    - render-quarto
-  script:
-    - pdm run mkdocs build --site-dir public
-  artifacts:
-    paths:
-      - public
-  only:
-    - main
-
-# Multi-version testing (optional - uncomment if needed)
-# test-python-3.10:
-#   extends: test-coverage
-#   image: python:3.10
-# 
-# test-python-3.11:
-#   extends: test-coverage
-#   image: python:3.11
-#
-# test-python-3.12:
-#   extends: test-coverage
-#   image: python:3.12
