@@ -173,6 +173,37 @@ class QGCenter(QGPoint, Center):
 
         self.position += remaining_dist
 
+    def clone(self) -> QGCenter:
+        """Create an independent copy of this center.
+
+        The cloned center shares the same quantum graph (space) but has
+        independent edge and position attributes. This is much faster than
+        deepcopy as it doesn't duplicate the entire graph structure.
+
+        Note: This creates a shallow copy of the center's state, bypassing
+        validation to handle intermediate states during brownian motion.
+
+        Returns:
+            A new QGCenter with the same location but independent state.
+
+        Example:
+            ```python
+            original = QGCenter(...)
+            copy = original.clone()
+            original.brownian_motion(0.1)  # Doesn't affect copy
+            ```
+        """
+        # Create new center without validation (like deepcopy does)
+        # This is needed because brownian_motion can leave centers in
+        # temporarily invalid states (e.g., negative positions before
+        # edge traversal is complete)
+        new_center = object.__new__(QGCenter)
+        new_center._quantum_graph = self._quantum_graph
+        new_center._edge = self._edge
+        new_center.position = self.position
+        new_center._rng = self._rng
+        return new_center
+
     def brownian_motion(self, time_to_travel: float) -> None:
         """Perform Brownian motion on the quantum graph.
 

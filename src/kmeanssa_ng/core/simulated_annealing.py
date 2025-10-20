@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import random as rd
-from copy import deepcopy
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -125,6 +124,26 @@ class SimulatedAnnealing:
         """Initialize centers using k-means++ procedure."""
         return self.space.sample_kpp_centers(self._k)
 
+    def _clone_centers(self, centers: list[Center]) -> list[Center]:
+        """Create independent copies of centers.
+
+        Uses the clone() method if available (much faster than deepcopy),
+        otherwise falls back to deepcopy for compatibility.
+
+        Args:
+            centers: List of centers to clone.
+
+        Returns:
+            List of cloned centers with independent state.
+        """
+        if hasattr(centers[0], "clone"):
+            return [center.clone() for center in centers]
+        else:
+            # Fallback for custom Center implementations without clone()
+            from copy import deepcopy
+
+            return deepcopy(centers)
+
     def _initialize_times(self, n: int) -> np.ndarray:
         """Generate inhomogeneous Poisson times.
 
@@ -196,7 +215,7 @@ class SimulatedAnnealing:
         else:
             self._centers = self._initialize_centers()
 
-        best_centers = deepcopy(self._centers)
+        best_centers = self._clone_centers(self._centers)
         best_energy = self.space.calculate_energy_graph(best_centers)
 
         times = self._initialize_times(self.n)
@@ -240,7 +259,7 @@ class SimulatedAnnealing:
             if i >= i0:
                 new_energy = self.space.calculate_energy_graph(self._centers)
                 if new_energy < best_energy:
-                    best_centers = deepcopy(self._centers)
+                    best_centers = self._clone_centers(self._centers)
                     best_energy = new_energy
 
         return best_centers
@@ -283,7 +302,7 @@ class SimulatedAnnealing:
             if i >= i0:
                 new_energy = self.space.calculate_energy_graph(self._centers)
                 if new_energy < best_energy:
-                    best_centers = deepcopy(self._centers)
+                    best_centers = self._clone_centers(self._centers)
                     best_energy = new_energy
 
         return best_centers
