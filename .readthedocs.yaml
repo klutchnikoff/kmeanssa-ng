@@ -11,8 +11,8 @@ build:
       - pdm install -G docs --no-default
       # Generate API documentation from docstrings
       - pdm run quartodoc build
-    # Main build command
-    build:
+    post_build:
+      # Main build command
       - pdm run quarto render docs-src/
 
 # Install project dependencies using PDM
