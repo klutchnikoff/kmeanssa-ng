@@ -6,9 +6,10 @@ build:
   tools:
     python: "3.11"
   jobs:
+    post_install:
+      - pip install pdm
+      - pdm install -G docs
     pre_build:
-      # Install all dev dependencies, including the 'docs' group
-      - pdm install -G docs --no-default
       # Generate API documentation from docstrings
       - pdm run quartodoc build
     post_build:
@@ -17,9 +18,3 @@ build:
       # Copy generated HTML to ReadTheDocs output directory
       - mkdir -p $READTHEDOCS_OUTPUT/html
       - cp -r docs-src/_site/* $READTHEDOCS_OUTPUT/html/
-
-# Install project dependencies using PDM
-python:
-  install:
-    - method: pdm
-      path: .
