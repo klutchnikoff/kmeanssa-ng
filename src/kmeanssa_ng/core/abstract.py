@@ -110,6 +110,21 @@ class Space(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def sample_kpp_centers(self, k: int) -> list[Center]:
+        """Sample centers using k-means++ initialization.
+        
+        The k-means++ algorithm chooses initial centers to be spread out,
+        improving convergence compared to random initialization.
+
+        Args:
+            k: Number of centers to sample.
+
+        Returns:
+            List of k centers sampled using k-means++ procedure.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def compute_clusters(self, centers: list[Center]) -> None:
         """Assign points to their nearest center.
 
