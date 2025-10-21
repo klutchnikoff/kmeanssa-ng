@@ -1,6 +1,6 @@
 [project]
 name = "kmeanssa-ng"
-version = "0.2.0"
+version = "0.1.0"
 description = "K-means clustering on quantum graphs and metric spaces using simulated annealing"
 authors = [
     {name = "Nicolas Klutchnikoff", email = "nicolas.klutchnikoff@univ-rennes2.fr"},
@@ -51,7 +51,4 @@ lint = [
 docs = [
     "quarto-cli>=1.4.550",
     "quartodoc>=0.4.2",
-]
-build = [
-    "twine>=6.2.0",
 ]
