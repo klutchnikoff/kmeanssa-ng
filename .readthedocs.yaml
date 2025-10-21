@@ -14,7 +14,10 @@ build:
       - /tmp/quarto-1.4.550/bin/quartodoc build --config docs-src/_quarto.yml
     post_build:
       # Render Quarto documentation
-      - /tmp/quarto-1.4.550/bin/quarto render docs-src/ --output-dir _site
+      - /tmp/quarto-1.4.550/bin/quarto render docs-src/
+      # Copy generated HTML to ReadTheDocs output directory
+      - mkdir -p $READTHEDOCS_OUTPUT/html
+      - cp -r docs-src/_site/* $READTHEDOCS_OUTPUT/html/
 
 # Install Python dependencies
 python:
