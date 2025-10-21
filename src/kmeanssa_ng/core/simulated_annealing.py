@@ -9,6 +9,7 @@ import numpy as np
 
 if TYPE_CHECKING:
     from .abstract import Center, Point, Space
+    from .strategies import MinimizeEnergyStrategy, RobustificationStrategy
 
 
 class SimulatedAnnealing:
@@ -31,9 +32,9 @@ class SimulatedAnnealing:
         space = QuantumGraph(...)
         points = space.sample_points(100)
 
-        # Run simulated annealing
+        # Run simulated annealing with the interleaved algorithm
         sa = SimulatedAnnealing(points, k=5)
-        centers = sa.run(robust_prop=0.1, initialization="kpp")
+        centers = sa.run_interleaved(robust_prop=0.1, initialization="kpp")
         ```
     """
 
@@ -178,64 +179,38 @@ class SimulatedAnnealing:
         )
         return energy / len(points)
 
-    def run(
+    def _prepare_run(
         self,
-        robust_prop: float = 0.0,
-        robust_points: list[Point] | None = None,
-        initialization: str = "kpp",
-        algorithm_version: str = "v1",
-    ) -> list[Center]:
-        """Run the simulated annealing algorithm.
-
-        Args:
-            robust_prop: Proportion of final iterations for robustification (0 to 1).
-                The best centers from this period are returned.
-            robust_points: Optional dataset for computing energy during robustification.
-                Defaults to the observations.
-            initialization: Initialization method ("kpp" for k-means++, "random" otherwise).
-            algorithm_version: Algorithm variant ("v1" or "v2"). v1 interleaves drift
-                and brownian motion, v2 performs all brownian motion first.
-
-        Returns:
-            List of k robust cluster centers.
-
-        Raises:
-            ValueError: If robust_prop not in [0, 1] or algorithm_version invalid.
-        """
+        robust_prop: float,
+        initialization: str,
+        strategy: RobustificationStrategy | None,
+    ) -> tuple[int, RobustificationStrategy]:
+        """Prepare the simulation by initializing centers and strategy."""
         if robust_prop < 0 or robust_prop > 1:
             raise ValueError("The proportion must be in [0,1]")
-        if algorithm_version not in ["v1", "v2"]:
-            raise ValueError("algorithm_version must be 'v1' or 'v2'")
 
-        if robust_points is None:
-            robust_points = self._observations
+        if strategy is None:
+            strategy = MinimizeEnergyStrategy()
 
         i0 = int(np.floor((self.n - 1) * (1 - robust_prop)))
 
-        # Initialize centers
         if initialization == "kpp":
             self._centers = self._initialize_kpp_centers()
         else:
             self._centers = self._initialize_centers()
 
-        best_centers = self._clone_centers(self._centers)
-        best_energy = self.space.calculate_energy_graph(best_centers)
+        strategy.initialize(self)
+        return i0, strategy
 
-        times = self._initialize_times(self.n)
-
-        if algorithm_version == "v1":
-            return self._run_v1(times, i0, best_centers, best_energy)
-        else:
-            return self._run_v2(times, i0, best_centers, best_energy)
-
-    def _run_v1(
+    def run_interleaved(
         self,
-        times: np.ndarray,
-        i0: int,
-        best_centers: list[Center],
-        best_energy: float,
-    ) -> list[Center]:
-        """Run algorithm version 1 (interleaved drift and brownian motion)."""
+        robust_prop: float = 0.0,
+        initialization: str = "kpp",
+        strategy: RobustificationStrategy | None = None,
+    ):
+        """Run SA with interleaved drift and brownian motion."""
+        i0, strategy = self._prepare_run(robust_prop, initialization, strategy)
+        times = self._initialize_times(self.n)
         time = 0.0
 
         for i, point in enumerate(self._observations):
@@ -245,51 +220,43 @@ class SimulatedAnnealing:
                 h = min(time + self._step_size, T) - time
                 prop = min(h * self._beta * np.log(1 + time), 1)
 
-                # Brownian motion for all centers
                 for center in self._centers:
                     center.brownian_motion(h)
 
-                # Vectorized distance computation
                 distances = self.space.batch_distances_from_centers(
                     self._centers, point
                 )
                 closest_idx = np.argmin(distances)
                 closest_center = self._centers[closest_idx]
 
-                # Drift toward observation
                 closest_center.drift(point, prop)
-
                 time += h
 
             if i >= i0:
-                new_energy = self.space.calculate_energy_graph(self._centers)
-                if new_energy < best_energy:
-                    best_centers = self._clone_centers(self._centers)
-                    best_energy = new_energy
+                strategy.collect(self)
 
-        return best_centers
+        return strategy.get_result()
 
-    def _run_v2(
+    def run_sequential(
         self,
-        times: np.ndarray,
-        i0: int,
-        best_centers: list[Center],
-        best_energy: float,
-    ) -> list[Center]:
-        """Run algorithm version 2 (brownian motion then drift)."""
+        robust_prop: float = 0.0,
+        initialization: str = "kpp",
+        strategy: RobustificationStrategy | None = None,
+    ):
+        """Run SA with sequential brownian motion then drift."""
+        i0, strategy = self._prepare_run(robust_prop, initialization, strategy)
+        times = self._initialize_times(self.n)
         time = 0.0
 
         for i, point in enumerate(self._observations, start=1):
             T = times[i]
 
-            # Brownian motion phase
             while time <= T - self._step_size:
                 h = min(time + self._step_size, T) - time
                 for center in self._centers:
                     center.brownian_motion(h)
                 time += h
 
-            # Drift phase - vectorized distance computation
             distances = self.space.batch_distances_from_centers(self._centers, point)
             closest_idx = np.argmin(distances)
             closest_center = self._centers[closest_idx]
@@ -300,9 +267,6 @@ class SimulatedAnnealing:
             time = T
 
             if i >= i0:
-                new_energy = self.space.calculate_energy_graph(self._centers)
-                if new_energy < best_energy:
-                    best_centers = self._clone_centers(self._centers)
-                    best_energy = new_energy
+                strategy.collect(self)
 
-        return best_centers
+        return strategy.get_result()
