@@ -6,18 +6,18 @@ build:
   tools:
     python: "3.11"
   jobs:
+    pre_install:
+      # Install Quarto
+      - wget -qO- https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.550/quarto-1.4.550-linux-amd64.tar.gz | tar -xz -C /tmp
     pre_build:
-      # Install all dev dependencies, including the 'docs' group
-      - pdm install -G docs --no-default
       # Generate API documentation from docstrings
-      - pdm run quartodoc build
+      - /tmp/quarto-1.4.550/bin/quartodoc build --config docs-src/_quarto.yml
     post_build:
-      # Main build command
-      - pdm run quarto render docs-src/
+      # Render Quarto documentation
+      - /tmp/quarto-1.4.550/bin/quarto render docs-src/ --output-dir _site
 
-# Install project dependencies using PDM
+# Install Python dependencies
 python:
   install:
-    - method: pdm
-      path: .
+    - requirements: docs/requirements.txt
 
