@@ -89,6 +89,39 @@ class TestQuantumGraph:
         dist2 = graph.batch_distances_from_centers([c2], p2)
         assert np.isclose(dist2[0], 0.6)
 
+    def test_batch_distances_from_centers(self):
+        """Test batch_distances_from_centers method."""
+        graph = generate_simple_graph(n_a=3)
+        graph.precomputing()
+        centers = graph.sample_centers(k=3)
+        target = graph.sample_points(n=1)[0]
+
+        distances = graph.batch_distances_from_centers(centers, target)
+
+        assert isinstance(distances, np.ndarray)
+        assert distances.shape == (3,)
+        assert np.all(distances >= 0)
+
+        # Manual check for one distance
+        manual_dist = graph.distance(centers[0], target)
+        assert np.isclose(distances[0], manual_dist)
+
+    def test_private_sample_point_node_without_weights_raises(self):
+        """Test that sampling from nodes without weights raises NotImplementedError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        with pytest.raises(NotImplementedError, match="requires 'weight' attribute"):
+            graph._sample_point(where="Node")
+
+    def test_sample_point_node_with_weights(self):
+        """Test that sampling from nodes with weights works."""
+        graph = QuantumGraph()
+        graph.add_node(0, weight=1.0)
+        graph.add_node(1, weight=0.0)  # this should not be chosen
+        graph.add_edge(0, 1, length=1.0)
+        point = graph._sample_point(where="Node")
+        assert point.edge[0] == 0
+
 
 class TestQGPoint:
     """Tests for QGPoint class."""

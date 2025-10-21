@@ -284,6 +284,27 @@ class TestSimulatedAnnealing:
         # Node IDs can be strings or integers depending on graph
         assert all(node_id in graph.nodes for node_id in node_ids)
 
+    def test_most_frequent_node_strategy_empty_collection(self):
+        """Test MostFrequentNodeStrategy with an empty collection."""
+        from kmeanssa_ng.quantum_graph.strategies import MostFrequentNodeStrategy
+
+        # Mock SimulatedAnnealing instance
+        class MockSA:
+            def __init__(self, k):
+                self._k = k
+
+        strategy = MostFrequentNodeStrategy()
+
+        # Test for k > 1
+        sa_k2 = MockSA(k=2)
+        strategy.initialize(sa_k2)
+        assert strategy.get_result() == []
+
+        # Test for k = 1
+        sa_k1 = MockSA(k=1)
+        strategy.initialize(sa_k1)
+        assert strategy.get_result() is None
+
 
 class TestIntegration:
     """Integration tests combining multiple components."""
@@ -333,3 +354,32 @@ class TestIntegration:
 
 # Import numpy for type checking in tests
 import numpy as np
+
+
+from kmeanssa_ng.core.strategies import RobustificationStrategy
+
+
+class TestRobustificationStrategy:
+    """Tests for RobustificationStrategy abstract base class."""
+
+    class DummyStrategy(RobustificationStrategy):
+        """Dummy strategy that calls the abstract methods directly."""
+
+        def initialize(self, sa):
+            RobustificationStrategy.initialize(self, sa)
+
+        def collect(self, sa):
+            RobustificationStrategy.collect(self, sa)
+
+        def get_result(self):
+            return RobustificationStrategy.get_result(self)
+
+    def test_abstract_methods_raise_not_implemented(self):
+        """Test that abstract methods raise NotImplementedError."""
+        strategy = self.DummyStrategy()
+        with pytest.raises(NotImplementedError):
+            strategy.initialize(None)
+        with pytest.raises(NotImplementedError):
+            strategy.collect(None)
+        with pytest.raises(NotImplementedError):
+            strategy.get_result()

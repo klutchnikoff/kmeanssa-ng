@@ -34,6 +34,8 @@ ruff-format:
 # Test and coverage
 test-coverage:
   stage: test
+  variables:
+    NUMBA_DISABLE_JIT: "1"
   script:
     - pdm run pytest --cov=kmeanssa_ng --cov-report=term --cov-report=xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
