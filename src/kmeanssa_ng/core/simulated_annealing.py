@@ -7,6 +7,10 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from .initialization import (
+    InitializationStrategy,
+    KMeansPlusPlusInitializationStrategy,
+)
 from .strategies import MinimizeEnergyStrategy
 
 if TYPE_CHECKING:
@@ -36,7 +40,7 @@ class SimulatedAnnealing:
 
         # Run simulated annealing with the interleaved algorithm
         sa = SimulatedAnnealing(points, k=5)
-        centers = sa.run_interleaved(robust_prop=0.1, initialization="kpp")
+        centers = sa.run_interleaved(robust_prop=0.1)
         ```
     """
 
@@ -121,13 +125,10 @@ class SimulatedAnnealing:
         """Metric space containing the observations."""
         return self._space
 
-    def _initialize_centers(self) -> list[Center]:
-        """Initialize centers randomly in the metric space."""
-        return self.space.sample_centers(self._k)
-
-    def _initialize_kpp_centers(self) -> list[Center]:
-        """Initialize centers using k-means++ procedure."""
-        return self.space.sample_kpp_centers(self._k)
+    @property
+    def k(self) -> int:
+        """Number of clusters."""
+        return self._k
 
     def _clone_centers(self, centers: list[Center]) -> list[Center]:
         """Create independent copies of centers.
@@ -184,7 +185,7 @@ class SimulatedAnnealing:
     def _prepare_run(
         self,
         robust_prop: float,
-        initialization: str,
+        initialization: InitializationStrategy | None,
         strategy: RobustificationStrategy | None,
     ) -> tuple[int, RobustificationStrategy]:
         """Prepare the simulation by initializing centers and strategy."""
@@ -194,12 +195,12 @@ class SimulatedAnnealing:
         if strategy is None:
             strategy = MinimizeEnergyStrategy()
 
+        if initialization is None:
+            initialization = KMeansPlusPlusInitializationStrategy()
+
         i0 = int(np.floor((self.n - 1) * (1 - robust_prop)))
 
-        if initialization == "kpp":
-            self._centers = self._initialize_kpp_centers()
-        else:
-            self._centers = self._initialize_centers()
+        self._centers = initialization.initialize_centers(self)
 
         strategy.initialize(self)
         return i0, strategy
@@ -207,7 +208,7 @@ class SimulatedAnnealing:
     def run_interleaved(
         self,
         robust_prop: float = 0.0,
-        initialization: str = "kpp",
+        initialization: InitializationStrategy | None = None,
         strategy: RobustificationStrategy | None = None,
     ):
         """Run SA with interleaved drift and brownian motion."""
@@ -242,7 +243,7 @@ class SimulatedAnnealing:
     def run_sequential(
         self,
         robust_prop: float = 0.0,
-        initialization: str = "kpp",
+        initialization: InitializationStrategy | None = None,
         strategy: RobustificationStrategy | None = None,
     ):
         """Run SA with sequential brownian motion then drift."""

@@ -8,6 +8,10 @@ from kmeanssa_ng import (
     generate_sbm,
     generate_simple_graph,
 )
+from kmeanssa_ng.core.initialization import (
+    KMeansPlusPlusInitializationStrategy,
+    RandomInitializationStrategy,
+)
 
 
 class TestSimulatedAnnealing:
@@ -126,7 +130,7 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2, lambda_param=1, beta=1.0, step_size=0.1)
 
-        centers = sa.run_interleaved(robust_prop=0.0, initialization="random")
+        centers = sa.run_interleaved(robust_prop=0.0, initialization=RandomInitializationStrategy())
 
         assert len(centers) == 2
         # Check that centers are from the same graph (not exact object equality after deepcopy)
@@ -139,7 +143,7 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_interleaved(initialization="kpp")
+        centers = sa.run_interleaved(initialization=KMeansPlusPlusInitializationStrategy())
 
         assert len(centers) == 2
 
@@ -150,7 +154,7 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_interleaved(robust_prop=0.1, initialization="kpp")
+        centers = sa.run_interleaved(robust_prop=0.1, initialization=KMeansPlusPlusInitializationStrategy())
 
         assert len(centers) == 2
 
@@ -172,7 +176,7 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(20)
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_sequential(initialization="kpp")
+        centers = sa.run_sequential(initialization=KMeansPlusPlusInitializationStrategy())
         assert len(centers) == 2
 
 
@@ -199,7 +203,7 @@ class TestSimulatedAnnealing:
         assert sa.centers == []
 
         # After running, should have centers
-        centers = sa.run_interleaved(initialization="kpp")
+        centers = sa.run_interleaved(initialization=KMeansPlusPlusInitializationStrategy())
         # Note: centers property returns the private _centers, which is set during run
         assert len(sa.centers) == 2
 
@@ -319,7 +323,7 @@ class TestIntegration:
 
         # Run simulated annealing
         sa = SimulatedAnnealing(points, k=2, lambda_param=1, beta=2.0)
-        centers = sa.run_interleaved(robust_prop=0.1, initialization="kpp")
+        centers = sa.run_interleaved(robust_prop=0.1, initialization=KMeansPlusPlusInitializationStrategy())
 
         # Compute clusters
         graph.compute_clusters(centers)
