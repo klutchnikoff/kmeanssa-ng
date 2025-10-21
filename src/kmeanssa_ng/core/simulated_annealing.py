@@ -7,9 +7,11 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from .strategies import MinimizeEnergyStrategy
+
 if TYPE_CHECKING:
     from .abstract import Center, Point, Space
-    from .strategies import MinimizeEnergyStrategy, RobustificationStrategy
+    from .strategies import RobustificationStrategy
 
 
 class SimulatedAnnealing:

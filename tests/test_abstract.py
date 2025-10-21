@@ -17,6 +17,9 @@ class DummySpace(Space):
     def sample_centers(self, k: int) -> list[Center]:
         return super().sample_centers(k)
 
+    def sample_kpp_centers(self, k: int) -> list[Center]:
+        return super().sample_kpp_centers(k)
+
     def compute_clusters(self, centers: list[Center]) -> None:
         return super().compute_clusters(centers)
 

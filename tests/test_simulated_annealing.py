@@ -126,7 +126,7 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2, lambda_param=1, beta=1.0, step_size=0.1)
 
-        centers = sa.run(robust_prop=0.0, initialization="random")
+        centers = sa.run_interleaved(robust_prop=0.0, initialization="random")
 
         assert len(centers) == 2
         # Check that centers are from the same graph (not exact object equality after deepcopy)
@@ -139,7 +139,7 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run(initialization="kpp")
+        centers = sa.run_interleaved(initialization="kpp")
 
         assert len(centers) == 2
 
@@ -150,7 +150,7 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run(robust_prop=0.1, initialization="kpp")
+        centers = sa.run_interleaved(robust_prop=0.1, initialization="kpp")
 
         assert len(centers) == 2
 
@@ -161,30 +161,20 @@ class TestSimulatedAnnealing:
         sa = SimulatedAnnealing(points, k=2)
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run(robust_prop=1.5)
+            sa.run_interleaved(robust_prop=1.5)
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run(robust_prop=-0.1)
+            sa.run_interleaved(robust_prop=-0.1)
 
-    def test_invalid_algorithm_version_raises(self):
-        """Test that invalid algorithm_version raises ValueError."""
+    def test_sequential_algorithm(self):
+        """Test running the sequential algorithm."""
         graph = generate_simple_graph()
         points = graph.sample_points(20)
         sa = SimulatedAnnealing(points, k=2)
 
-        with pytest.raises(ValueError, match="algorithm_version"):
-            sa.run(algorithm_version="v3")
-
-    def test_run_v2(self):
-        """Test running algorithm version 2."""
-        graph = generate_simple_graph(n_a=3)
-        points = graph.sample_points(20)
-
-        sa = SimulatedAnnealing(points, k=2)
-
-        centers = sa.run(algorithm_version="v2")
-
+        centers = sa.run_sequential(initialization="kpp")
         assert len(centers) == 2
+
 
     def test_calculate_energy(self):
         """Test energy calculation."""
@@ -209,63 +199,86 @@ class TestSimulatedAnnealing:
         assert sa.centers == []
 
         # After running, should have centers
-        centers = sa.run(initialization="kpp")
+        centers = sa.run_interleaved(initialization="kpp")
         # Note: centers property returns the private _centers, which is set during run
         assert len(sa.centers) == 2
 
     def test_run_for_mean(self):
         """Test run_for_mean method (k=1 special case)."""
+        from kmeanssa_ng.quantum_graph.strategies import MostFrequentNodeStrategy
+
         graph = generate_simple_graph(n_a=3)
         points = graph.sample_points(20)
 
         sa = QGSimulatedAnnealing(points, k=1)
 
-        node_idx = sa.run_for_mean(robust_prop=0.1)
+        node_idx = sa.run_interleaved(
+            robust_prop=0.1, strategy=MostFrequentNodeStrategy()
+        )
 
         # Node IDs can be strings (e.g., "A0") or integers
         assert node_idx in graph.nodes
 
-    def test_run_for_mean_with_wrong_k_raises(self):
-        """Test that run_for_mean with k != 1 raises ValueError."""
+    def test_run_for_mean_with_multiple_k(self):
+        """Test that run with k != 1 returns a list of nodes."""
+        from kmeanssa_ng.quantum_graph.strategies import MostFrequentNodeStrategy
+
         graph = generate_simple_graph()
         points = graph.sample_points(20)
         sa = QGSimulatedAnnealing(points, k=2)
 
-        with pytest.raises(ValueError, match="k=1"):
-            sa.run_for_mean()
+        node_ids = sa.run_interleaved(strategy=MostFrequentNodeStrategy())
+        assert isinstance(node_ids, list)
+        assert len(node_ids) == 2
 
     def test_run_for_mean_invalid_robust_prop_raises(self):
-        """Test that run_for_mean with invalid robust_prop raises ValueError (covers line 51)."""
+        """Test that run_interleaved with invalid robust_prop raises ValueError (covers line 51)."""
+        from kmeanssa_ng.quantum_graph.strategies import MostFrequentNodeStrategy
+
         graph = generate_simple_graph()
         points = graph.sample_points(20)
         sa = QGSimulatedAnnealing(points, k=1)
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run_for_mean(robust_prop=1.5)
+            sa.run_interleaved(
+                robust_prop=1.5, strategy=MostFrequentNodeStrategy()
+            )
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run_for_mean(robust_prop=-0.1)
+            sa.run_interleaved(
+                robust_prop=-0.1, strategy=MostFrequentNodeStrategy()
+            )
 
     def test_run_for_kmeans_invalid_robust_prop_raises(self):
-        """Test that run_for_kmeans with invalid robust_prop raises ValueError (covers line 105)."""
+        """Test that run_interleaved with invalid robust_prop raises ValueError (covers line 105)."""
+        from kmeanssa_ng.quantum_graph.strategies import MostFrequentNodeStrategy
+
         graph = generate_simple_graph()
         points = graph.sample_points(20)
         sa = QGSimulatedAnnealing(points, k=2)
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run_for_kmeans(robust_prop=1.5)
+            sa.run_interleaved(
+                robust_prop=1.5, strategy=MostFrequentNodeStrategy()
+            )
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run_for_kmeans(robust_prop=-0.1)
+            sa.run_interleaved(
+                robust_prop=-0.1, strategy=MostFrequentNodeStrategy()
+            )
 
     def test_run_for_kmeans(self):
         """Test run_for_kmeans method."""
+        from kmeanssa_ng.quantum_graph.strategies import MostFrequentNodeStrategy
+
         graph = generate_simple_graph(n_a=3)
         points = graph.sample_points(20)
 
         sa = QGSimulatedAnnealing(points, k=2)
 
-        node_ids = sa.run_for_kmeans(robust_prop=0.1)
+        node_ids = sa.run_interleaved(
+            robust_prop=0.1, strategy=MostFrequentNodeStrategy()
+        )
 
         assert len(node_ids) == 2
         # Node IDs can be strings or integers depending on graph
@@ -285,7 +298,7 @@ class TestIntegration:
 
         # Run simulated annealing
         sa = SimulatedAnnealing(points, k=2, lambda_param=1, beta=2.0)
-        centers = sa.run(robust_prop=0.1, initialization="kpp")
+        centers = sa.run_interleaved(robust_prop=0.1, initialization="kpp")
 
         # Compute clusters
         graph.compute_clusters(centers)
