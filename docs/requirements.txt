@@ -1,6 +1,12 @@
 # Documentation dependencies for ReadTheDocs
+# Build backend needed to install the package
+pdm-backend
+
+# Package dependencies (will also be installed via package install)
 numpy>=1.24.0
 networkx>=3.0
 pandas>=2.0.0
 numba>=0.60.0
+
+# Documentation tools
 quartodoc>=0.4.2
