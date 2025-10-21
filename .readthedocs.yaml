@@ -5,15 +5,6 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
-
-# Install project dependencies using PDM
-python:
-  install:
-    - method: pdm
-      path: .
-
-# Build commands
-build:
   jobs:
     pre_build:
       # Install all dev dependencies, including the 'docs' group
@@ -23,4 +14,10 @@ build:
     # Main build command
     build:
       - pdm run quarto render docs-src/
+
+# Install project dependencies using PDM
+python:
+  install:
+    - method: pdm
+      path: .
 
