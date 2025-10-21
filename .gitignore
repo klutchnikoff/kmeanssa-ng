@@ -23,6 +23,7 @@ htmlcov/
 
 # Documentation
 site/
+docs/
 docs-src/_site/
 docs-src/_freeze/
 
