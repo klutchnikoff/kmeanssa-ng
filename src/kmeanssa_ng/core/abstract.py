@@ -112,7 +112,7 @@ class Space(ABC):
     @abstractmethod
     def sample_kpp_centers(self, k: int) -> list[Center]:
         """Sample centers using k-means++ initialization.
-        
+
         The k-means++ algorithm chooses initial centers to be spread out,
         improving convergence compared to random initialization.
 
