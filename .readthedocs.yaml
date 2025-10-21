@@ -1,8 +1,8 @@
 # .readthedocs.yaml
 version: 2
 
-sphinx:
-  configuration: docs/conf.py
+mkdocs:
+  configuration: mkdocs.yml
 
 build:
   os: ubuntu-22.04
@@ -13,11 +13,5 @@ build:
       - pip install pdm
       - pdm install -G docs
     pre_build:
-      # Generate API documentation from docstrings
-      - pdm run quartodoc build
-    post_build:
-      # Main build command
-      - pdm run quarto render docs-src/
-      # Copy generated HTML to ReadTheDocs output directory
-      - mkdir -p $READTHEDOCS_OUTPUT/html
-      - cp -r docs-src/_site/* $READTHEDOCS_OUTPUT/html/
+      # Render Quarto files to Markdown for MkDocs
+      - pdm run quarto render docs-src --to gfm --output-dir docs

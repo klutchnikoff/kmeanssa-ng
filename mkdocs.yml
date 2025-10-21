@@ -1,0 +1,47 @@
+site_name: kmeanssa-ng
+site_description: K-means clustering on quantum graphs and metric spaces using simulated annealing
+repo_url: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng
+edit_uri: ""
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - content.code.copy
+
+av:
+  - Home: index.md
+  - "Getting Started":
+    - "Quickstart": quickstart.md
+    - "Concepts": concepts.md
+  - "User Guide":
+    - "Quantum Graphs": quantum-graphs.md
+    - "Simulated Annealing": simulated-annealing.md
+    - "Generators": generators.md
+    - "Custom Spaces": custom-spaces.md
+  - "Examples":
+    - "Basic Clustering": basic-clustering.md
+    - "Advanced Usage": advanced-usage.md
+    - "Performance": performance.md
+  - "API":
+    - "Overview": api/index.md
+    - "Core": api/core.md
+    - "Quantum Graph": api/quantum_graph.md
+    - "Generators": api/generators.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_root_heading: true
+            show_source: true

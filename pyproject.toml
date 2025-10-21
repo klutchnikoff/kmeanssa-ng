@@ -11,7 +11,7 @@ dependencies = [
     "pandas>=2.0.0",
     "numba>=0.60.0",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.md"
 license = {text = "MIT"}
 keywords = ["k-means", "clustering", "quantum-graphs", "simulated-annealing", "metric-spaces"]
@@ -20,7 +20,7 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
+
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -50,5 +50,7 @@ lint = [
 ]
 docs = [
     "quarto-cli>=1.4.550",
-    "quartodoc>=0.4.2",
+    "mkdocs>=1.5.3",
+    "mkdocs-material>=9.1.21",
+    "mkdocstrings[python]>=0.22.0",
 ]
