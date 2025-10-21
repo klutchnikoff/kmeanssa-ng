@@ -1,6 +1,6 @@
 [project]
 name = "kmeanssa-ng"
-version = "0.2.1"
+version = "0.2.2"
 description = "K-means clustering on quantum graphs and metric spaces using simulated annealing"
 authors = [
     {name = "Nicolas Klutchnikoff", email = "nicolas.klutchnikoff@univ-rennes2.fr"},
