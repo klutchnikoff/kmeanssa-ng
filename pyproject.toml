@@ -43,7 +43,7 @@ distribution = true
 [tool.pdm.scripts]
 format = "ruff format"
 check = "ruff check"
-rendermkdocs = "quarto render docs-src --output docs"
+rendermkdocs = "quarto render docs-src --to gfm"
 servemkdocs = "mkdocs serve"
 
 [tool.pdm.dev-dependencies]
