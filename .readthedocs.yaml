@@ -12,5 +12,3 @@ build:
     post_install:
       - pip install pdm
       - pdm install -G docs
-    pre_build:
-      - pdm run rendermkdocs
