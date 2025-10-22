@@ -14,4 +14,6 @@ build:
       - pdm install -G docs
     pre_build:
       # Render Quarto files to Markdown for MkDocs
-      - pdm run quarto render docs-src --to gfm --output-dir docs
+      - pdm run quarto render docs-src --to gfm --output-dir ../docs
+      # Rename -gfm.md files to .md
+      - find docs -name "*-gfm.md" -exec sh -c 'mv "$0" "$(echo "$0" | sed "s/-gfm//")"' {} \;
