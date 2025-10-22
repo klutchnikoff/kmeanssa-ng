@@ -29,6 +29,7 @@ docs-src/_freeze/
 
 # Dependency Management
 .pdm-build/
+.pdm-python
 pdm.lock
 __pypackages__/
 
