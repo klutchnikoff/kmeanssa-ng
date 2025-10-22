@@ -49,7 +49,7 @@ sa = SimulatedAnnealing(
 # Get cluster centers as node IDs (more interpretable)
 node_centers = sa.run_interleaved(
     robust_prop=0.1,                                  # 10% robustness  
-    initialization=KMeansPlusPlusInitialization(),    # K-means++ initialization
+    initialization_strategy=KMeansPlusPlus(),    # K-means++ initialization
     robustification_strategy=MostFrequentNode()       # Choose centers as most frequent nodes in clusters
 )
 print(f"Cluster centers near nodes: {node_centers}")
