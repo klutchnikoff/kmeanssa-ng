@@ -2,15 +2,15 @@
 
 from .initialization import (
     InitializationStrategy,
-    KMeansPlusPlusInitialization,
-    RandomInitialization,
+    KMeansPlusPlus,
+    RandomInit,
 )
 from .robustification import MinimizeEnergy, RobustificationStrategy
 
 __all__ = [
     "InitializationStrategy",
-    "KMeansPlusPlusInitialization",
-    "RandomInitialization",
+    "KMeansPlusPlus",
+    "RandomInit",
     "RobustificationStrategy",
     "MinimizeEnergy",
 ]

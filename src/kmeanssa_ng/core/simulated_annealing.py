@@ -9,7 +9,7 @@ import numpy as np
 
 from .strategies.initialization import (
     InitializationStrategy,
-    KMeansPlusPlusInitialization,
+    KMeansPlusPlus,
 )
 from .strategies.robustification import MinimizeEnergy
 
@@ -196,7 +196,7 @@ class SimulatedAnnealing:
             robustification_strategy = MinimizeEnergy()
 
         if initialization_strategy is None:
-            initialization_strategy = KMeansPlusPlusInitialization()
+            initialization_strategy = KMeansPlusPlus()
 
         i0 = int(np.floor((self.n - 1) * (1 - robust_prop)))
 

@@ -31,9 +31,9 @@ __version__ = metadata.version("kmeanssa-ng")
 from .core import Center, Point, SimulatedAnnealing, Space
 from .core.strategies import (
     InitializationStrategy,
-    KMeansPlusPlusInitialization,
+    KMeansPlusPlus,
     MinimizeEnergy,
-    RandomInitialization,
+    RandomInit,
     RobustificationStrategy,
 )
 from .quantum_graph import (
@@ -57,8 +57,8 @@ __all__ = [
     "SimulatedAnnealing",
     # Strategies
     "InitializationStrategy",
-    "KMeansPlusPlusInitialization",
-    "RandomInitialization",
+    "KMeansPlusPlus",
+    "RandomInit",
     "RobustificationStrategy",
     "MinimizeEnergy",
     "MostFrequentNode",
