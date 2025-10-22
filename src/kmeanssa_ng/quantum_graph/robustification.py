@@ -5,13 +5,13 @@ from __future__ import annotations
 from collections import Counter
 from typing import TYPE_CHECKING, Any
 
-from ..core.strategies import RobustificationStrategy
+from ..core.strategies.robustification import RobustificationStrategy
 
 if TYPE_CHECKING:
     from ..core.simulated_annealing import SimulatedAnnealing
 
 
-class MostFrequentNodeStrategy(RobustificationStrategy[list[Any]]):
+class MostFrequentNode(RobustificationStrategy[list[Any]]):
     """Strategy to find the most frequent node for each center."""
 
     def initialize(self, sa: "SimulatedAnnealing") -> None:

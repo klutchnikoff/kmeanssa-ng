@@ -8,9 +8,9 @@ from kmeanssa_ng import (
     generate_sbm,
     generate_simple_graph,
 )
-from kmeanssa_ng.core.initialization import (
-    KMeansPlusPlusInitializationStrategy,
-    RandomInitializationStrategy,
+from kmeanssa_ng.core.strategies.initialization import (
+    KMeansPlusPlusInitialization,
+    RandomInitialization,
 )
 
 
@@ -130,7 +130,7 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2, lambda_param=1, beta=1.0, step_size=0.1)
 
-        centers = sa.run_interleaved(robust_prop=0.0, initialization=RandomInitializationStrategy())
+        centers = sa.run_interleaved(robust_prop=0.0, initialization=RandomInitialization())
 
         assert len(centers) == 2
         # Check that centers are from the same graph (not exact object equality after deepcopy)
@@ -143,7 +143,7 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_interleaved(initialization=KMeansPlusPlusInitializationStrategy())
+        centers = sa.run_interleaved(initialization=KMeansPlusPlusInitialization())
 
         assert len(centers) == 2
 
@@ -151,10 +151,9 @@ class TestSimulatedAnnealing:
         """Test running with robustification."""
         graph = generate_simple_graph(n_a=3)
         points = graph.sample_points(20)
-
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_interleaved(robust_prop=0.1, initialization=KMeansPlusPlusInitializationStrategy())
+        centers = sa.run_interleaved(robust_prop=0.1, initialization=KMeansPlusPlusInitialization())
 
         assert len(centers) == 2
 
@@ -176,7 +175,7 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(20)
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_sequential(initialization=KMeansPlusPlusInitializationStrategy())
+        centers = sa.run_sequential(initialization=KMeansPlusPlusInitialization())
         assert len(centers) == 2
 
 
@@ -203,13 +202,12 @@ class TestSimulatedAnnealing:
         assert sa.centers == []
 
         # After running, should have centers
-        centers = sa.run_interleaved(initialization=KMeansPlusPlusInitializationStrategy())
+        centers = sa.run_interleaved(initialization=KMeansPlusPlusInitialization())
         # Note: centers property returns the private _centers, which is set during run
         assert len(sa.centers) == 2
 
     def test_run_for_mean(self):
-        """Test run_for_mean method (k=1 special case)."""
-        from kmeanssa_ng.quantum_graph.strategies import MostFrequentNodeStrategy
+        from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
 
         graph = generate_simple_graph(n_a=3)
         points = graph.sample_points(20)
@@ -217,7 +215,7 @@ class TestSimulatedAnnealing:
         sa = SimulatedAnnealing(points, k=1)
 
         node_idx = sa.run_interleaved(
-            robust_prop=0.1, strategy=MostFrequentNodeStrategy()
+            robust_prop=0.1, robustification_strategy=MostFrequentNode()
         )
 
         # Node IDs can be strings (e.g., "A0") or integers
@@ -225,19 +223,18 @@ class TestSimulatedAnnealing:
 
     def test_run_for_mean_with_multiple_k(self):
         """Test that run with k != 1 returns a list of nodes."""
-        from kmeanssa_ng.quantum_graph.strategies import MostFrequentNodeStrategy
+        from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
 
         graph = generate_simple_graph()
         points = graph.sample_points(20)
         sa = SimulatedAnnealing(points, k=2)
 
-        node_ids = sa.run_interleaved(strategy=MostFrequentNodeStrategy())
+        node_ids = sa.run_interleaved(robustification_strategy=MostFrequentNode())
         assert isinstance(node_ids, list)
         assert len(node_ids) == 2
 
     def test_run_for_mean_invalid_robust_prop_raises(self):
-        """Test that run_interleaved with invalid robust_prop raises ValueError (covers line 51)."""
-        from kmeanssa_ng.quantum_graph.strategies import MostFrequentNodeStrategy
+        from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
 
         graph = generate_simple_graph()
         points = graph.sample_points(20)
@@ -245,17 +242,16 @@ class TestSimulatedAnnealing:
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
             sa.run_interleaved(
-                robust_prop=1.5, strategy=MostFrequentNodeStrategy()
+                robust_prop=1.5, robustification_strategy=MostFrequentNode()
             )
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
             sa.run_interleaved(
-                robust_prop=-0.1, strategy=MostFrequentNodeStrategy()
+                robust_prop=-0.1, robustification_strategy=MostFrequentNode()
             )
 
     def test_run_for_kmeans_invalid_robust_prop_raises(self):
-        """Test that run_interleaved with invalid robust_prop raises ValueError (covers line 105)."""
-        from kmeanssa_ng.quantum_graph.strategies import MostFrequentNodeStrategy
+        from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
 
         graph = generate_simple_graph()
         points = graph.sample_points(20)
@@ -263,17 +259,16 @@ class TestSimulatedAnnealing:
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
             sa.run_interleaved(
-                robust_prop=1.5, strategy=MostFrequentNodeStrategy()
+                robust_prop=1.5, robustification_strategy=MostFrequentNode()
             )
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
             sa.run_interleaved(
-                robust_prop=-0.1, strategy=MostFrequentNodeStrategy()
+                robust_prop=-0.1, robustification_strategy=MostFrequentNode()
             )
 
     def test_run_for_kmeans(self):
-        """Test run_for_kmeans method."""
-        from kmeanssa_ng.quantum_graph.strategies import MostFrequentNodeStrategy
+        from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
 
         graph = generate_simple_graph(n_a=3)
         points = graph.sample_points(20)
@@ -281,7 +276,7 @@ class TestSimulatedAnnealing:
         sa = SimulatedAnnealing(points, k=2)
 
         node_ids = sa.run_interleaved(
-            robust_prop=0.1, strategy=MostFrequentNodeStrategy()
+            robustification_strategy=MostFrequentNode()
         )
 
         assert len(node_ids) == 2
@@ -289,15 +284,16 @@ class TestSimulatedAnnealing:
         assert all(node_id in graph.nodes for node_id in node_ids)
 
     def test_most_frequent_node_strategy_empty_collection(self):
-        """Test MostFrequentNodeStrategy with an empty collection."""
-        from kmeanssa_ng.quantum_graph.strategies import MostFrequentNodeStrategy
+        """Test MostFrequentNode with an empty collection."""
+
+        from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
 
         # Mock SimulatedAnnealing instance
         class MockSA:
             def __init__(self, k):
                 self._k = k
 
-        strategy = MostFrequentNodeStrategy()
+        strategy = MostFrequentNode()
 
         # Test for k > 1
         sa_k2 = MockSA(k=2)
@@ -323,7 +319,7 @@ class TestIntegration:
 
         # Run simulated annealing
         sa = SimulatedAnnealing(points, k=2, lambda_param=1, beta=2.0)
-        centers = sa.run_interleaved(robust_prop=0.1, initialization=KMeansPlusPlusInitializationStrategy())
+        centers = sa.run_interleaved(robust_prop=0.1, initialization=KMeansPlusPlusInitialization())
 
         # Compute clusters
         graph.compute_clusters(centers)
@@ -360,7 +356,7 @@ class TestIntegration:
 import numpy as np
 
 
-from kmeanssa_ng.core.strategies import RobustificationStrategy
+from kmeanssa_ng.core.strategies.robustification import RobustificationStrategy
 
 
 class TestRobustificationStrategy:

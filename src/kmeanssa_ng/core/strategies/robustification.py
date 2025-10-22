@@ -44,7 +44,7 @@ class RobustificationStrategy(ABC, Generic[T_Result]):
         raise NotImplementedError
 
 
-class MinimizeEnergyStrategy(RobustificationStrategy[list["Center"]]):
+class MinimizeEnergy(RobustificationStrategy[list["Center"]]):
     """Strategy to find centers that minimize the k-means energy."""
 
     def initialize(self, sa: "SimulatedAnnealing") -> None:

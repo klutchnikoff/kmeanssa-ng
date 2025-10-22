@@ -26,7 +26,7 @@ class InitializationStrategy(ABC):
         raise NotImplementedError
 
 
-class RandomInitializationStrategy(InitializationStrategy):
+class RandomInitialization(InitializationStrategy):
     """Initializes centers by sampling them randomly from the space."""
 
     def initialize_centers(self, sa: SimulatedAnnealing) -> List[Center]:
@@ -34,7 +34,7 @@ class RandomInitializationStrategy(InitializationStrategy):
         return sa.space.sample_centers(sa.k)
 
 
-class KMeansPlusPlusInitializationStrategy(InitializationStrategy):
+class KMeansPlusPlusInitialization(InitializationStrategy):
     """Initializes centers using the k-means++ algorithm."""
 
     def initialize_centers(self, sa: SimulatedAnnealing) -> List[Center]:
