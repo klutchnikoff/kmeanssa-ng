@@ -31,7 +31,6 @@ from .core import Center, Point, SimulatedAnnealing, Space
 from .quantum_graph import (
     QGCenter,
     QGPoint,
-    QGSimulatedAnnealing,
     QuantumGraph,
     as_quantum_graph,
     complete_quantum_graph,
@@ -51,7 +50,6 @@ __all__ = [
     "QGPoint",
     "QGCenter",
     "QuantumGraph",
-    "QGSimulatedAnnealing",
     # Generators
     "generate_simple_graph",
     "generate_simple_random_graph",

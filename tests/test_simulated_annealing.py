@@ -3,7 +3,7 @@
 import pytest
 
 from kmeanssa_ng import (
-    QGSimulatedAnnealing,
+    SimulatedAnnealing,
     SimulatedAnnealing,
     generate_sbm,
     generate_simple_graph,
@@ -214,7 +214,7 @@ class TestSimulatedAnnealing:
         graph = generate_simple_graph(n_a=3)
         points = graph.sample_points(20)
 
-        sa = QGSimulatedAnnealing(points, k=1)
+        sa = SimulatedAnnealing(points, k=1)
 
         node_idx = sa.run_interleaved(
             robust_prop=0.1, strategy=MostFrequentNodeStrategy()
@@ -229,7 +229,7 @@ class TestSimulatedAnnealing:
 
         graph = generate_simple_graph()
         points = graph.sample_points(20)
-        sa = QGSimulatedAnnealing(points, k=2)
+        sa = SimulatedAnnealing(points, k=2)
 
         node_ids = sa.run_interleaved(strategy=MostFrequentNodeStrategy())
         assert isinstance(node_ids, list)
@@ -241,7 +241,7 @@ class TestSimulatedAnnealing:
 
         graph = generate_simple_graph()
         points = graph.sample_points(20)
-        sa = QGSimulatedAnnealing(points, k=1)
+        sa = SimulatedAnnealing(points, k=1)
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
             sa.run_interleaved(
@@ -259,7 +259,7 @@ class TestSimulatedAnnealing:
 
         graph = generate_simple_graph()
         points = graph.sample_points(20)
-        sa = QGSimulatedAnnealing(points, k=2)
+        sa = SimulatedAnnealing(points, k=2)
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
             sa.run_interleaved(
@@ -278,7 +278,7 @@ class TestSimulatedAnnealing:
         graph = generate_simple_graph(n_a=3)
         points = graph.sample_points(20)
 
-        sa = QGSimulatedAnnealing(points, k=2)
+        sa = SimulatedAnnealing(points, k=2)
 
         node_ids = sa.run_interleaved(
             robust_prop=0.1, strategy=MostFrequentNodeStrategy()
