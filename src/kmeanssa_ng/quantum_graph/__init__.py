@@ -10,14 +10,12 @@ from .generators import (
     generate_simple_random_graph,
 )
 from .point import QGPoint
-from .qg_simulated_annealing import QGSimulatedAnnealing
 from .space import QuantumGraph
 
 __all__ = [
     "QGPoint",
     "QGCenter",
     "QuantumGraph",
-    "QGSimulatedAnnealing",
     "generate_simple_graph",
     "generate_simple_random_graph",
     "generate_sbm",

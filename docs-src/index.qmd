@@ -4,7 +4,7 @@ This is the documentation for the `kmeanssa-ng` project.
 
 Use the navigation bar to explore:
 
-- **Getting Started**: Quick start guide and core concepts.
+- **Quick Start**: Quick start guide and core concepts.
 - **User Guide**: In-depth explanations of features.
 - **Examples**: Practical use cases.
 - **API**: API reference for all modules.
