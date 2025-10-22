@@ -185,7 +185,7 @@ class SimulatedAnnealing:
     def _prepare_run(
         self,
         robust_prop: float,
-        initialization: InitializationStrategy | None,
+        initialization_strategy: InitializationStrategy | None,
         robustification_strategy: RobustificationStrategy | None,
     ) -> tuple[int, RobustificationStrategy]:
         """Prepare the simulation by initializing centers and strategy."""
@@ -195,12 +195,12 @@ class SimulatedAnnealing:
         if robustification_strategy is None:
             robustification_strategy = MinimizeEnergy()
 
-        if initialization is None:
-            initialization = KMeansPlusPlusInitialization()
+        if initialization_strategy is None:
+            initialization_strategy = KMeansPlusPlusInitialization()
 
         i0 = int(np.floor((self.n - 1) * (1 - robust_prop)))
 
-        self._centers = initialization.initialize_centers(self)
+        self._centers = initialization_strategy.initialize_centers(self)
 
         robustification_strategy.initialize(self)
         return i0, robustification_strategy
@@ -208,12 +208,12 @@ class SimulatedAnnealing:
     def run_interleaved(
         self,
         robust_prop: float = 0.0,
-        initialization: InitializationStrategy | None = None,
+        initialization_strategy: InitializationStrategy | None = None,
         robustification_strategy: RobustificationStrategy | None = None,
     ):
         """Run SA with interleaved drift and brownian motion."""
         i0, strategy = self._prepare_run(
-            robust_prop, initialization, robustification_strategy
+            robust_prop, initialization_strategy, robustification_strategy
         )
         times = self._initialize_times(self.n)
         time = 0.0
@@ -245,12 +245,12 @@ class SimulatedAnnealing:
     def run_sequential(
         self,
         robust_prop: float = 0.0,
-        initialization: InitializationStrategy | None = None,
+        initialization_strategy: InitializationStrategy | None = None,
         robustification_strategy: RobustificationStrategy | None = None,
     ):
         """Run SA with sequential brownian motion then drift."""
         i0, strategy = self._prepare_run(
-            robust_prop, initialization, robustification_strategy
+            robust_prop, initialization_strategy, robustification_strategy
         )
         times = self._initialize_times(self.n)
         time = 0.0

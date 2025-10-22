@@ -14,7 +14,7 @@
 
 Install the latest version directly from PyPi:
 ```bash
-pip install kmeanssa-ng.git
+pip install kmeanssa-ng
 ```
 
 ## Quickstart
