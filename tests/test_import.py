@@ -1,11 +1,15 @@
 """Test basic imports and package structure."""
 
+import tomli
+
 import kmeanssa_ng
 
 
 def test_version():
-    """Test that version is defined."""
-    assert kmeanssa_ng.__version__ == "0.1.0"
+    """Test that version is consistent with pyproject.toml."""
+    with open("pyproject.toml", "rb") as f:
+        pyproject = tomli.load(f)
+    assert kmeanssa_ng.__version__ == pyproject["project"]["version"]
 
 
 def test_core_imports():

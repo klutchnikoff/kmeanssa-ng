@@ -5,7 +5,7 @@
 groups = ["default", "docs", "lint", "test"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:07879b93badda8955389a1a103bb67aeb338df36e1bff161e61da923a91c3db3"
+content_hash = "sha256:3b986eb6f0c60f2113a89687413ed66826bc2b840e32d44e080b0c0aa5a4b399"
 
 [[metadata.targets]]
 requires_python = ">=3.10"
@@ -2846,7 +2846,6 @@ version = "2.3.0"
 requires_python = ">=3.8"
 summary = "A lil' TOML parser"
 groups = ["docs", "test"]
-marker = "python_version < \"3.11\""
 files = [
     {file = "tomli-2.3.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:88bd15eb972f3664f5ed4b57c1634a97153b4bac4479dcb6a495f41921eb7f45"},
     {file = "tomli-2.3.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:883b1c0d6398a6a9d29b508c331fa56adbcdff647f6ace4dfca0f50e90dfd0ba"},

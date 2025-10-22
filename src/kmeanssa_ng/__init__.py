@@ -24,10 +24,18 @@ Example:
     ```
 """
 
-__version__ = "0.1.0"
-__author__ = "Nicolas Klutchnikoff"
+from importlib import metadata
+
+__version__ = metadata.version("kmeanssa-ng")
 
 from .core import Center, Point, SimulatedAnnealing, Space
+from .core.strategies import (
+    InitializationStrategy,
+    KMeansPlusPlusInitialization,
+    MinimizeEnergy,
+    RandomInitialization,
+    RobustificationStrategy,
+)
 from .quantum_graph import (
     QGCenter,
     QGPoint,
@@ -38,6 +46,7 @@ from .quantum_graph import (
     generate_sbm,
     generate_simple_graph,
     generate_simple_random_graph,
+    MostFrequentNode,
 )
 
 __all__ = [
@@ -46,6 +55,13 @@ __all__ = [
     "Center",
     "Space",
     "SimulatedAnnealing",
+    # Strategies
+    "InitializationStrategy",
+    "KMeansPlusPlusInitialization",
+    "RandomInitialization",
+    "RobustificationStrategy",
+    "MinimizeEnergy",
+    "MostFrequentNode",
     # Quantum graph classes
     "QGPoint",
     "QGCenter",
