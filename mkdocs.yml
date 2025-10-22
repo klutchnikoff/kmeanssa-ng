@@ -17,7 +17,7 @@ theme:
   features:
     - content.code.copy
 
-nav:
+av:
   - Home: index.md
   - "Getting Started":
     - "Quickstart": quickstart.md
@@ -36,8 +36,6 @@ nav:
     - "Core": api/core.md
     - "Quantum Graph": api/quantum_graph.md
     - "Generators": api/generators.md
-  - "Contributing": contributing.md
-  - "PLMLab": "https://plmlab.math.cnrs.fr/nicolas.klutchnikoff"
 
 plugins:
   - search
