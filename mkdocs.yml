@@ -17,7 +17,7 @@ theme:
   features:
     - content.code.copy
 
-av:
+nav:
   - Home: index.md
   - "Getting Started":
     - "Quickstart": quickstart.md
