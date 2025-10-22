@@ -12,9 +12,9 @@
 
 ## Installation
 
-Install the latest version directly from GitLab:
+Install the latest version directly from PyPi:
 ```bash
-pip install git+https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng.git
+pip install kmeanssa-ng.git
 ```
 
 ## Quickstart
@@ -22,7 +22,7 @@ pip install git+https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng.git
 Here is a minimal example of clustering points on a quantum graph:
 
 ```python
-from kmeanssa_ng import generate_sbm, QGSimulatedAnnealing, SimulatedAnnealing
+from kmeanssa_ng import generate_sbm, SimulatedAnnealing, MostFrequentNode, KMeansPlusPlusInitialization
 
 # Generate a graph with two distinct communities
 graph = generate_sbm(
@@ -38,16 +38,20 @@ graph.precomputing()
 points = graph.sample_points(150)
 
 # Run quantum graph specialized simulated annealing
-qg_sa = QGSimulatedAnnealing(
+sa = SimulatedAnnealing(
     observations=points,
     k=2,                  # We know there are 2 clusters
     lambda_param=1.0,     # Standard temperature
-    beta=1.0,            # Standard drift strength
-    step_size=0.1        # Standard step size
+    beta=1.0,             # Standard drift strength
+    step_size=0.1         # Standard step size
 )
 
 # Get cluster centers as node IDs (more interpretable)
-node_centers = qg_sa.run_for_kmeans(robust_prop=0.1)
+node_centers = sa.run_interleaved(
+    robust_prop=0.1,                                  # 10% robustness  
+    initialization=KMeansPlusPlusInitialization(),    # K-means++ initialization
+    robustification_strategy=MostFrequentNode()       # Choose centers as most frequent nodes in clusters
+)
 print(f"Cluster centers near nodes: {node_centers}")
 ```
 

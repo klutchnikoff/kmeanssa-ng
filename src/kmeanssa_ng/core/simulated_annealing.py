@@ -212,7 +212,9 @@ class SimulatedAnnealing:
         robustification_strategy: RobustificationStrategy | None = None,
     ):
         """Run SA with interleaved drift and brownian motion."""
-        i0, strategy = self._prepare_run(robust_prop, initialization, robustification_strategy)
+        i0, strategy = self._prepare_run(
+            robust_prop, initialization, robustification_strategy
+        )
         times = self._initialize_times(self.n)
         time = 0.0
 
@@ -247,7 +249,9 @@ class SimulatedAnnealing:
         robustification_strategy: RobustificationStrategy | None = None,
     ):
         """Run SA with sequential brownian motion then drift."""
-        i0, strategy = self._prepare_run(robust_prop, initialization, robustification_strategy)
+        i0, strategy = self._prepare_run(
+            robust_prop, initialization, robustification_strategy
+        )
         times = self._initialize_times(self.n)
         time = 0.0
 
