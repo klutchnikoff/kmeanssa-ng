@@ -10,6 +10,4 @@ build:
     python: "3.10"
   jobs:
     post_install:
-      - pip install pdm
-      - pdm install --prod
-      - pdm install -G docs --no-self
+      - pip install mkdocs-material "mkdocstrings[python]"
