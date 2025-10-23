@@ -22,7 +22,7 @@ pip install kmeanssa-ng
 Here is a minimal example of clustering points on a quantum graph:
 
 ```python
-from kmeanssa_ng import generate_sbm, SimulatedAnnealing, MostFrequentNode, KMeansPlusPlusInitialization
+from kmeanssa_ng import generate_sbm, SimulatedAnnealing, MostFrequentNode, KMeansPlusPlus
 
 # Generate a graph with two distinct communities
 graph = generate_sbm(
@@ -49,7 +49,7 @@ sa = SimulatedAnnealing(
 # Get cluster centers as node IDs (more interpretable)
 node_centers = sa.run_interleaved(
     robust_prop=0.1,                                  # 10% robustness  
-    initialization_strategy=KMeansPlusPlus(),    # K-means++ initialization
+    initialization_strategy=KMeansPlusPlus(),         # K-means++ initialization
     robustification_strategy=MostFrequentNode()       # Choose centers as most frequent nodes in clusters
 )
 print(f"Cluster centers near nodes: {node_centers}")
