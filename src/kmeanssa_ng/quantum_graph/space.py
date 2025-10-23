@@ -275,9 +275,14 @@ class QuantumGraph(nx.Graph, Space):
             n2: Second node of the edge.
 
         Returns:
-            Edge length (defaults to 0 if not found).
+            Edge length.
+
+        Raises:
+            ValueError: If edge does not exist.
         """
-        edge_data = self.get_edge_data(n1, n2, default={"length": 0})
+        edge_data = self.get_edge_data(n1, n2)
+        if edge_data is None:
+            raise ValueError(f"Edge ({n1}, {n2}) does not exist in graph")
         return edge_data["length"]
 
     def quantum_path(self, p1: QGPoint, p2: QGPoint) -> dict[str, float | tuple | None]:
