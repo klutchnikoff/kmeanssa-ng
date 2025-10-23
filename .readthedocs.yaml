@@ -10,4 +10,5 @@ build:
     python: "3.10"
   jobs:
     post_install:
+      - pip install .
       - pip install mkdocs-material "mkdocstrings[python]"
