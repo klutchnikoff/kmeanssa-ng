@@ -45,14 +45,11 @@ format = "ruff format"
 check = "ruff check"
 rendermkdocs = "bash scripts/rendermkdocs.sh"
 servemkdocs = "mkdocs serve"
+benchmark = "pytest tests/test_benchmarks.py --benchmark-only -m 'not slow'"
+benchmark-all = "pytest tests/test_benchmarks.py --benchmark-only"
+benchmark-compare = "pytest tests/test_benchmarks.py --benchmark-only -m 'not slow' --benchmark-compare"
 
 [tool.pdm.dev-dependencies]
-test = [
-  "pytest>=7.4.0",
-  "pytest-cov>=4.1.0",
-  "pytest-xdist>=3.3.0",
-  "tomli>=2.0.1",
-]
 lint = [
   "ruff>=0.1.0",
 ]
@@ -61,4 +58,19 @@ docs = [
   "mkdocs>=1.5.3",
   "mkdocs-material>=9.1.21",
   "mkdocstrings[python]>=0.22.0",
+]
+
+[dependency-groups]
+test = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.3.0",
+    "tomli>=2.0.1",
+    "pytest-benchmark>=5.1.0",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "benchmark: marks tests as performance benchmarks",
 ]
