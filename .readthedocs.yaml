@@ -7,8 +7,9 @@ mkdocs:
 build:
   os: ubuntu-22.04
   tools:
-    python: "3.11"
+    python: "3.10"
   jobs:
     post_install:
       - pip install pdm
-      - pdm install -G docs
+      - pdm install --prod
+      - pdm install -G docs --no-self
