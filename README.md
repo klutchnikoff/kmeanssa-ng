@@ -59,6 +59,20 @@ print(f"Cluster centers near nodes: {node_centers}")
 
 The full documentation, including API reference and tutorials, is under construction and will be available soon.
 
+## Citation
+
+If you use this package in your research, please cite:
+
+```bibtex
+@software{kmeanssa_ng,
+  author       = {Klutchnikoff, Nicolas and Gavra, Ioana},
+  title        = {kmeanssa-ng: K-means Clustering on Quantum Graphs and Metric Spaces},
+  year         = {2025},
+  url          = {https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng},
+  note         = {Python package for k-means clustering using simulated annealing}
+}
+```
+
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
