@@ -57,6 +57,14 @@ class TestQuantumGraph:
         length = graph.get_edge_length(0, 1)
         assert length == 2.5
 
+    def test_get_edge_length_nonexistent_edge_raises(self):
+        """Test that getting length of nonexistent edge raises ValueError."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+
+        with pytest.raises(ValueError, match="does not exist in graph"):
+            graph.get_edge_length(2, 3)
+
     def test_calculate_energy_with_no_observations(self):
         """Test energy calculation with how='obs' and no observations."""
         # Create a minimal graph that has no 'nb_obs' attributes set
