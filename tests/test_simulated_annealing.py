@@ -4,7 +4,6 @@ import pytest
 
 from kmeanssa_ng import (
     SimulatedAnnealing,
-    SimulatedAnnealing,
     generate_sbm,
     generate_simple_graph,
 )
@@ -130,7 +129,9 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2, lambda_param=1, beta=1.0, step_size=0.1)
 
-        centers = sa.run_interleaved(robust_prop=0.0, initialization_strategy=RandomInit())
+        centers = sa.run_interleaved(
+            robust_prop=0.0, initialization_strategy=RandomInit()
+        )
 
         assert len(centers) == 2
         # Check that centers are from the same graph (not exact object equality after deepcopy)
@@ -153,7 +154,9 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(20)
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_interleaved(robust_prop=0.1, initialization_strategy=KMeansPlusPlus())
+        centers = sa.run_interleaved(
+            robust_prop=0.1, initialization_strategy=KMeansPlusPlus()
+        )
 
         assert len(centers) == 2
 
@@ -177,7 +180,6 @@ class TestSimulatedAnnealing:
 
         centers = sa.run_sequential(initialization_strategy=KMeansPlusPlus())
         assert len(centers) == 2
-
 
     def test_calculate_energy(self):
         """Test energy calculation."""
@@ -275,9 +277,7 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2)
 
-        node_ids = sa.run_interleaved(
-            robustification_strategy=MostFrequentNode()
-        )
+        node_ids = sa.run_interleaved(robustification_strategy=MostFrequentNode())
 
         assert len(node_ids) == 2
         # Node IDs can be strings or integers depending on graph
@@ -319,7 +319,9 @@ class TestIntegration:
 
         # Run simulated annealing
         sa = SimulatedAnnealing(points, k=2, lambda_param=1, beta=2.0)
-        centers = sa.run_interleaved(robust_prop=0.1, initialization_strategy=KMeansPlusPlus())
+        centers = sa.run_interleaved(
+            robust_prop=0.1, initialization_strategy=KMeansPlusPlus()
+        )
 
         # Compute clusters
         graph.compute_clusters(centers)
