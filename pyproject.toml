@@ -33,6 +33,15 @@ dependencies = [
   "pandas>=2.0.0",
 ]
 
+[dependency-groups]
+test = [
+  "pytest>=7.4.0",
+  "pytest-benchmark>=5.1.0",
+  "pytest-cov>=4.1.0",
+  "pytest-xdist>=3.3.0",
+  "tomli>=2.0.1",
+]
+
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
@@ -60,17 +69,8 @@ docs = [
   "mkdocstrings[python]>=0.22.0",
 ]
 
-[dependency-groups]
-test = [
-    "pytest>=7.4.0",
-    "pytest-cov>=4.1.0",
-    "pytest-xdist>=3.3.0",
-    "tomli>=2.0.1",
-    "pytest-benchmark>=5.1.0",
-]
-
 [tool.pytest.ini_options]
 markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "benchmark: marks tests as performance benchmarks",
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "benchmark: marks tests as performance benchmarks",
 ]
