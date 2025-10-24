@@ -1,4 +1,491 @@
-# Concepts
+# Cpre Concepts
 
 
-This page is under construction.
+## Overview: K-means on Arbitrary Metric Spaces
+
+### The Classical K-means Problem
+
+The k-means algorithm is a fundamental clustering method that partitions
+$n$ observations into $k$ clusters. In the classical Euclidean setting,
+given observations $\{x_1, \ldots, x_n\} \subset \mathbb{R}^d$, the goal
+is to find cluster centers $\{c_1, \ldots, c_k\}$ that minimize the
+total within-cluster variance:
+
+$$
+\text{minimize} \quad \sum_{i=1}^{n} \min_{j=1,\ldots,k} \|x_i - c_j\|^2
+$$
+
+This problem is NP-hard in general, and practical algorithms like
+Lloyd’s algorithm provide local minima through iterative refinement.
+
+### Extension to Metric Spaces
+
+The key insight of `kmeanssa-ng` is that k-means clustering can be
+generalized to **any metric space** $(\mathcal{M}, d)$, not just
+Euclidean space. The optimization problem becomes:
+
+$$
+\text{minimize} \quad \sum_{i=1}^{n} \min_{j=1,\ldots,k} d(x_i, c_j)^2
+$$
+
+where $d: \mathcal{M} \times \mathcal{M} \to \mathbb{R}_+$ is a distance
+function.
+
+This opens up clustering to:
+
+- **Metric graphs** (quantum graphs): networks where points can exist
+  anywhere on edges
+- **Riemannian manifolds**: curved spaces with geodesic distances
+- **Custom spaces**: any domain with a meaningful distance metric
+
+### Why This Matters
+
+Many real-world problems involve data that doesn’t naturally live in
+Euclidean space:
+
+- Network data (social networks, transportation, molecules)
+- Geographical data on curved surfaces
+- Data constrained to manifolds (e.g., directional data on spheres)
+
+Standard k-means fails in these settings because Euclidean distance is
+inappropriate. `kmeanssa-ng` provides a principled framework for
+clustering in these spaces.
+
+## Simulated Annealing
+
+### General Principle
+
+Simulated annealing is a probabilistic optimization technique inspired
+by the metallurgical process of annealing, where metals are heated and
+slowly cooled to reduce defects and reach a low-energy state.
+
+The key idea is to allow the algorithm to:
+
+- **Explore** the solution space through random movements (like thermal
+  fluctuations)
+- **Exploit** promising regions by moving toward better solutions
+- **Gradually reduce randomness** over time (cooling), converging to a
+  good solution
+
+This balance between exploration and exploitation helps escape local
+minima—a critical advantage over greedy algorithms like Lloyd’s method.
+
+### Mechanisms in K-means Context
+
+In `kmeanssa-ng`, cluster centers are dynamic entities that move through
+the metric space using two complementary mechanisms:
+
+#### Brownian Motion (Exploration)
+
+Centers perform **random walks** in the metric space, characterized by:
+
+- Random direction selection
+- Distance traveled proportional to $\sqrt{\Delta t}$ (diffusion
+  scaling)
+- Allows escape from local minima through stochastic exploration
+
+For a center $c$ and time parameter $\Delta t$:
+
+$$
+c \leftarrow c + \text{Brownian}(\Delta t)
+$$
+
+#### Drift (Exploitation)
+
+Centers are **pulled toward** the observations assigned to their
+cluster:
+
+- Each center drifts toward a randomly selected point in its cluster
+- Distance traveled: proportion $\alpha$ of the geodesic distance
+- Reduces cluster energy by moving centers closer to their observations
+
+For a center $c$, target observation $x$, and drift proportion
+$\alpha \in [0,1]$:
+
+$$
+c \leftarrow c + \alpha \cdot (x - c)
+$$
+
+(where the notation is geometric; on graphs this means moving along the
+geodesic path)
+
+#### Temperature Schedule
+
+The “temperature” controls the balance between exploration and
+exploitation over time. `kmeanssa-ng` uses an **inhomogeneous Poisson
+process** to generate a decreasing temperature schedule:
+
+$$
+T(n) = \sqrt{\sum_{i=1}^{n} E_i + 1} - 1
+$$
+
+where $E_i \sim \text{Exp}(\lambda)$ are exponential random variables.
+
+Key properties:
+
+- Temperature decreases over time (cooling)
+- Controlled by parameter $\lambda$ (intensity)
+- Stochastic schedule adds robustness
+
+### Two Algorithm Variants
+
+`kmeanssa-ng` implements two strategies for combining Brownian motion
+and drift:
+
+#### V1: Interleaved (Default)
+
+At each iteration:
+
+1.  Randomly select one observation $x_i$
+2.  Perform Brownian motion on all centers:
+    $c_j \leftarrow c_j + \text{Brownian}(\Delta t)$
+3.  Find nearest center $c^*$ to $x_i$
+4.  Apply drift: $c^* \leftarrow c^* + \alpha \cdot (x_i - c^*)$
+
+This approach **alternates** exploration and exploitation at a
+fine-grained level.
+
+#### V2: Sequential
+
+Separates exploration and exploitation into distinct phases:
+
+1.  **Brownian phase**: Iterate through all observations, performing
+    only Brownian motion
+2.  **Drift phase**: Iterate through all observations, performing only
+    drift
+
+This approach separates the two mechanisms temporally.
+
+**Choice**: V1 (interleaved) is generally recommended as the default,
+but V2 can be useful for specific problem structures.
+
+### Robustification
+
+To improve stability, `kmeanssa-ng` uses **robustification**: instead of
+returning the final centers, it averages results from the last $p\%$ of
+iterations (default: 10%). This reduces sensitivity to late-iteration
+fluctuations.
+
+## Architecture: Three-Layer Design
+
+The power of `kmeanssa-ng` comes from its **modular, extensible
+architecture** that cleanly separates concerns into three layers:
+
+### Layer 1: Abstract Base Classes
+
+The foundation is a set of abstract classes in
+`kmeanssa_ng.core.abstract` that define the interface for any metric
+space:
+
+#### `Point`
+
+Represents an **immobile element** in a metric space.
+
+`python path=null start=null class Point(ABC):     @property     @abstractmethod     def space(self) -> Space:         """The metric space this point belongs to."""         ...`
+
+Key properties:
+
+- Fixed location in the space
+- Knows which space it belongs to
+- Used for observations
+
+#### `Center`
+
+Represents a **mobile point** that can serve as a cluster center.
+Inherits from `Point` and adds movement capabilities:
+
+\`\`\`python path=null start=null class Center(Point): @abstractmethod
+def brownian_motion(self, time_to_travel: float) -\> None: “““Perform
+random Brownian motion.”“” …
+
+    @abstractmethod
+    def drift(self, target_point: Point, prop_to_travel: float) -> None:
+        """Move toward a target point."""
+        ...
+
+
+    Key capabilities:
+
+    - Brownian motion: random exploration
+    - Drift: directed movement toward observations
+    - Mutable position
+
+    #### `Space`
+
+    Represents the **metric space** itself, providing operations on points and centers:
+
+    ```python path=null start=null
+    class Space(ABC):
+        @abstractmethod
+        def distance(self, p1: Point, p2: Point) -> float:
+            """Compute distance between two points."""
+            ...
+        
+        @abstractmethod
+        def sample_points(self, n: int) -> list[Point]:
+            """Sample random points."""
+            ...
+        
+        @abstractmethod
+        def sample_centers(self, k: int) -> list[Center]:
+            """Sample random centers."""
+            ...
+        
+        @abstractmethod
+        def sample_kpp_centers(self, k: int) -> list[Center]:
+            """Sample centers using k-means++ initialization."""
+            ...
+        
+        @abstractmethod
+        def compute_clusters(self, centers: list[Center]) -> None:
+            """Assign points to nearest centers."""
+            ...
+        
+        @abstractmethod
+        def calculate_energy_graph(self, centers: list[Center]) -> float:
+            """Calculate k-means energy (distortion)."""
+            ...
+
+Key responsibilities:
+
+- Distance computation
+- Point and center sampling
+- Cluster assignment
+- Energy calculation
+
+### Layer 2: Algorithm Implementation
+
+The `SimulatedAnnealing` class in `kmeanssa_ng.core.simulated_annealing`
+implements the optimization algorithm **independently** of any specific
+space:
+
+\`\`\`python path=null start=null class SimulatedAnnealing: def
+**init**( self, observations: list\[Point\], k: int, lambda_param: float
+= 1.0, beta: float = 1.0, step_size: float = 0.1, ): “““Initialize
+simulated annealing for k-means.
+
+        Args:
+            observations: Points to cluster (all from same Space)
+            k: Number of clusters
+            lambda_param: Poisson process intensity
+            beta: Inverse temperature parameter
+            step_size: Time step for updates
+        """
+        ...
+
+    def run_interleaved(
+        self,
+        robust_prop: float = 0.1,
+        initialization_strategy = None,
+        robustification_strategy = None,
+    ) -> list[Center]:
+        """Run V1 (interleaved) algorithm."""
+        ...
+
+    def run_sequential(
+        self,
+        robust_prop: float = 0.1,
+        initialization_strategy = None,
+        robustification_strategy = None,
+    ) -> list[Center]:
+        """Run V2 (sequential) algorithm."""
+        ...
+
+
+    Critical insight: **The algorithm never needs to know the specific type of space it's working with**. It only uses the `Point`, `Center`, and `Space` interfaces.
+
+    ### Layer 3: Concrete Implementations
+
+    Specific metric spaces implement the abstract interfaces. Currently, `kmeanssa-ng` provides:
+
+    #### Quantum Graphs
+
+    In `kmeanssa_ng.quantum_graph`:
+
+    - `QuantumGraph`: A NetworkX graph where points exist on edges, not just nodes
+    - `QGPoint`: Points located at a position along an edge
+    - `QGCenter`: Centers that can move along edges using graph geodesics
+
+    See [Quantum Graphs](quantum-graphs.md) for details.
+
+    #### Future Implementations
+
+    The architecture is designed for easy extension to other spaces:
+
+    - Riemannian manifolds
+    - Hyperbolic spaces
+    - Tree spaces
+    - Product spaces
+    - Custom metric spaces
+
+    ### Why This Design?
+
+    This three-layer architecture provides:
+
+    1. **Separation of concerns**: Algorithm logic is independent of space geometry
+    2. **Reusability**: Write the algorithm once, use it on any space
+    3. **Extensibility**: Add new spaces without modifying the algorithm
+    4. **Type safety**: Abstract base classes enforce correct implementations
+    5. **Testability**: Each layer can be tested independently
+
+    ## Extending to New Spaces
+
+    One of the main strengths of `kmeanssa-ng` is how easy it is to add support for new metric spaces. You only need to implement three classes:
+
+    ### Step 1: Define Your Point
+
+    ```python path=null start=null
+    from kmeanssa_ng.core.abstract import Point, Space
+
+    class MyPoint(Point):
+        def __init__(self, space: 'MySpace', location: YourLocationType):
+            self._space = space
+            self._location = location
+        
+        @property
+        def space(self) -> Space:
+            return self._space
+        
+        # Add any space-specific properties you need
+        @property
+        def location(self) -> YourLocationType:
+            return self._location
+
+### Step 2: Define Your Center
+
+\`\`\`python path=null start=null from kmeanssa_ng.core.abstract import
+Center
+
+class MyCenter(MyPoint, Center): def brownian_motion(self,
+time_to_travel: float) -\> None: “““Implement random movement in your
+space.
+
+        For example:
+        - Choose a random direction
+        - Move distance ~ sqrt(time_to_travel)
+        - Update self._location
+        """
+        # Your implementation here
+        pass
+
+    def drift(self, target_point: Point, prop_to_travel: float) -> None:
+        """Implement directed movement toward target.
+        
+        For example:
+        - Compute geodesic from self to target
+        - Move proportion prop_to_travel along geodesic
+        - Update self._location
+        """
+        # Your implementation here
+        pass
+
+
+    ### Step 3: Define Your Space
+
+    ```python path=null start=null
+    from kmeanssa_ng.core.abstract import Space
+
+    class MySpace(Space):
+        def distance(self, p1: Point, p2: Point) -> float:
+            """Compute your metric."""
+            # Your distance computation
+            pass
+        
+        def sample_points(self, n: int) -> list[Point]:
+            """Sample random points uniformly (or according to some measure)."""
+            # Your sampling logic
+            pass
+        
+        def sample_centers(self, k: int) -> list[Center]:
+            """Sample random centers."""
+            # Your center sampling logic
+            pass
+        
+        def sample_kpp_centers(self, k: int) -> list[Center]:
+            """Implement k-means++ initialization."""
+            # Your k-means++ logic
+            pass
+        
+        def compute_clusters(self, centers: list[Center]) -> None:
+            """Assign each observation to nearest center."""
+            # Your cluster assignment logic
+            pass
+        
+        def calculate_energy_graph(self, centers: list[Center]) -> float:
+            """Compute sum of squared distances to nearest centers."""
+            # Your energy calculation
+            pass
+
+### Step 4: Use the Existing Algorithm
+
+\`\`\`python path=null start=null from kmeanssa_ng import
+SimulatedAnnealing
+
+# Create your space and sample observations
+
+my_space = MySpace(…) points = my_space.sample_points(100)
+
+# Run simulated annealing - works immediately!
+
+sa = SimulatedAnnealing(observations=points, k=5) centers =
+sa.run_interleaved()
+
+
+    That's it! The algorithm automatically works with your new space.
+
+    ### Conceptual Example: Unit Circle
+
+    Here's a simple example for clustering on the unit circle $S^1$:
+
+    ```python path=null start=null
+    import numpy as np
+    from kmeanssa_ng.core.abstract import Point, Center, Space
+
+    class CirclePoint(Point):
+        def __init__(self, space: 'CircleSpace', angle: float):
+            self._space = space
+            self.angle = angle % (2 * np.pi)  # Normalize to [0, 2π)
+        
+        @property
+        def space(self) -> Space:
+            return self._space
+
+    class CircleCenter(CirclePoint, Center):
+        def brownian_motion(self, time_to_travel: float) -> None:
+            # Random angular displacement
+            displacement = np.random.normal(0, np.sqrt(time_to_travel))
+            self.angle = (self.angle + displacement) % (2 * np.pi)
+        
+        def drift(self, target_point: Point, prop_to_travel: float) -> None:
+            # Move toward target along shorter arc
+            target_angle = target_point.angle
+            diff = (target_angle - self.angle) % (2 * np.pi)
+            if diff > np.pi:
+                diff -= 2 * np.pi
+            self.angle = (self.angle + prop_to_travel * diff) % (2 * np.pi)
+
+    class CircleSpace(Space):
+        def distance(self, p1: Point, p2: Point) -> float:
+            # Angular distance (shorter arc)
+            diff = abs(p1.angle - p2.angle)
+            return min(diff, 2 * np.pi - diff)
+        
+        # ... implement other methods ...
+
+This demonstrates how the framework generalizes to any space with a
+meaningful distance metric and notion of movement.
+
+## Summary
+
+The `kmeanssa-ng` package provides:
+
+1.  **Generality**: K-means clustering on arbitrary metric spaces
+2.  **Robustness**: Simulated annealing avoids local minima
+3.  **Modularity**: Clean three-layer architecture
+4.  **Extensibility**: Easy to add new spaces
+5.  **Practical**: Currently supports quantum graphs with more spaces
+    coming
+
+The combination of principled optimization (simulated annealing) and
+flexible design (abstract interfaces) makes `kmeanssa-ng` a powerful
+tool for clustering in non-Euclidean domains.

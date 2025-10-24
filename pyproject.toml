@@ -52,8 +52,8 @@ distribution = true
 [tool.pdm.scripts]
 format = "ruff format"
 check = "ruff check"
-rendermkdocs = "bash scripts/rendermkdocs.sh"
-servemkdocs = "mkdocs serve"
+makedoc = "bash scripts/rendermkdocs.sh"
+servedoc = "mkdocs serve"
 benchmark = "pytest tests/test_benchmarks.py --benchmark-only -m 'not slow'"
 benchmark-all = "pytest tests/test_benchmarks.py --benchmark-only"
 benchmark-compare = "pytest tests/test_benchmarks.py --benchmark-only -m 'not slow' --benchmark-compare"
