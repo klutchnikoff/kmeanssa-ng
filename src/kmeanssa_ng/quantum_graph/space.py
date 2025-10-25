@@ -774,6 +774,6 @@ class QuantumGraph(nx.Graph, Space):
                 nodelist=center_nodes,
                 ax=ax,
                 node_size=center_sizes,
-                edgecolors="black",
+                edgecolors="grey",
                 linewidths=2,
             )
