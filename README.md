@@ -1,7 +1,9 @@
 # kmeanssa-ng
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PyPI version](https://img.shields.io/pypi/v/kmeanssa-ng.svg)](https://pypi.org/project/kmeanssa-ng/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Documentation Status](https://readthedocs.org/projects/kmeanssa-ng/badge/?version=latest)](https://kmeanssa-ng.readthedocs.io/en/latest/?badge=latest)
 [![Pipeline Status](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/badges/main/pipeline.svg)](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/pipelines)
 [![Coverage Report](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/badges/main/coverage.svg)](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/commits/main)
 [![Code style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -57,7 +59,7 @@ print(f"Cluster centers near nodes: {node_centers}")
 
 ## Documentation
 
-The full documentation, including API reference and tutorials, is under construction and will be available soon.
+The full documentation, including API reference and tutorials, is available at [kmeanssa-ng.readthedocs.io](https://kmeanssa-ng.readthedocs.io/).
 
 ## Citation
 
