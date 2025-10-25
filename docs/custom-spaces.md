@@ -116,7 +116,7 @@ class MySpace(Space):
         # Your cluster assignment logic
         pass
     
-    def calculate_energy_graph(self, centers: list[Center]) -> float:
+    def calculate_energy(self, centers: list[Center]) -> float:
         '''Compute sum of squared distances to nearest centers.'''
         # Your energy calculation
         pass
@@ -126,7 +126,7 @@ Key responsibilities: - `distance`: The metric $d(p_1, p_2)$. -
 `sample_points` and `sample_centers`: Factory methods for creating
 points and centers. - `sample_kpp_centers`: An implementation of the
 k-means++ initialization strategy, which is crucial for good
-performance. - `compute_clusters` and `calculate_energy_graph`: Methods
+performance. - `compute_clusters` and `calculate_energy`: Methods
 for assigning points to clusters and calculating the total k-means
 energy.
 

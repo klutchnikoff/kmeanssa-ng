@@ -65,9 +65,9 @@ class QGCenter(QGPoint, Center):
         best_neighbors = []
 
         for neighbor in neighbors:
-            distance = self.space.distance_between_nodes(
+            distance = self.space.node_distance(
                 neighbor, n2
-            ) + self.space.distance_between_nodes(n1, neighbor)
+            ) + self.space.node_distance(n1, neighbor)
             if distance < min_distance:
                 min_distance = distance
                 best_neighbors = [neighbor]

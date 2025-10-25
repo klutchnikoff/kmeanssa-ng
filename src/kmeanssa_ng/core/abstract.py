@@ -137,7 +137,7 @@ class Space(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def calculate_energy_graph(self, centers: list[Center]) -> float:
+    def calculate_energy(self, centers: list[Center]) -> float:
         """Calculate the k-means energy (distortion) for given centers.
 
         The energy is the sum of squared distances from each point

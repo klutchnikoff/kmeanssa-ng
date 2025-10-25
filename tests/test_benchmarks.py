@@ -67,7 +67,7 @@ class TestBenchmarks:
         target = small_graph_precomputed.sample_points(n=1)[0]
 
         result = benchmark(
-            small_graph_precomputed.batch_distances_from_centers, centers, target
+            small_graph_precomputed.distances_from_centers, centers, target
         )
         assert len(result) == 5
 
@@ -80,7 +80,7 @@ class TestBenchmarks:
         target = medium_graph_precomputed.sample_points(n=1)[0]
 
         result = benchmark(
-            medium_graph_precomputed.batch_distances_from_centers, centers, target
+            medium_graph_precomputed.distances_from_centers, centers, target
         )
         assert len(result) == 10
 

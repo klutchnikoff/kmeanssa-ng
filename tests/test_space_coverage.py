@@ -266,7 +266,7 @@ class TestSamplingEdgeCases:
         graph.precomputing()
 
         center = graph.node_as_center(1)  # Center at middle node
-        energy = graph.calculate_energy_graph([center], how="uniform")
+        energy = graph.calculate_energy([center], how="uniform")
 
         assert isinstance(energy, float)
         assert energy >= 0
@@ -278,7 +278,7 @@ class TestSamplingEdgeCases:
         graph.precomputing()
 
         center = graph.node_as_center(0)
-        energy = graph.calculate_energy_graph([center], how="obs")
+        energy = graph.calculate_energy([center], how="obs")
 
         assert energy == 0.0  # No observations
 
@@ -292,27 +292,27 @@ class TestSamplingEdgeCases:
         nx.set_node_attributes(graph, {0: {"nb_obs": 5}, 1: {"nb_obs": 3}})
 
         center = graph.node_as_center(1)
-        energy = graph.calculate_energy_graph([center], how="obs")
+        energy = graph.calculate_energy([center], how="obs")
 
         assert isinstance(energy, float)
         assert energy >= 0
 
-    def test_compute_matrix_distance_no_precomputing(self):
+    def test_distance_matrix_no_precomputing(self):
         """Test matrix distance computation without precomputing."""
         graph = QuantumGraph()
         graph.add_edge(0, 1, length=1.0)
 
         with pytest.raises(ValueError, match="Must call precomputing\\(\\) first"):
-            graph.compute_matrix_distance()
+            graph.distance_matrix()
 
-    def test_compute_matrix_distance(self):
+    def test_distance_matrix(self):
         """Test matrix distance computation."""
         graph = QuantumGraph()
         graph.add_edge(0, 1, length=2.0)
         graph.add_edge(1, 2, length=3.0)
         graph.precomputing()
 
-        matrix = graph.compute_matrix_distance()
+        matrix = graph.distance_matrix()
 
         assert matrix.shape == (3, 3)
         assert matrix[0, 1] == 2.0

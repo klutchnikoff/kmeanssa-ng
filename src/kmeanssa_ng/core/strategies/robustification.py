@@ -49,11 +49,11 @@ class MinimizeEnergy(RobustificationStrategy[list["Center"]]):
     def initialize(self, sa: SimulatedAnnealing) -> None:
         """Initialize with current centers and their energy."""
         self._best_centers = sa._clone_centers(sa.centers)
-        self._best_energy = sa.space.calculate_energy_graph(self._best_centers)
+        self._best_energy = sa.space.calculate_energy(self._best_centers)
 
     def collect(self, sa: SimulatedAnnealing) -> None:
         """If current centers have lower energy, save them."""
-        new_energy = sa.space.calculate_energy_graph(sa.centers)
+        new_energy = sa.space.calculate_energy(sa.centers)
         if new_energy < self._best_energy:
             self._best_centers = sa._clone_centers(sa.centers)
             self._best_energy = new_energy

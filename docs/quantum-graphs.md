@@ -138,7 +138,7 @@ weighted_graph.nodes['A']['weight'] = 1.0
 weighted_graph.nodes['B']['weight'] = 5.0  # High-density area
 weighted_graph.nodes['C']['weight'] = 1.0
 
-weighted_graph.precomputing()
+weighted_# Distances precomputed automatically
 
 # Sample points - more will appear near node B
 weighted_points = weighted_graph.sample_points(1000)

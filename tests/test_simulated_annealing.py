@@ -354,8 +354,8 @@ class TestIntegration:
         centers_random = graph.sample_centers(2)
         centers_kpp = graph.sample_kpp_centers(2)
 
-        energy_random = graph.calculate_energy_graph(centers_random)
-        energy_kpp = graph.calculate_energy_graph(centers_kpp)
+        energy_random = graph.calculate_energy(centers_random)
+        energy_kpp = graph.calculate_energy(centers_kpp)
 
         # k-means++ should generally be better (or equal) to random
         # This is probabilistic, so we just check it runs

@@ -38,14 +38,14 @@ class TestQuantumGraph:
         graph.precomputing()
         assert graph._pairwise_nodes_distance is not None
 
-    def test_distance_between_nodes(self):
+    def test_node_distance(self):
         """Test distance computation between nodes."""
         graph = QuantumGraph()
         graph.add_edge(0, 1, length=1.0)
         graph.add_edge(1, 2, length=2.0)
         graph.precomputing()
 
-        dist = graph.distance_between_nodes(0, 2)
+        dist = graph.node_distance(0, 2)
         assert dist == 3.0
 
     def test_get_edge_length(self):
@@ -74,7 +74,7 @@ class TestQuantumGraph:
         centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
 
         # When how="obs" and no nodes have `nb_obs`, total_obs should be 0
-        energy = graph.calculate_energy_graph(centers, how="obs")
+        energy = graph.calculate_energy(centers, how="obs")
         assert energy == 0.0
 
     def test_batch_distances_special_cases(self):
@@ -87,23 +87,23 @@ class TestQuantumGraph:
         # Case 1: Center and target on the same edge
         c1 = QGCenter(QGPoint(graph, (0, 1), 0.2))
         p1 = QGPoint(graph, (0, 1), 0.8)
-        dist1 = graph.batch_distances_from_centers([c1], p1)
+        dist1 = graph.distances_from_centers([c1], p1)
         assert np.isclose(dist1[0], 0.6)
 
         # Case 2: Center and target on reversed edge
         c2 = QGCenter(QGPoint(graph, (0, 1), 0.2))
         p2 = QGPoint(graph, (1, 0), 0.2)  # Same as (0, 1) at 0.8
-        dist2 = graph.batch_distances_from_centers([c2], p2)
+        dist2 = graph.distances_from_centers([c2], p2)
         assert np.isclose(dist2[0], 0.6)
 
-    def test_batch_distances_from_centers(self):
-        """Test batch_distances_from_centers method."""
+    def test_distances_from_centers(self):
+        """Test distances_from_centers method."""
         graph = generate_simple_graph(n_a=3)
         graph.precomputing()
         centers = graph.sample_centers(k=3)
         target = graph.sample_points(n=1)[0]
 
-        distances = graph.batch_distances_from_centers(centers, target)
+        distances = graph.distances_from_centers(centers, target)
 
         assert isinstance(distances, np.ndarray)
         assert distances.shape == (3,)
@@ -123,7 +123,7 @@ class TestQuantumGraph:
         target = QGPoint(graph, (1, 2), 0.3)
         
         with pytest.raises(ValueError, match="Must call precomputing"):
-            graph.batch_distances_from_centers(centers, target)
+            graph.distances_from_centers(centers, target)
 
     def test_sample_kpp_centers_k1(self):
         """Test k-means++ initialization with k=1."""

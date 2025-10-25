@@ -27,14 +27,12 @@ Here is a minimal example of clustering points on a quantum graph:
 from kmeanssa_ng import generate_sbm, SimulatedAnnealing, MostFrequentNode, KMeansPlusPlus
 
 # Generate a graph with two distinct communities
+# Distances are precomputed automatically (precompute=True by default)
 graph = generate_sbm(
     sizes=[40, 40],       # Two communities of 40 nodes each
     p=[[0.8, 0.1],        # High intra-community connectivity  
        [0.1, 0.8]],       # Low inter-community connectivity
 )
-
-# Essential: precompute shortest paths
-graph.precomputing()
 
 # Sample points uniformly across the graph
 points = graph.sample_points(150)

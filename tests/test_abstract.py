@@ -23,8 +23,8 @@ class DummySpace(Space):
     def compute_clusters(self, centers: list[Center]) -> None:
         return super().compute_clusters(centers)
 
-    def calculate_energy_graph(self, centers: list[Center]) -> float:
-        return super().calculate_energy_graph(centers)
+    def calculate_energy(self, centers: list[Center]) -> float:
+        return super().calculate_energy(centers)
 
 
 class DummyPoint(Point):
@@ -77,4 +77,4 @@ def test_abstract_methods_raise_not_implemented():
         space.compute_clusters([center])
 
     with pytest.raises(NotImplementedError):
-        space.calculate_energy_graph([center])
+        space.calculate_energy([center])

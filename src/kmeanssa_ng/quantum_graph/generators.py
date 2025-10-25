@@ -14,6 +14,7 @@ def generate_simple_graph(
     n_a: int = 5,
     n_aa: int = 3,
     bridge_length: float = 2.0,
+    precompute: bool = True,
     **attr,
 ) -> QuantumGraph:
     """Generate a symmetric two-cluster graph connected by a bridge.
@@ -26,6 +27,7 @@ def generate_simple_graph(
         n_a: Number of neighbors for each central node (must be >= 0).
         n_aa: Number of second-level neighbors (must be >= 0).
         bridge_length: Length of the edge connecting the two clusters (must be > 0).
+        precompute: If True, precompute pairwise distances (default: True).
         **attr: Additional graph attributes.
 
     Returns:
@@ -65,7 +67,7 @@ def generate_simple_graph(
     if bridge_length_float <= 0:
         raise ValueError(f"bridge_length must be positive, got {bridge_length_float}")
 
-    graph = QuantumGraph(**attr)
+    graph = QuantumGraph(precompute=False, **attr)
 
     # Add central nodes
     graph.add_node("A0", weight=1)
@@ -102,7 +104,8 @@ def generate_simple_graph(
         distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
         nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
-    graph.precomputing()
+    if precompute:
+        graph.precomputing()
     return graph
 
 
@@ -112,6 +115,7 @@ def generate_simple_random_graph(
     lam_a: int = 0,
     lam_b: int = 0,
     bridge_length: float = 10.0,
+    precompute: bool = True,
     **attr,
 ) -> QuantumGraph:
     """Generate a random two-cluster graph with Poisson branching.
@@ -127,12 +131,13 @@ def generate_simple_random_graph(
         lam_a: Poisson parameter for A cluster third-level branching.
         lam_b: Poisson parameter for B cluster third-level branching.
         bridge_length: Mean length of the bridge edge (actual length is uniform random).
+        precompute: If True, precompute pairwise distances (default: True).
         **attr: Additional graph attributes.
 
     Returns:
         A random quantum graph with two clusters.
     """
-    graph = QuantumGraph(**attr)
+    graph = QuantumGraph(precompute=False, **attr)
     rng = np.random.default_rng()
 
     # Central nodes and bridge
@@ -178,13 +183,15 @@ def generate_simple_random_graph(
         distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
         nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
-    graph.precomputing()
+    if precompute:
+        graph.precomputing()
     return graph
 
 
 def generate_sbm(
     sizes: list[int] | None = None,
     p: list[list[float]] | None = None,
+    precompute: bool = True,
 ) -> QuantumGraph:
     """Generate a Stochastic Block Model quantum graph.
 
@@ -198,6 +205,7 @@ def generate_sbm(
             of edges from block r to block s. Must be symmetric for undirected graphs.
             Defaults to [[0.7, 0.1], [0.1, 0.7]].
             Must be a square matrix with probabilities in [0, 1].
+        precompute: If True, precompute pairwise distances (default: True).
 
     Returns:
         A quantum graph representing the SBM.
@@ -255,7 +263,7 @@ def generate_sbm(
                 raise ValueError(f"p[{i}][{j}] must be in [0, 1], got {prob_float}")
 
     nx_graph = nx.stochastic_block_model(sizes=sizes, p=p)
-    graph = QuantumGraph(nx_graph, attr=nx.get_node_attributes(nx_graph, name="block"))
+    graph = QuantumGraph(nx_graph, precompute=False, attr=nx.get_node_attributes(nx_graph, name="block"))
 
     # Set uniform attributes
     nx.set_node_attributes(graph, 1, "weight")
@@ -267,7 +275,8 @@ def generate_sbm(
         distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
         nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
-    graph.precomputing()
+    if precompute:
+        graph.precomputing()
     return graph
 
 
@@ -276,6 +285,7 @@ def generate_random_sbm(
     p: list[list[float]] | None = None,
     weights: list[float] | None = None,
     lengths: list[list[float]] | None = None,
+    precompute: bool = True,
 ) -> QuantumGraph:
     """Generate an SBM quantum graph with block-specific edge lengths and node weights.
 
@@ -285,6 +295,7 @@ def generate_random_sbm(
         weights: Node weight for each block. Defaults to [1, 1].
         lengths: Matrix of edge lengths. Element (i, j) gives the length
             for edges between blocks i and j. Defaults to [[1, 4], [4, 1]].
+        precompute: If True, precompute pairwise distances (default: True).
 
     Returns:
         A quantum graph with block-specific attributes.
@@ -354,7 +365,7 @@ def generate_random_sbm(
             raise ValueError("Elements of `lengths` must be positive numbers.")
 
     nx_graph = nx.stochastic_block_model(sizes=sizes, p=p)
-    graph = QuantumGraph(nx_graph)
+    graph = QuantumGraph(nx_graph, precompute=False)
 
     # Set node weights based on block
     for node in graph.nodes:
@@ -372,7 +383,8 @@ def generate_random_sbm(
         distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
         nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
-    graph.precomputing()
+    if precompute:
+        graph.precomputing()
     return graph
 
 
@@ -381,6 +393,7 @@ def as_quantum_graph(
     node_weight: float = 1.0,
     edge_length: float = 1.0,
     edge_weight: float = 1.0,
+    precompute: bool = False,
 ) -> QuantumGraph:
     """Convert a NetworkX graph to a quantum graph with uniform attributes.
 
@@ -389,6 +402,7 @@ def as_quantum_graph(
         node_weight: Uniform weight to assign to all nodes.
         edge_length: Uniform length to assign to all edges.
         edge_weight: Uniform weight to assign to all edges.
+        precompute: If True, precompute pairwise distances (default: False for compatibility).
 
     Returns:
         The converted quantum graph.
@@ -416,7 +430,7 @@ def as_quantum_graph(
     if not isinstance(edge_weight, (int, float)) or edge_weight <= 0:
         raise ValueError("`edge_weight` must be a positive number.")
 
-    qg = QuantumGraph(graph)
+    qg = QuantumGraph(graph, precompute=False)
     nx.set_node_attributes(qg, node_weight, "weight")
     nx.set_edge_attributes(qg, edge_length, "length")
     nx.set_edge_attributes(qg, edge_weight, "weight")
@@ -425,6 +439,8 @@ def as_quantum_graph(
     for edge in qg.edges:
         nx.set_edge_attributes(qg, {edge: {"distribution": distrib}})
 
+    if precompute:
+        qg.precomputing()
     return qg
 
 
@@ -432,6 +448,7 @@ def complete_quantum_graph(
     objects: list,
     similarities: np.ndarray | None = None,
     true_labels: list | None = None,
+    precompute: bool = True,
 ) -> QuantumGraph:
     """Create a complete quantum graph from objects with optional similarity matrix.
 
@@ -442,6 +459,7 @@ def complete_quantum_graph(
         similarities: Optional n×n matrix of similarities/distances. If None, all edges
             have length 1.
         true_labels: Optional true cluster labels for each object.
+        precompute: If True, precompute pairwise distances (default: True).
 
     Returns:
         A complete quantum graph where edge lengths are given by the similarity matrix.
@@ -480,7 +498,7 @@ def complete_quantum_graph(
                 f"`true_labels` must have the same length as `objects` ({num_objects})."
             )
 
-    graph = QuantumGraph()
+    graph = QuantumGraph(precompute=False)
 
     # Add nodes
     for i, _ in enumerate(objects):
@@ -500,5 +518,6 @@ def complete_quantum_graph(
             distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
             graph.add_edge(i, j, weight=1, length=edge_length, distribution=distrib)
 
-    graph.precomputing()
+    if precompute:
+        graph.precomputing()
     return graph
