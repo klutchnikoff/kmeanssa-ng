@@ -44,16 +44,20 @@ class RobustificationStrategy(ABC, Generic[T_Result]):
 
 
 class MinimizeEnergy(RobustificationStrategy[list["Center"]]):
-    """Strategy to find centers that minimize the k-means energy."""
+    """Strategy to find centers that minimize the k-means energy.
+
+    Uses optimized energy calculation if available (e.g., Numba-accelerated),
+    otherwise falls back to standard implementation.
+    """
 
     def initialize(self, sa: SimulatedAnnealing) -> None:
         """Initialize with current centers and their energy."""
         self._best_centers = sa._clone_centers(sa.centers)
-        self._best_energy = sa.space.calculate_energy(self._best_centers)
+        self._best_energy = self._calculate_energy(sa, self._best_centers)
 
     def collect(self, sa: SimulatedAnnealing) -> None:
         """If current centers have lower energy, save them."""
-        new_energy = sa.space.calculate_energy(sa.centers)
+        new_energy = self._calculate_energy(sa, sa.centers)
         if new_energy < self._best_energy:
             self._best_centers = sa._clone_centers(sa.centers)
             self._best_energy = new_energy
@@ -61,3 +65,22 @@ class MinimizeEnergy(RobustificationStrategy[list["Center"]]):
     def get_result(self) -> list["Center"]:
         """Return the list of centers with the minimum energy found."""
         return self._best_centers
+
+    def _calculate_energy(
+        self, sa: SimulatedAnnealing, centers: list["Center"]
+    ) -> float:
+        """Calculate energy using optimized method if available.
+
+        Checks for calculate_energy_numba method on the space for accelerated
+        computation, otherwise uses standard calculate_energy.
+
+        Args:
+            sa: SimulatedAnnealing instance
+            centers: Centers to calculate energy for
+
+        Returns:
+            Energy value
+        """
+        if hasattr(sa.space, "calculate_energy_numba"):
+            return sa.space.calculate_energy_numba(centers)
+        return sa.space.calculate_energy(centers)
