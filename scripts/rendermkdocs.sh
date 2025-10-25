@@ -1,8 +1,13 @@
 #!/bin/bash
 
-mkdir -p docs
-rm -f docs/*.md
-for qmd_file in docs-src/*.qmd; do
-  quarto render "$qmd_file" --to gfm --output-dir ../docs
-done
+# Render all Quarto documents as a project
+# This respects _quarto.yml settings (freeze, seed, etc.)
+cd docs-src
+quarto render --to gfm
+cd ..
+
+# Copy API documentation
 cp -r docs-src/api docs/
+
+# Remove GFM duplicate files to avoid mkdocs warnings
+find docs/api -name '*-gfm.md' -delete
