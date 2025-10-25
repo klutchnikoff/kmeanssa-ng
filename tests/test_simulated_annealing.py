@@ -210,30 +210,34 @@ class TestSimulatedAnnealing:
 
     def test_run_for_mean(self):
         from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
+        from kmeanssa_ng import QGCenter
 
         graph = generate_simple_graph(n_a=3)
         points = graph.sample_points(20)
 
         sa = SimulatedAnnealing(points, k=1)
 
-        node_idx = sa.run_interleaved(
+        center = sa.run_interleaved(
             robust_prop=0.1, robustification_strategy=MostFrequentNode()
         )
 
-        # Node IDs can be strings (e.g., "A0") or integers
-        assert node_idx in graph.nodes
+        # Should return a single QGCenter object
+        assert isinstance(center, QGCenter)
+        assert center.space == graph
 
     def test_run_for_mean_with_multiple_k(self):
-        """Test that run with k != 1 returns a list of nodes."""
+        """Test that run with k != 1 returns a list of centers."""
         from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
+        from kmeanssa_ng import QGCenter
 
         graph = generate_simple_graph()
         points = graph.sample_points(20)
         sa = SimulatedAnnealing(points, k=2)
 
-        node_ids = sa.run_interleaved(robustification_strategy=MostFrequentNode())
-        assert isinstance(node_ids, list)
-        assert len(node_ids) == 2
+        centers = sa.run_interleaved(robustification_strategy=MostFrequentNode())
+        assert isinstance(centers, list)
+        assert len(centers) == 2
+        assert all(isinstance(c, QGCenter) for c in centers)
 
     def test_run_for_mean_invalid_robust_prop_raises(self):
         from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
@@ -271,27 +275,32 @@ class TestSimulatedAnnealing:
 
     def test_run_for_kmeans(self):
         from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
+        from kmeanssa_ng import QGCenter
 
         graph = generate_simple_graph(n_a=3)
         points = graph.sample_points(20)
 
         sa = SimulatedAnnealing(points, k=2)
 
-        node_ids = sa.run_interleaved(robustification_strategy=MostFrequentNode())
+        centers = sa.run_interleaved(robustification_strategy=MostFrequentNode())
 
-        assert len(node_ids) == 2
-        # Node IDs can be strings or integers depending on graph
-        assert all(node_id in graph.nodes for node_id in node_ids)
+        assert len(centers) == 2
+        assert all(isinstance(c, QGCenter) for c in centers)
+        assert all(c.space == graph for c in centers)
 
     def test_most_frequent_node_strategy_empty_collection(self):
         """Test MostFrequentNode with an empty collection."""
 
         from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
+        from kmeanssa_ng import QuantumGraph
 
         # Mock SimulatedAnnealing instance
         class MockSA:
             def __init__(self, k):
                 self._k = k
+                # Create a minimal graph for testing
+                self.space = QuantumGraph()
+                self.space.add_edge(0, 1, length=1.0)
 
         strategy = MostFrequentNode()
 
