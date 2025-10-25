@@ -19,3 +19,4 @@ This package provides an implementation of the k-means clustering algorithm usin
 
 This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).<br> 
 &copy; Copyright 2025, Nicolas Klutchnikoff and Ioana Gavra
+ 
