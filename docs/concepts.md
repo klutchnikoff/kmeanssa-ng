@@ -13,7 +13,7 @@ $(\mathcal{M}, d)$, not just Euclidean space. Given a probability
 measure $P$ on $(\mathcal{M}, d)$, we seek $k$ centers that minimize:
 
 $$ 
-\text{minimize} \quad U(c_1, \ldots, c_k) = \frac{1}{2}\int_{\mathcal{M}} \min_{j=1,\ldots,k} d(x, c_j)^2 \, P(dx)
+\text{minimize} \quad U(c_1, \ldots, c_k) = \frac{1}{2}\int_{\mathcal{M}} \min_{j=1,\ldots,k} d^2(x, c_j) \, P(dx)
 $$
 
 where $d: \mathcal{M} \times \mathcal{M} \to \mathbb{R}_+$ is a distance
@@ -22,7 +22,7 @@ function.
 **Key distinction**: We are not clustering a fixed dataset, but rather
 **quantizing a probability distribution**. The algorithm is **online**:
 observations arrive sequentially according to a Poisson process, and
-each new observation $Y_t \sim P$ causes a drift that pulls the nearest
+each new observation $Y_k \sim P$ causes a drift that pulls the nearest
 center toward it. Between observations, centers explore the space via
 Brownian motion. This homogenized version of [Simulated
 Annealing](simulated-annealing.md) processes data incrementally without
@@ -99,17 +99,3 @@ The key benefit of this architecture is its extensibility. Users can add
 support for new metric spaces simply by providing their own concrete
 implementation of the `Space` layer. See [Custom
 Spaces](custom-spaces.md) for a detailed guide.
-
-## Summary
-
-The `kmeanssa-ng` package provides:
-
-1.  **Generality**: K-means clustering on arbitrary metric spaces.
-2.  **Robustness**: A [Simulated Annealing](simulated-annealing.md)
-    algorithm that avoids local minima.
-3.  **Modularity**: A clean three-layer architecture that separates the
-    algorithm from the geometry.
-4.  **Extensibility**: A simple interface for adding [new custom
-    spaces](custom-spaces.md).
-5.  **Practicality**: A ready-to-use implementation for clustering on
-    [Quantum Graphs](quantum-graphs.md).
