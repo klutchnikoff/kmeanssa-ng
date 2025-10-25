@@ -364,7 +364,6 @@ class TestIntegration:
 
 
 # Import numpy for type checking in tests
-import numpy as np
 
 
 from kmeanssa_ng.core.strategies.robustification import RobustificationStrategy

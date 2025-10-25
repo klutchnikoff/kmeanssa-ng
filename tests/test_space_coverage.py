@@ -1,7 +1,6 @@
 """Additional tests for QuantumGraph space.py to improve coverage."""
 
 import networkx as nx
-import numpy as np
 import pytest
 
 from kmeanssa_ng import QuantumGraph, QGPoint, QGCenter

@@ -1,7 +1,6 @@
 """Test quantum graph functionality."""
 
 import networkx as nx
-import networkx as nx
 import numpy as np
 import pytest
 

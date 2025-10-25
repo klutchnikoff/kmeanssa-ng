@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 
 from kmeanssa_ng import (
-    QuantumGraph,
     generate_simple_graph,
     generate_simple_random_graph,
     generate_sbm,
