@@ -12,10 +12,10 @@ from .space import QuantumGraph
 
 class UniformDistribution:
     """Picklable uniform distribution function."""
-    
+
     def __init__(self, length: float):
         self.length = length
-    
+
     def __call__(self) -> float:
         return rd.uniform(0, self.length)
 

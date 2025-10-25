@@ -21,7 +21,9 @@ if TYPE_CHECKING:
     from .abstract import Center, Point, Space
 
 
-def compute_labels(space: Space, points: list[Point], centers: list[Center]) -> np.ndarray:
+def compute_labels(
+    space: Space, points: list[Point], centers: list[Center]
+) -> np.ndarray:
     """Assign each point to its nearest center.
 
     Args:
@@ -62,7 +64,7 @@ def compute_distance_matrix(space: Space, points: list[Point]) -> np.ndarray:
     # Optimization: if all points are quantum graph nodes, use precomputed distances
     if _all_points_at_nodes(points):
         return _distance_matrix_from_precomputed(space, points)
-    
+
     # General case: compute all pairwise distances
     n = len(points)
     distances = np.zeros((n, n))
@@ -76,42 +78,42 @@ def compute_distance_matrix(space: Space, points: list[Point]) -> np.ndarray:
 
 def _all_points_at_nodes(points: list[Point]) -> bool:
     """Check if all points are at graph nodes.
-    
+
     A point is at a node if:
     - position == 0 (at edge[0])
     - position == edge_length (at edge[1])
-    
+
     Args:
         points: List of points to check.
-    
+
     Returns:
         True if all points are at nodes, False otherwise.
     """
     if not hasattr(points[0], "position"):
         return False
-    
+
     for point in points:
         if point.position == 0:
             continue  # At edge[0]
-        
+
         # Check if at edge[1] (position == edge_length)
         if hasattr(point, "space") and hasattr(point.space, "get_edge_length"):
             edge_length = point.space.get_edge_length(*point.edge)
             if abs(point.position - edge_length) < 1e-10:  # Floating point tolerance
                 continue  # At edge[1]
-        
+
         return False  # Point is in the middle of an edge
-    
+
     return True
 
 
 def _distance_matrix_from_precomputed(space: Space, points: list[Point]) -> np.ndarray:
     """Build distance matrix using precomputed node distances.
-    
+
     Args:
         space: The quantum graph space.
         points: List of points at nodes.
-    
+
     Returns:
         n×n distance matrix.
     """
@@ -119,7 +121,7 @@ def _distance_matrix_from_precomputed(space: Space, points: list[Point]) -> np.n
     if hasattr(space, "_pairwise_nodes_distance") and space._pairwise_nodes_distance:
         n = len(points)
         distances = np.zeros((n, n))
-        
+
         # Extract node IDs from points
         # If position == 0, use edge[0]; if position == edge_length, use edge[1]
         node_ids = []
@@ -129,15 +131,15 @@ def _distance_matrix_from_precomputed(space: Space, points: list[Point]) -> np.n
             else:
                 # Point is at edge[1]
                 node_ids.append(point.edge[1])
-        
+
         for i in range(n):
             for j in range(i + 1, n):
                 d = space._pairwise_nodes_distance[node_ids[i]][node_ids[j]]
                 distances[i, j] = d
                 distances[j, i] = d
-        
+
         return distances
-    
+
     # Fallback: no precomputed distances available
     n = len(points)
     distances = np.zeros((n, n))
@@ -407,7 +409,9 @@ def evaluate_clustering(
     results = {
         "silhouette": silhouette(space, points, centers, predicted_labels),
         "davies_bouldin": davies_bouldin(space, points, centers, predicted_labels),
-        "calinski_harabasz": calinski_harabasz(space, points, centers, predicted_labels),
+        "calinski_harabasz": calinski_harabasz(
+            space, points, centers, predicted_labels
+        ),
     }
 
     if true_labels is not None:

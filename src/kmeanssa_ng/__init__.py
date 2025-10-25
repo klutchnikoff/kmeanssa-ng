@@ -28,7 +28,14 @@ from importlib import metadata
 
 __version__ = metadata.version("kmeanssa-ng")
 
-from .core import Center, Point, SimulatedAnnealing, Space, run_parallel, run_parallel_with_callback
+from .core import (
+    Center,
+    Point,
+    SimulatedAnnealing,
+    Space,
+    run_parallel,
+    run_parallel_with_callback,
+)
 from .core.metrics import (
     adjusted_rand_index,
     calinski_harabasz,
@@ -94,4 +101,3 @@ __all__ = [
     "as_quantum_graph",
     "complete_quantum_graph",
 ]
-
