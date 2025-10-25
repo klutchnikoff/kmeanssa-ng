@@ -14,13 +14,14 @@ from typing import TYPE_CHECKING, Callable, Literal
 import numpy as np
 
 if TYPE_CHECKING:
-    from .abstract import Center, Point
+    from .abstract import Center, Point, Space
     from .strategies.initialization import InitializationStrategy
     from .strategies.robustification import RobustificationStrategy
 
 
 def _run_with_seed(
-    observations: list[Point],
+    space: "Space",
+    n_points: int,
     k: int,
     seed: int,
     algorithm: Literal["interleaved", "sequential"],
@@ -36,7 +37,8 @@ def _run_with_seed(
     This is a worker function designed to be pickled for multiprocessing.
 
     Args:
-        observations: List of points to cluster.
+        space: The metric space to sample points from.
+        n_points: Number of points to sample.
         k: Number of clusters.
         seed: Random seed for reproducibility.
         algorithm: Which algorithm to use ("interleaved" or "sequential").
@@ -53,9 +55,13 @@ def _run_with_seed(
     # Import here to avoid circular dependencies
     from .simulated_annealing import SimulatedAnnealing
 
-    # Set random seed for reproducibility
+    # Set random seed for reproducibility (affects sampling, Poisson process, etc.)
     rd.seed(seed)
     np.random.seed(seed)
+    
+    # Sample observations with this seed
+    observations = space.sample_points(n_points)
+    
     # Create algorithm instance
     sa = SimulatedAnnealing(
         observations=observations,
@@ -90,7 +96,8 @@ def _run_with_seed(
 
 
 def run_parallel(
-    observations: list[Point],
+    space: "Space",
+    n_points: int,
     k: int,
     n_runs: int = 10,
     algorithm: Literal["interleaved", "sequential"] = "interleaved",
@@ -107,10 +114,13 @@ def run_parallel(
     """Run simulated annealing multiple times in parallel with different seeds.
 
     This function executes n_runs independent simulated annealing runs in parallel,
-    each with a different random seed, and returns the best result (lowest energy).
+    each with a different random seed. Each run samples its own observations,
+    generates its own Poisson process, and initializes differently, ensuring
+    complete independence between runs.
 
     Args:
-        observations: List of points to cluster.
+        space: The metric space to sample points from.
+        n_points: Number of points to sample for each run.
         k: Number of clusters.
         n_runs: Number of parallel runs to execute.
         algorithm: Which algorithm variant to use ("interleaved" or "sequential").
@@ -136,15 +146,14 @@ def run_parallel(
         ```python
         from kmeanssa_ng import run_parallel
 
-        # Generate observations
+        # Generate a graph
         graph = QuantumGraph(...)
-        points = graph.sample_points(100)
 
-        # Run 10 parallel executions
-        best_centers = run_parallel(points, k=5, n_runs=10)
+        # Run 10 parallel executions, each sampling its own 100 points
+        best_centers = run_parallel(graph, n_points=100, k=5, n_runs=10)
 
         # Get all results for analysis
-        best, all_results = run_parallel(points, k=5, n_runs=10, return_all=True)
+        best, all_results = run_parallel(graph, n_points=100, k=5, n_runs=10, return_all=True)
         for centers, energy, seed in all_results:
             print(f"Seed {seed}: energy = {energy:.4f}")
         ```
@@ -173,7 +182,8 @@ def run_parallel(
         futures = [
             executor.submit(
                 _run_with_seed,
-                observations,
+                space,
+                n_points,
                 k,
                 seed,
                 algorithm,
@@ -203,7 +213,8 @@ def run_parallel(
 
 
 def run_parallel_with_callback(
-    observations: list[Point],
+    space: "Space",
+    n_points: int,
     k: int,
     n_runs: int = 10,
     algorithm: Literal["interleaved", "sequential"] = "interleaved",
@@ -218,10 +229,12 @@ def run_parallel_with_callback(
     """Run parallel simulated annealing with progress callback.
 
     Similar to run_parallel but calls a callback function after each run completes,
-    useful for progress tracking and real-time monitoring.
+    useful for progress tracking and real-time monitoring. Each run samples its own
+    observations with its specific seed.
 
     Args:
-        observations: List of points to cluster.
+        space: The metric space to sample points from.
+        n_points: Number of points to sample for each run.
         k: Number of clusters.
         n_runs: Number of parallel runs to execute.
         algorithm: Which algorithm variant to use.
@@ -241,8 +254,9 @@ def run_parallel_with_callback(
         def progress_callback(run_idx, seed, energy):
             print(f"Run {run_idx+1}/{n_runs}: energy = {energy:.4f} (seed={seed})")
 
+        graph = QuantumGraph(...)
         centers = run_parallel_with_callback(
-            points, k=5, n_runs=10, callback=progress_callback
+            graph, n_points=100, k=5, n_runs=10, callback=progress_callback
         )
         ```
     """
@@ -271,7 +285,8 @@ def run_parallel_with_callback(
         future_to_index = {
             executor.submit(
                 _run_with_seed,
-                observations,
+                space,
+                n_points,
                 k,
                 seed,
                 algorithm,
