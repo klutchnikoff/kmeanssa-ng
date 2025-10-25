@@ -40,6 +40,7 @@ nav:
   - "Getting Started":
     - "Quickstart": quickstart.md
     - "Concepts": concepts.md
+    - "Contributing": contributing.md
   - "User Guide":
     - "Quantum Graphs": quantum-graphs.md
     - "Simulated Annealing": simulated-annealing.md
