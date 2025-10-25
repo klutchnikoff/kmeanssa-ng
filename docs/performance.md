@@ -1,4 +1,6 @@
-# Performance
+---
+title: Performance
+---
 
 
 This page is under construction.

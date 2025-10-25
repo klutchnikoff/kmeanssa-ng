@@ -1,4 +1,6 @@
-# Contributing
+---
+title: Contributing
+---
 
 
 This page is under construction.

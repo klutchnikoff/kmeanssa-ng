@@ -1,4 +1,6 @@
-# Custom Spaces
+---
+title: Custom Spaces
+---
 
 
 One of the main strengths of `kmeanssa-ng` is how easy it is to add

@@ -1,4 +1,6 @@
-# Simulated Annealing
+---
+title: Simulated Annealing
+---
 
 
 ## General Principle

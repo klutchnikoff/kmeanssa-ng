@@ -4,41 +4,39 @@ title: "Core Concepts"
 
 ## Overview: K-means on Arbitrary Metric Spaces
 
-### The Classical K-means Problem
+### The Quantization Problem
 
-The k-means algorithm is a fundamental clustering method that partitions $n$ observations into $k$ clusters. In the classical Euclidean setting, given observations {x_1, ..., x_n} $\subset \mathbb{R}^d$, the goal is to find cluster centers {c_1, ..., c_k} that minimize the total within-cluster variance:
-
-$$ 
-\text{minimize} \quad \sum_{i=1}^{n} \min_{j=1,\ldots,k} \|x_i - c_j\|^2 
-$$ 
-
-This problem is NP-hard in general, and practical algorithms like Lloyd's algorithm provide local minima through iterative refinement.
-
-### Extension to Metric Spaces
-
-The key insight of `kmeanssa-ng` is that k-means clustering can be generalized to **any metric space** $(\mathcal{M}, d)$, not just Euclidean space. The optimization problem becomes:
+The key insight of `kmeanssa-ng` is that k-means can be generalized to **quantization of probability distributions** on almost any metric space $(\mathcal{M}, d)$, not just Euclidean space. Given a probability measure $P$ on $(\mathcal{M}, d)$, we seek $k$ centers that minimize:
 
 $$ 
-\text{minimize} \quad \sum_{i=1}^{n} \min_{j=1,\ldots,k} d(x_i, c_j)^2 
+\text{minimize} \quad U(c_1, \ldots, c_k) = \frac{1}{2}\int_{\mathcal{M}} \min_{j=1,\ldots,k} d^2(x, c_j) \, P(dx)
 $$ 
 
 where $d: \mathcal{M} \times \mathcal{M} \to \mathbb{R}_+$ is a distance function.
 
-This opens up clustering to:
+**Key distinction**: We are not clustering a fixed dataset, but rather **quantizing a probability distribution**. The algorithm is **online**: observations arrive sequentially according to a Poisson process, and each new observation $Y_k \sim P$ causes a drift that pulls the nearest center toward it. Between observations, centers explore the space via Brownian motion. This homogenized version of [Simulated Annealing](simulated-annealing.md) processes data incrementally without storing all observations.
+
+**Connection to classical k-means**: When $P$ is a uniform distribution over a finite set of data points, this reduces to the standard k-means problem. But the framework is much more general:
+
+- For **graph clustering without weights**: use $P = \text{Uniform}(V)$ over vertices
+- For **weighted graphs**: use $P$ proportional to vertex weights
+- For **continuous spaces**: use any continuous probability distribution on the metric space
+
+This opens up quantization to:
 
 - **Metric graphs** (quantum graphs): networks where points can exist anywhere on edges
 - **Riemannian manifolds**: curved spaces with geodesic distances
-- **Custom spaces**: any domain with a meaningful distance metric
+- **Custom spaces**: any domain with a meaningful distance metric and probability measure
 
 ### Why This Matters
 
-Many real-world problems involve data that doesn't naturally live in Euclidean space:
+Many real-world problems involve probability distributions on non-Euclidean spaces:
 
 - Network data (social networks, transportation, molecules)
 - Geographical data on curved surfaces
 - Data constrained to manifolds (e.g., directional data on spheres)
 
-Standard k-means fails in these settings because Euclidean distance is inappropriate. `kmeanssa-ng` provides a principled framework for clustering in these spaces, using [Simulated Annealing](simulated-annealing.md) to find optimal cluster centers.
+Standard k-means fails in these settings because Euclidean distance is inappropriate. `kmeanssa-ng` provides a principled framework for quantizing distributions in these spaces, using stochastic observations to drive the optimization.
 
 ## Architecture: A Three-Layer Design
 
@@ -64,13 +62,3 @@ Crucially, **the algorithm is completely independent of the space it operates on
 This layer provides concrete implementations of the abstract `Space`, `Point`, and `Center` classes for specific metric spaces. `kmeanssa-ng` comes with a built-in implementation for [Quantum Graphs](quantum-graphs.md).
 
 The key benefit of this architecture is its extensibility. Users can add support for new metric spaces simply by providing their own concrete implementation of the `Space` layer. See [Custom Spaces](custom-spaces.md) for a detailed guide.
-
-## Summary
-
-The `kmeanssa-ng` package provides:
-
-1.  **Generality**: K-means clustering on arbitrary metric spaces.
-2.  **Robustness**: A [Simulated Annealing](simulated-annealing.md) algorithm that avoids local minima.
-3.  **Modularity**: A clean three-layer architecture that separates the algorithm from the geometry.
-4.  **Extensibility**: A simple interface for adding [new custom spaces](custom-spaces.md).
-5.  **Practicality**: A ready-to-use implementation for clustering on [Quantum Graphs](quantum-graphs.md).

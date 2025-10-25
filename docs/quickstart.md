@@ -1,4 +1,9 @@
-# Quickstart
+---
+title: Quickstart
+execute:
+  freeze: auto
+  seed: 42
+---
 
 
 This guide provides a basic example of how to use `kmeanssa-ng` to
@@ -16,8 +21,8 @@ from kmeanssa_ng import generate_sbm
 graph = generate_sbm(
     sizes=[40, 40],  # Two communities of 40 nodes each
     p=[
-        [0.2, 0.01],  # High intra-community connectivity
-        [0.01, 0.2],
+        [0.7, 0.01],  # High intra-community connectivity
+        [0.01, 0.7],
     ],  # Low inter-community connectivity
 )
 
@@ -32,7 +37,7 @@ points we want to cluster.
 
 ``` python
 # Sample points uniformly across the graph
-points = graph.sample_points(150)
+points = graph.sample_points(500)
 ```
 
 ## 3. Run K-means with Simulated Annealing
@@ -62,7 +67,7 @@ centers = sa.run_interleaved(
 print(f"Cluster centers: {centers}")
 ```
 
-    Cluster centers: [QGCenter(edge=(49, 74), position=0.000), QGCenter(edge=(17, 38), position=0.000)]
+    Cluster centers: [QGCenter(edge=(23, 29), position=0.000), QGCenter(edge=(60, 69), position=0.000)]
 
 ## 4. Visualize the Results
 
@@ -81,9 +86,10 @@ graph.compute_clusters(centers)
 fig, ax = plt.subplots(figsize=(10, 8))
 graph.draw(
     ax=ax,
-    color_by='cluster',
+    color_by="cluster",
     centers=centers,
-    node_size_by_obs=True  # Show which nodes have more sampled points
+    node_size_by_obs=True,  # Show which nodes have more sampled points
+    edge_color="grey",
 )
 plt.title("K-means Clustering on a Quantum Graph")
 plt.show()

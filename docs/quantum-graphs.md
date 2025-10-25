@@ -1,4 +1,6 @@
-# Quantum Graphs
+---
+title: Quantum Graphs
+---
 
 
 This page is under construction.
