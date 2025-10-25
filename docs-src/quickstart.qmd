@@ -28,10 +28,9 @@ graph = generate_sbm(
     ],
 )
 
-# Essential: precompute shortest paths.
+# Note: Distances are automatically precomputed by default.
 # The algorithm relies on distances between points on the graph,
-# so pre-calculating all-pairs shortest paths is a required optimization.
-graph.precomputing()
+# so generate_sbm() precomputes all-pairs shortest paths automatically.
 ```
 
 ## 2. Define the Data Distribution
