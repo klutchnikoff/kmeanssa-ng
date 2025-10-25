@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Callable, Literal
 import numpy as np
 
 if TYPE_CHECKING:
-    from .abstract import Center, Point, Space
+    from .abstract import Center, Space
     from .strategies.initialization import InitializationStrategy
     from .strategies.robustification import RobustificationStrategy
 
@@ -58,10 +58,10 @@ def _run_with_seed(
     # Set random seed for reproducibility (affects sampling, Poisson process, etc.)
     rd.seed(seed)
     np.random.seed(seed)
-    
+
     # Sample observations with this seed
     observations = space.sample_points(n_points)
-    
+
     # Create algorithm instance
     sa = SimulatedAnnealing(
         observations=observations,
