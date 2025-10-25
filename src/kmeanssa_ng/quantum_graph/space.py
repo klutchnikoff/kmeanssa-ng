@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random as rd
+from typing import TYPE_CHECKING
 
 import networkx as nx
 import numpy as np
@@ -11,6 +12,9 @@ from numba import njit
 from ..core import Space
 from .center import QGCenter
 from .point import QGPoint
+
+if TYPE_CHECKING:
+    import matplotlib.pyplot as plt
 
 
 @njit(cache=True, fastmath=True)
@@ -679,3 +683,97 @@ class QuantumGraph(nx.Graph, Space):
         """
         node_list = list(self.nodes())
         return [self.node_as_center(node_list[idx]) for idx in indices]
+
+    def draw(
+        self,
+        color_by: str | None = "cluster",
+        centers: list[QGCenter] | None = None,
+        node_size_by_obs: bool = True,
+        ax: "plt.Axes" | None = None,
+        **kwargs,
+    ):
+        """Draws the graph using matplotlib.
+
+        This method provides a flexible way to visualize the graph, its clusters,
+        and the results of the k-means algorithm. To use this method, you need
+        to install the 'plot' extras: `pip install kmeanssa-ng[plot]`
+
+        Args:
+            color_by: Node attribute to use for coloring.
+                - "cluster": Colors nodes by their assigned cluster.
+                - "block": Colors nodes by a pre-defined 'block' attribute.
+                - None: All nodes will have the same default color. (Default: "skyblue")
+            centers: A list of QGCenter objects to be highlighted on the graph.
+            node_size_by_obs: If True, sizes nodes based on 'nb_obs' attribute.
+            ax: A matplotlib axes object to draw on. If None, a new figure
+                and axes are created.
+            **kwargs: Additional arguments passed to nx.draw().
+        """
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError as e:
+            raise ImportError(
+                "Plotting requires matplotlib. Please install it with "
+                "`pip install kmeanssa-ng[plot]`"
+            ) from e
+
+        if ax is None:
+            fig, ax = plt.subplots(figsize=kwargs.pop("figsize", (12, 12)))
+
+        # Use pre-computed layout for consistency
+        pos = self.node_position
+
+        # Determine node colors
+        node_colors = "skyblue"  # Default color
+        if color_by:
+            # Check if any node has the attribute
+            if not any(color_by in n[1] for n in self.nodes(data=True)):
+                print(
+                    f"Warning: Node attribute '{color_by}' not found. Using default color."
+                )
+            else:
+                node_colors = [self.nodes[n].get(color_by, 0) for n in self.nodes()]
+
+        # Determine node sizes
+        node_sizes = 300  # Default size
+        if node_size_by_obs:
+            if not any("nb_obs" in n[1] for n in self.nodes(data=True)):
+                print("Warning: Node attribute 'nb_obs' not found. Using default size.")
+            else:
+                # Scale size by number of observations, with a minimum size
+                node_sizes = [
+                    self.nodes[n].get("nb_obs", 0) * 50 + 100 for n in self.nodes()
+                ]
+
+        # Draw the graph
+        nx.draw(
+            self,
+            pos=pos,
+            ax=ax,
+            node_color=node_colors,
+            node_size=node_sizes,
+            with_labels=False,
+            **kwargs,
+        )
+
+        # Highlight centers
+        if centers:
+            center_nodes = [c.edge[0] for c in centers]
+            node_list = list(self.nodes)
+            center_node_indices = [node_list.index(n) for n in center_nodes]
+
+            center_sizes = (
+                [node_sizes[i] * 2 for i in center_node_indices]
+                if isinstance(node_sizes, list)
+                else node_sizes * 2
+            )
+
+            nx.draw_networkx_nodes(
+                self,
+                pos,
+                nodelist=center_nodes,
+                ax=ax,
+                node_size=center_sizes,
+                edgecolors="black",
+                linewidths=2,
+            )
