@@ -44,6 +44,7 @@ nav:
   - "User Guide":
     - "Quantum Graphs": quantum-graphs.md
     - "Simulated Annealing": simulated-annealing.md
+    - "Parallel Execution": parallel-execution.md
     - "Generators": generators.md
     - "Custom Spaces": custom-spaces.md
   # - "Examples":
