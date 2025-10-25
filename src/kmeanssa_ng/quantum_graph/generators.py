@@ -10,6 +10,16 @@ import numpy as np
 from .space import QuantumGraph
 
 
+class UniformDistribution:
+    """Picklable uniform distribution function."""
+    
+    def __init__(self, length: float):
+        self.length = length
+    
+    def __call__(self) -> float:
+        return rd.uniform(0, self.length)
+
+
 def generate_simple_graph(
     n_a: int = 5,
     n_aa: int = 3,
@@ -100,8 +110,8 @@ def generate_simple_graph(
     for edge in graph.edges:
         nx.set_edge_attributes(graph, {edge: {"weight": 1.0}})
         edge_length = graph.get_edge_data(*edge)["length"]
-        # Proper closure to capture edge_length
-        distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
+        # Use picklable callable class instead of lambda
+        distrib = UniformDistribution(edge_length)
         nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
     if precompute:
@@ -180,7 +190,7 @@ def generate_simple_random_graph(
         nx.set_edge_attributes(graph, {edge: {"weight": w}})
 
         edge_length = graph.get_edge_data(*edge)["length"]
-        distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
+        distrib = UniformDistribution(edge_length)
         nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
     if precompute:
@@ -274,7 +284,7 @@ def generate_sbm(
     for edge in graph.edges:
         nx.set_edge_attributes(graph, {edge: {"weight": 1}})
         edge_length = graph.get_edge_data(*edge)["length"]
-        distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
+        distrib = UniformDistribution(edge_length)
         nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
     if precompute:
@@ -382,7 +392,7 @@ def generate_random_sbm(
         edge_length = lengths[block_i][block_j]
 
         nx.set_edge_attributes(graph, {edge: {"length": edge_length, "weight": 1}})
-        distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
+        distrib = UniformDistribution(edge_length)
         nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
     if precompute:
@@ -437,7 +447,7 @@ def as_quantum_graph(
     nx.set_edge_attributes(qg, edge_length, "length")
     nx.set_edge_attributes(qg, edge_weight, "weight")
 
-    distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
+    distrib = UniformDistribution(edge_length)
     for edge in qg.edges:
         nx.set_edge_attributes(qg, {edge: {"distribution": distrib}})
 
@@ -517,7 +527,7 @@ def complete_quantum_graph(
             else:
                 edge_length = 1.0
 
-            distrib = lambda L=edge_length: rd.uniform(0, L)  # noqa: E731
+            distrib = UniformDistribution(edge_length)
             graph.add_edge(i, j, weight=1, length=edge_length, distribution=distrib)
 
     if precompute:
