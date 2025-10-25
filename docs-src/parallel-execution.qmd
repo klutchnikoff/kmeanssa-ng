@@ -29,21 +29,24 @@ from kmeanssa_ng import run_parallel, generate_sbm
 
 # Generate a graph with two communities
 graph = generate_sbm(sizes=[50, 50], p=[[0.7, 0.1], [0.1, 0.7]])
-points = graph.sample_points(100)
 
 # Run 10 times in parallel (uses all available CPU cores)
-best_centers = run_parallel(points, k=2, n_runs=10)
+# Each run samples its own 100 points with a different seed
+best_centers = run_parallel(graph, n_points=100, k=2, n_runs=10)
 print(f"Best result has {len(best_centers)} centers")
 ```
 
 **Parameters**:
 
-- `points`: List of observations to cluster
+- `space`: The metric space (e.g., QuantumGraph) to sample points from
+- `n_points`: Number of points to sample for each run
 - `k`: Number of clusters
 - `n_runs`: Number of parallel executions (default: 10)
 - `n_jobs`: Number of worker processes (default: -1 = all cores)
 - `algorithm`: `"interleaved"` (default) or `"sequential"`
 - Other parameters are passed to `SimulatedAnnealing` (lambda_param, beta, step_size, robust_prop)
+
+**Note**: Each run samples its own observations, ensuring complete independence between runs.
 
 ## Retrieving All Results
 
@@ -51,7 +54,8 @@ To analyze the distribution of results across different seeds:
 
 ```python
 best_centers, all_results = run_parallel(
-    points, 
+    graph,
+    n_points=100,
     k=2, 
     n_runs=20, 
     return_all=True
@@ -79,7 +83,8 @@ def show_progress(run_idx, seed, energy):
     print(f"✓ Run {run_idx+1}/20 completed - Energy: {energy:.4f} (seed={seed})")
 
 centers = run_parallel_with_callback(
-    points,
+    graph,
+    n_points=100,
     k=2,
     n_runs=20,
     callback=show_progress
@@ -101,10 +106,10 @@ To ensure reproducibility, provide a fixed list of seeds:
 seeds = [42, 123, 456, 789, 101112]
 
 # These runs will produce consistent results
-result1 = run_parallel(points, k=2, n_runs=5, seeds=seeds)
-result2 = run_parallel(points, k=2, n_runs=5, seeds=seeds)
+result1 = run_parallel(graph, n_points=100, k=2, n_runs=5, seeds=seeds)
+result2 = run_parallel(graph, n_points=100, k=2, n_runs=5, seeds=seeds)
 
-# Results will be very similar (within numerical precision)
+# Results will be highly similar (same data, same initialization)
 ```
 
 **Note**: While individual runs are deterministic given a seed, the final result may vary slightly due to the order in which parallel processes complete. However, the energy distribution should be consistent.
@@ -115,7 +120,8 @@ You can pass all `SimulatedAnnealing` parameters:
 
 ```python
 centers = run_parallel(
-    points,
+    graph,
+    n_points=150,
     k=3,
     n_runs=50,
     # SimulatedAnnealing parameters
@@ -145,13 +151,13 @@ Here's a complete example analyzing clustering stability:
 from kmeanssa_ng import run_parallel, generate_sbm
 import numpy as np
 
-# Generate data
+# Generate graph
 graph = generate_sbm(sizes=[50, 50], p=[[0.8, 0.1], [0.1, 0.8]])
-points = graph.sample_points(150)
 
-# Run 100 times
+# Run 100 times, each sampling 150 points
 best, all_results = run_parallel(
-    points, 
+    graph,
+    n_points=150,
     k=2, 
     n_runs=100, 
     return_all=True
