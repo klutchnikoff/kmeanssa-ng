@@ -84,8 +84,9 @@ This is where **precomputing** becomes essential. The `precomputing()`
 method calculates all-pairs shortest paths between nodes using
 Dijkstra’s algorithm. Without this, every distance query would require
 running a pathfinding algorithm—extremely slow for large graphs. All
-[graph generators](generators.md) call `precomputing()` automatically,
-but if you modify a graph after creation, you must call it again.
+[graph generators](generators.md) precompute distances automatically
+(via `precompute=True` by default), but if you modify a graph after
+creation, you must call `precomputing()` again.
 
 ``` python
 from kmeanssa_ng import generate_sbm
@@ -94,7 +95,7 @@ graph = generate_sbm(sizes=[30, 30], p=[[0.8, 0.1], [0.1, 0.8]])
 print(f"Graph diameter (longest shortest path): {graph.diameter:.2f}")
 ```
 
-    Graph diameter (longest shortest path): 3.00
+    Graph diameter (longest shortest path): 2.00
 
 ## Sampling Points
 
@@ -125,7 +126,6 @@ Here’s a concrete example:
 
 ``` python
 from kmeanssa_ng import QuantumGraph
-import networkx as nx
 
 # Create a simple triangle graph
 weighted_graph = QuantumGraph()
@@ -138,7 +138,7 @@ weighted_graph.nodes['A']['weight'] = 1.0
 weighted_graph.nodes['B']['weight'] = 5.0  # High-density area
 weighted_graph.nodes['C']['weight'] = 1.0
 
-weighted_# Distances precomputed automatically
+weighted_graph.precomputing()  # Required after manual graph construction
 
 # Sample points - more will appear near node B
 weighted_points = weighted_graph.sample_points(1000)
@@ -158,9 +158,9 @@ for node in ['A', 'B', 'C']:
 ```
 
     Observations per node (approximate):
-      Node A (weight=1.0): 142 observations
-      Node B (weight=5.0): 716 observations
-      Node C (weight=1.0): 142 observations
+      Node A (weight=1.0): 139 observations
+      Node B (weight=5.0): 710 observations
+      Node C (weight=1.0): 151 observations
 
 You should see approximately a 1:5:1 ratio matching the node weights
 (A=1.0, B=5.0, C=1.0). Points are sampled proportionally to the combined
@@ -175,9 +175,10 @@ When using quantum graphs for clustering, remember:
 **Use generators**: The [graph generators](generators.md) handle all
 requirements automatically. Manual construction is rarely necessary.
 
-**Precomputing is mandatory**: Always call `precomputing()` after
-creating or modifying a graph. This caches shortest paths and is
-required for distance computation. Generators do this automatically.
+**Precomputing is automatic**: All generators precompute distances by
+default (`precompute=True`). If you manually construct a graph or modify
+it after creation, call `precomputing()` to update the cached shortest
+paths.
 
 **Connectivity matters**: The graph must be connected. For random graphs
 (e.g., Erdős-Rényi), you may need to extract the largest connected

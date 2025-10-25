@@ -34,10 +34,9 @@ graph = generate_sbm(
     ],
 )
 
-# Essential: precompute shortest paths.
+# Note: Distances are automatically precomputed by default.
 # The algorithm relies on distances between points on the graph,
-# so pre-calculating all-pairs shortest paths is a required optimization.
-# Distances precomputed automatically
+# so generate_sbm() precomputes all-pairs shortest paths automatically.
 ```
 
 ## 2. Define the Data Distribution
@@ -86,8 +85,8 @@ for center in centers:
 ```
 
     Cluster centers (position in edge):
-    Center near node 64 [edge (64, 78), pos=0.000]
-    Center near node 7 [edge (7, 14), pos=0.000]
+    Center near node 77 [edge (77, 68), pos=0.000]
+    Center near node 26 [edge (26, 24), pos=0.000]
 
 ## 4. Visualize the Results
 
