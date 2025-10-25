@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 class MostFrequentNode(RobustificationStrategy[list[Any]]):
     """Strategy to find the most frequent node for each center.
-    
+
     Returns QGCenter objects located at the most frequently visited nodes
     during the robustification phase.
     """
@@ -49,8 +49,11 @@ class MostFrequentNode(RobustificationStrategy[list[Any]]):
 
         # Convert node IDs to QGCenter objects
         from .space import QuantumGraph
+
         if isinstance(self.sa.space, QuantumGraph):
-            robust_centers = [self.sa.space.node_as_center(node) for node in robust_nodes]
+            robust_centers = [
+                self.sa.space.node_as_center(node) for node in robust_nodes
+            ]
         else:
             # Fallback for non-QuantumGraph spaces (shouldn't happen with this strategy)
             robust_centers = robust_nodes

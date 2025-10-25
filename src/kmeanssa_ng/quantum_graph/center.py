@@ -256,7 +256,7 @@ class QGCenter(QGPoint, Center):
     def __repr__(self) -> str:
         """Detailed string representation."""
         return f"QGCenter(edge={self.edge}, position={self.position:.3f})"
-    
+
     def __str__(self) -> str:
         """User-friendly string representation."""
         closest = self._closest_node()
