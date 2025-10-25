@@ -33,6 +33,11 @@ dependencies = [
   "pandas>=2.0.0",
 ]
 
+[project.optional-dependencies]
+plot = [
+  "matplotlib>=3.10.7",
+]
+
 [dependency-groups]
 test = [
   "pytest>=7.4.0",
@@ -66,6 +71,7 @@ docs = [
   "mkdocs>=1.5.3",
   "mkdocs-material>=9.1.21",
   "mkdocstrings[python]>=0.22.0",
+  "jupyter>=1.0.0",
 ]
 plot = [
   "matplotlib>=3.0.0",
@@ -75,9 +81,4 @@ plot = [
 markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')",
   "benchmark: marks tests as performance benchmarks",
-]
-
-[project.optional-dependencies]
-plot = [
-    "matplotlib>=3.10.7",
 ]
