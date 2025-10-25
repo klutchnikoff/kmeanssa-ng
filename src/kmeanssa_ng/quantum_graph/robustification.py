@@ -18,12 +18,12 @@ class MostFrequentNode(RobustificationStrategy[list[Any]]):
     during the robustification phase.
     """
 
-    def initialize(self, sa: "SimulatedAnnealing") -> None:
+    def initialize(self, sa: SimulatedAnnealing) -> None:
         """Initialize an empty list to store node collections."""
         self._central_nodes_collections: list[list] = []
         self.sa = sa
 
-    def collect(self, sa: "SimulatedAnnealing") -> None:
+    def collect(self, sa: SimulatedAnnealing) -> None:
         """Collect the closest node for each center at the current step."""
         current_nodes = [center._closest_node() for center in sa.centers]
         self._central_nodes_collections.append(current_nodes)

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from .abstract import Center, Point, Space
 from .strategies.initialization import (
     InitializationStrategy,
     KMeansPlusPlus,
@@ -14,7 +15,6 @@ from .strategies.initialization import (
 from .strategies.robustification import MinimizeEnergy
 
 if TYPE_CHECKING:
-    from .abstract import Center, Point, Space
     from .strategies.robustification import RobustificationStrategy
 
 
