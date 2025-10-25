@@ -1,8 +1,5 @@
 ---
 title: Quickstart
-execute:
-  freeze: auto
-  seed: 42
 ---
 
 
@@ -43,13 +40,18 @@ graph = generate_sbm(
 graph.precomputing()
 ```
 
-## 2. Sample Points
+## 2. Define the Data Distribution
 
-Next, we sample data points uniformly across the graph since our goal is
-to cluster the uniform distribution on the nodes.
+The algorithm quantizes a probability distribution, not a fixed dataset.
+We need to provide a set of `observations` that act as a representative
+sample (a proxy) of this distribution.
+
+In this example, our goal is to find centers for the **uniform
+distribution over the nodes of the graph**. We thus generate points
+sampled uniformly from the nodes.
 
 ``` python
-# Sample points uniformly across the graph
+# Sample points to serve as a proxy for a uniform data distribution
 points = graph.sample_points(500)
 ```
 
@@ -84,8 +86,8 @@ for center in centers:
 ```
 
     Cluster centers (position in edge):
-    Center near node 28 [edge (28, 21), pos=0.000]
-    Center near node 66 [edge (66, 40), pos=0.000]
+    Center near node 64 [edge (64, 78), pos=0.000]
+    Center near node 7 [edge (7, 14), pos=0.000]
 
 ## 4. Visualize the Results
 

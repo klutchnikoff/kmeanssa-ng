@@ -36,7 +36,9 @@ Centers perform **random walks** in the metric space, characterized by:
 
 For a center $c$ and time parameter $\Delta t$:
 
-$$ c \leftarrow c + \text{Brownian}(\Delta t) $$
+$$ 
+    c \leftarrow c + \text{Brownian}(\Delta t) 
+$$
 
 #### Drift (Exploitation)
 
@@ -48,9 +50,11 @@ cluster:
 - Reduces cluster energy by moving centers closer to their observations
 
 For a center $c$, target observation $x$, and drift proportion
-$\alpha  [0,1]$:
+$\alpha \in [0,1]$:
 
-$$ c \leftarrow c + \alpha  (x - c) $$
+$$ 
+    c \leftarrow c + \alpha \cdot (x - c) 
+$$
 
 (where the notation is geometric; on graphs this means moving along the
 geodesic path)
@@ -63,7 +67,7 @@ process** to generate a decreasing temperature schedule:
 
 $$ T(n) = \sqrt{\sum_{i=1}^{n} E_i + 1} - 1 $$
 
-where $E_i  \text{Exp}(\lambda)$ are exponential random variables.
+where $E_i \sim \text{Exp}(\lambda)$ are exponential random variables.
 
 Key properties:
 
@@ -76,7 +80,7 @@ Key properties:
 `kmeanssa-ng` implements two strategies for combining Brownian motion
 and drift:
 
-#### V1: Interleaved (Default)
+#### Interleaved (`run_interleaved`)
 
 At each iteration:
 
@@ -84,12 +88,12 @@ At each iteration:
 2.  Perform Brownian motion on all centers:
     $c_j \leftarrow c_j + \text{Brownian}(\Delta t)$
 3.  Find nearest center $c^*$ to $x_i$
-4.  Apply drift: $c^* \leftarrow c^* + \alpha  (x_i - c^*)$
+4.  Apply drift: $c^* \leftarrow c^* + \alpha \cdot (x_i - c^*)$
 
 This approach **alternates** exploration and exploitation at a
 fine-grained level.
 
-#### V2: Sequential
+#### Sequential (`run_sequential`)
 
 Separates exploration and exploitation into distinct phases:
 

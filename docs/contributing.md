@@ -43,7 +43,7 @@ Ready to contribute code? Here’s how to get started:
 
 1.  **Fork the repository** on GitLab.
 2.  **Clone your fork** locally:
-    `git clone https://your-gitlab-username@plmlab.math.cnrs.fr/your-gitlab-username/kmeanssa-ng.git`
+    `git clone https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng.git`
 3.  **Set up the development environment** (see below).
 4.  **Create a new branch** for your changes:
     `git checkout -b feature/my-new-feature` or `fix/a-specific-bug`.

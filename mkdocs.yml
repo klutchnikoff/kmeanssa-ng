@@ -46,10 +46,10 @@ nav:
     - "Simulated Annealing": simulated-annealing.md
     - "Generators": generators.md
     - "Custom Spaces": custom-spaces.md
-  - "Examples":
-    - "Basic Clustering": basic-clustering.md
-    - "Advanced Usage": advanced-usage.md
-    - "Performance": performance.md
+  # - "Examples":
+  #   - "Basic Clustering": basic-clustering.md
+  #   - "Advanced Usage": advanced-usage.md
+  #   - "Performance": performance.md
   - "API":
     - "Overview": api/index.md
     - "Core": api/core.md
