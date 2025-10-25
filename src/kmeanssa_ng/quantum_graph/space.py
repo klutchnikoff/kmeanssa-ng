@@ -117,7 +117,9 @@ class QuantumGraph(nx.Graph, Space):
         ```
     """
 
-    def __init__(self, incoming_graph_data=None, precompute: bool = False, **attr) -> None:
+    def __init__(
+        self, incoming_graph_data=None, precompute: bool = False, **attr
+    ) -> None:
         """Initialize a quantum graph.
 
         Args:
@@ -131,7 +133,7 @@ class QuantumGraph(nx.Graph, Space):
         self._node_to_index: dict[int, int] | None = None
         self._diameter: float = 0.0
         self._node_position: dict | None = None
-        
+
         if precompute and self.number_of_nodes() > 0:
             self.precomputing()
 
@@ -315,9 +317,7 @@ class QuantumGraph(nx.Graph, Space):
         d1 = self.node_distance(edge1[0], edge2[1]) + pos1 + (length2 - pos2)
         d2 = self.node_distance(edge1[1], edge2[0]) + (length1 - pos1) + pos2
         d3 = (
-            self.node_distance(edge1[1], edge2[1])
-            + (length1 - pos1)
-            + (length2 - pos2)
+            self.node_distance(edge1[1], edge2[1]) + (length1 - pos1) + (length2 - pos2)
         )
 
         # Find minimum distance (break ties randomly)
@@ -390,9 +390,7 @@ class QuantumGraph(nx.Graph, Space):
             ```
         """
         if self._pairwise_nodes_distance_array is None:
-            raise ValueError(
-                "Must call precomputing() before distances_from_centers"
-            )
+            raise ValueError("Must call precomputing() before distances_from_centers")
 
         k = len(centers)
 
@@ -604,10 +602,7 @@ class QuantumGraph(nx.Graph, Space):
         """
         for node in self.nodes:
             distances = np.array(
-                [
-                    self.node_distance(center.edge[0], node)
-                    for center in centers
-                ]
+                [self.node_distance(center.edge[0], node) for center in centers]
             )
             nx.set_node_attributes(self, {node: {"cluster": np.argmin(distances)}})
 

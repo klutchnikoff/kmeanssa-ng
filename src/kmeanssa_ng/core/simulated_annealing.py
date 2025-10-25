@@ -228,9 +228,7 @@ class SimulatedAnnealing:
                 for center in self._centers:
                     center.brownian_motion(h)
 
-                distances = self.space.distances_from_centers(
-                    self._centers, point
-                )
+                distances = self.space.distances_from_centers(self._centers, point)
                 closest_idx = np.argmin(distances)
                 closest_center = self._centers[closest_idx]
 

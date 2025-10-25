@@ -263,7 +263,9 @@ def generate_sbm(
                 raise ValueError(f"p[{i}][{j}] must be in [0, 1], got {prob_float}")
 
     nx_graph = nx.stochastic_block_model(sizes=sizes, p=p)
-    graph = QuantumGraph(nx_graph, precompute=False, attr=nx.get_node_attributes(nx_graph, name="block"))
+    graph = QuantumGraph(
+        nx_graph, precompute=False, attr=nx.get_node_attributes(nx_graph, name="block")
+    )
 
     # Set uniform attributes
     nx.set_node_attributes(graph, 1, "weight")
