@@ -114,6 +114,29 @@ class TestQuantumGraph:
         manual_dist = graph.distance(centers[0], target)
         assert np.isclose(distances[0], manual_dist)
 
+    def test_batch_distances_without_precomputing_raises(self):
+        """Test that batch_distances raises without precomputing."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 2, length=1.0)
+        
+        centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
+        target = QGPoint(graph, (1, 2), 0.3)
+        
+        with pytest.raises(ValueError, match="Must call precomputing"):
+            graph.batch_distances_from_centers(centers, target)
+
+    def test_sample_kpp_centers_k1(self):
+        """Test k-means++ initialization with k=1."""
+        graph = generate_simple_graph(n_a=3)
+        graph.precomputing()
+        
+        centers = graph.sample_kpp_centers(k=1)
+        
+        assert len(centers) == 1
+        assert isinstance(centers[0], QGCenter)
+        assert centers[0].space == graph
+
     def test_private_sample_point_node_without_weights_raises(self):
         """Test that sampling from nodes without weights raises NotImplementedError."""
         graph = QuantumGraph()
