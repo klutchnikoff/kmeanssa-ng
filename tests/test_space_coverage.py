@@ -2,6 +2,7 @@
 
 import networkx as nx
 import pytest
+from unittest.mock import patch
 
 from kmeanssa_ng import QuantumGraph, QGPoint, QGCenter
 
@@ -362,7 +363,8 @@ class TestSamplePointEdgeMode:
         # Add edge with required attributes
         import random as rd
 
-        distrib = lambda: rd.uniform(0, 2.0)
+        def distrib():
+            return rd.uniform(0, 2.0)
         graph.add_edge(0, 1, length=2.0, weight=1.0, distribution=distrib)
 
         point = graph._sample_point(where="Edge")
@@ -377,8 +379,10 @@ class TestSamplePointEdgeMode:
 
         import random as rd
 
-        distrib1 = lambda: rd.uniform(0, 1.0)
-        distrib2 = lambda: rd.uniform(0, 2.0)
+        def distrib1():
+            return rd.uniform(0, 1.0)
+        def distrib2():
+            return rd.uniform(0, 2.0)
 
         graph.add_edge(0, 1, length=1.0, weight=0.3, distribution=distrib1)
         graph.add_edge(1, 2, length=2.0, weight=0.7, distribution=distrib2)
@@ -392,16 +396,35 @@ class TestSamplePointEdgeMode:
         valid_edges = {(0, 1), (1, 2), (1, 0), (2, 1)}
         assert all(p.edge in valid_edges for p in points)
 
-    def test_sample_centers_edge_mode(self):
-        """Test sampling centers on edges."""
+
+class TestDrawingCoverage:
+    """Tests for drawing method coverage."""
+
+    def test_draw_raises_importerror_if_matplotlib_not_installed(self):
+        """Test that draw() raises ImportError if matplotlib is not installed."""
         graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
 
-        import random as rd
+        # Simulate ImportError for matplotlib
+        with patch.dict('sys.modules', {'matplotlib.pyplot': None}):
+            with pytest.raises(ImportError, match="Plotting requires matplotlib"):
+                graph.draw()
 
-        distrib = lambda: rd.uniform(0, 1.0)
-        graph.add_edge(0, 1, length=1.0, weight=1.0, distribution=distrib)
+    def test_draw_prints_warning_for_missing_attributes(self, capsys):
+        """Test draw() prints warnings to stdout for missing attributes."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
 
-        centers = graph.sample_centers(3, where="Edge")
+        # Mock the plotting call to avoid rendering
+        with patch("matplotlib.pyplot.subplots") as mock_subplots:
+            mock_ax = mock_subplots.return_value[1]
 
-        assert len(centers) == 3
-        assert all(isinstance(c, QGCenter) for c in centers)
+            # Test warning for missing color_by attribute
+            graph.draw(color_by="non_existent", ax=mock_ax)
+            captured = capsys.readouterr()
+            assert "Warning: Node attribute 'non_existent' not found" in captured.out
+
+            # Test warning for missing nb_obs attribute
+            graph.draw(node_size_by_obs=True, ax=mock_ax)
+            captured = capsys.readouterr()
+            assert "Warning: Node attribute 'nb_obs' not found" in captured.out

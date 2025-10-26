@@ -11,6 +11,7 @@ from kmeanssa_ng.core.strategies.initialization import (
     KMeansPlusPlus,
     RandomInit,
 )
+from kmeanssa_ng.core.strategies.robustification import RobustificationStrategy
 
 
 class TestSimulatedAnnealing:
@@ -204,7 +205,7 @@ class TestSimulatedAnnealing:
         assert sa.centers == []
 
         # After running, should have centers
-        centers = sa.run_interleaved(initialization_strategy=KMeansPlusPlus())
+        sa.run_interleaved(initialization_strategy=KMeansPlusPlus())
         # Note: centers property returns the private _centers, which is set during run
         assert len(sa.centers) == 2
 
@@ -348,7 +349,7 @@ class TestIntegration:
         graph = generate_simple_graph(n_a=5, bridge_length=5.0)
         points = graph.sample_points(50)
 
-        sa = SimulatedAnnealing(points, k=2, lambda_param=1, beta=2.0)
+        SimulatedAnnealing(points, k=2, lambda_param=1, beta=2.0)
 
         # Random initialization should have higher energy than k-means++
         centers_random = graph.sample_centers(2)
@@ -361,12 +362,6 @@ class TestIntegration:
         # This is probabilistic, so we just check it runs
         assert energy_random >= 0
         assert energy_kpp >= 0
-
-
-# Import numpy for type checking in tests
-
-
-from kmeanssa_ng.core.strategies.robustification import RobustificationStrategy
 
 
 class TestRobustificationStrategy:

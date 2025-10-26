@@ -412,3 +412,68 @@ class TestNormalizedMutualInfo:
         
         nmi = normalized_mutual_info(labels1, labels2)
         assert 0 <= nmi < 0.5
+
+
+class TestMetricHelpers:
+    """Tests for metric helper functions."""
+
+    def test_points_to_features_raises_for_unknown_type(self, simple_graph):
+        """Test that _points_to_features raises for unknown point types."""
+
+        class MockPoint:
+            pass
+
+        points = [MockPoint(), MockPoint()]
+        # Provide pre-computed labels to avoid calling compute_labels, which fails on MockPoint
+        labels = np.array([0, 1])
+
+        # davies_bouldin and calinski_harabasz internally call _points_to_features
+        with pytest.raises(NotImplementedError, match="Feature extraction not implemented"):
+            davies_bouldin(simple_graph, points, [], labels=labels)
+
+        with pytest.raises(NotImplementedError, match="Feature extraction not implemented"):
+            calinski_harabasz(simple_graph, points, [], labels=labels)
+
+    def test_evaluate_clustering_with_true_labels(self, simple_graph):
+        """Test that evaluate_clustering includes ARI and NMI with true_labels."""
+        from kmeanssa_ng.core.metrics import evaluate_clustering
+
+        # Create points and centers at fixed positions to ensure multiple clusters
+        points = [
+            QGPoint(simple_graph, (0, 1), 1.0),
+            QGPoint(simple_graph, (0, 1), 2.0),
+            QGPoint(simple_graph, (3, 4), 8.0),
+            QGPoint(simple_graph, (3, 4), 9.0),
+        ]
+        centers = [
+            QGPoint(simple_graph, (0, 1), 1.5),
+            QGPoint(simple_graph, (3, 4), 8.5),
+        ]
+        true_labels = np.array([0, 0, 1, 1])
+
+        results = evaluate_clustering(simple_graph, points, centers, true_labels=true_labels)
+
+        assert "ari" in results
+        assert "nmi" in results
+        assert isinstance(results["ari"], float)
+        assert isinstance(results["nmi"], float)
+
+    def test_distance_matrix_fallback_without_precomputing(self):
+        """Test the fallback path in _distance_matrix_from_precomputed."""
+        from kmeanssa_ng.core.metrics import _distance_matrix_from_precomputed
+
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=10.0)
+        points = [
+            QGPoint(graph, (0, 1), 0.0),  # at node 0
+            QGPoint(graph, (0, 1), 10.0), # at node 1
+        ]
+
+        # Ensure precomputed distances are not available
+        graph._pairwise_nodes_distance = None
+
+        # Call the internal function directly to test the fallback
+        dm = _distance_matrix_from_precomputed(graph, points)
+
+        assert dm.shape == (2, 2)
+        assert np.isclose(dm[0, 1], 10.0)

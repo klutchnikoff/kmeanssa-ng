@@ -11,36 +11,39 @@ from kmeanssa_ng import (
     generate_sbm,
 )
 from kmeanssa_ng.core.strategies.initialization import KMeansPlusPlus
+from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
+
+
+@pytest.fixture
+def small_graph():
+    """Small graph for quick benchmarks (40 nodes)."""
+    graph = generate_sbm(sizes=[20, 20], p=[[0.8, 0.1], [0.1, 0.8]])
+    return graph
+
+
+@pytest.fixture
+def small_graph_precomputed(small_graph):
+    """Small graph with precomputed distances (40 nodes)."""
+    small_graph.precomputing()
+    return small_graph
+
+
+@pytest.fixture
+def medium_graph():
+    """Medium graph for realistic benchmarks (100 nodes)."""
+    graph = generate_sbm(sizes=[50, 50], p=[[0.8, 0.1], [0.1, 0.8]])
+    return graph
+
+
+@pytest.fixture
+def medium_graph_precomputed(medium_graph):
+    """Medium graph with precomputed distances (100 nodes)."""
+    medium_graph.precomputing()
+    return medium_graph
 
 
 class TestBenchmarks:
     """Performance benchmark tests for critical operations."""
-
-    @pytest.fixture
-    def small_graph(self):
-        """Small graph for quick benchmarks (40 nodes)."""
-        graph = generate_sbm(sizes=[20, 20], p=[[0.8, 0.1], [0.1, 0.8]])
-        return graph
-
-    @pytest.fixture
-    def small_graph_precomputed(self):
-        """Small graph with precomputed distances (40 nodes)."""
-        graph = generate_sbm(sizes=[20, 20], p=[[0.8, 0.1], [0.1, 0.8]])
-        graph.precomputing()
-        return graph
-
-    @pytest.fixture
-    def medium_graph(self):
-        """Medium graph for realistic benchmarks (100 nodes)."""
-        graph = generate_sbm(sizes=[50, 50], p=[[0.8, 0.1], [0.1, 0.8]])
-        return graph
-
-    @pytest.fixture
-    def medium_graph_precomputed(self):
-        """Medium graph with precomputed distances (100 nodes)."""
-        graph = generate_sbm(sizes=[50, 50], p=[[0.8, 0.1], [0.1, 0.8]])
-        graph.precomputing()
-        return graph
 
     def test_benchmark_precomputing_small(self, benchmark, small_graph):
         """Benchmark graph precomputing on small graph (40 nodes).
@@ -145,3 +148,33 @@ class TestBenchmarks:
 
         result = benchmark(sa.run_sequential, initialization_strategy=KMeansPlusPlus())
         assert len(result) == 3
+
+    @pytest.mark.slow
+    def test_benchmark_sa_interleaved_mostfrequentnode_medium(self, benchmark, medium_graph_precomputed):
+        """Benchmark interleaved SA with MostFrequentNode strategy on medium graph."""
+        points = medium_graph_precomputed.sample_points(150)
+        sa = SimulatedAnnealing(points, k=3, lambda_param=1, beta=1.0, step_size=0.1)
+
+        result = benchmark(
+            sa.run_interleaved,
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MostFrequentNode(),
+        )
+        assert len(result) == 3
+
+
+class TestEnergyCalculationBenchmark:
+    """Benchmark tests for k-means energy calculation."""
+
+    @pytest.fixture
+    def centers_for_benchmark(self, medium_graph_precomputed):
+        """Generate k=10 centers for the medium graph."""
+        return medium_graph_precomputed.sample_kpp_centers(k=10)
+
+    def test_benchmark_energy_numba(self, benchmark, medium_graph_precomputed, centers_for_benchmark):
+        """Benchmark Numba-accelerated energy calculation."""
+        benchmark(medium_graph_precomputed.calculate_energy_numba, centers_for_benchmark)
+
+    def test_benchmark_energy_python_uniform(self, benchmark, medium_graph_precomputed, centers_for_benchmark):
+        """Benchmark pure Python energy calculation with how='uniform'."""
+        benchmark(medium_graph_precomputed.calculate_energy, centers_for_benchmark, how="uniform")

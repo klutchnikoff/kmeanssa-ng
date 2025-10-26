@@ -319,7 +319,6 @@ class TestQGCenter:
         point = QGPoint(graph, edge=(0, 1), position=0.5)
         center = QGCenter(point)
 
-        initial_edge = center.edge
         center.brownian_motion(0.01)  # Small time step
 
         # Position should have changed (probabilistically)
@@ -377,7 +376,6 @@ class TestQGCenter:
         point = QGPoint(graph, edge=(0, 1), position=0.5)
         center = QGCenter(point)
 
-        initial_position = center.position
         center.brownian_motion(0.0)  # Should not crash
 
         # Position might change slightly due to random normal, but should be close
