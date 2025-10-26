@@ -29,6 +29,7 @@ def _run_with_seed(
     lambda_param: int,
     beta: float,
     step_size: float,
+    energy_mode: str,
     robust_prop: float,
     initialization: str | None,
     robustification: str | None,
@@ -70,6 +71,7 @@ def _run_with_seed(
         lambda_param=lambda_param,
         beta=beta,
         step_size=step_size,
+        energy_mode=energy_mode,
     )
 
     # Parse strategies (could be extended to support more strategies)
@@ -105,6 +107,7 @@ def run_parallel(
     lambda_param: int = 1,
     beta: float = 1.0,
     step_size: float = 0.1,
+    energy_mode: str = "uniform",
     robust_prop: float = 0.0,
     initialization_strategy: InitializationStrategy | None = None,
     robustification_strategy: RobustificationStrategy | None = None,
@@ -216,6 +219,7 @@ def run_parallel(
                 lambda_param,
                 beta,
                 step_size,
+                energy_mode,
                 robust_prop,
                 None,  # initialization
                 None,  # robustification
@@ -247,6 +251,7 @@ def run_parallel_with_callback(
     lambda_param: int = 1,
     beta: float = 1.0,
     step_size: float = 0.1,
+    energy_mode: str = "uniform",
     robust_prop: float = 0.0,
     n_jobs: int = -1,
     seeds: list[int] | None = None,
@@ -344,6 +349,7 @@ def run_parallel_with_callback(
                 lambda_param,
                 beta,
                 step_size,
+                energy_mode,
                 robust_prop,
                 None,
                 None,

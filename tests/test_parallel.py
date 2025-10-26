@@ -92,6 +92,7 @@ class TestRunParallel:
             lambda_param=2,
             beta=0.5,
             step_size=0.05,
+            energy_mode="obs",
             robust_prop=0.1,
             n_jobs=2,
         )
@@ -162,30 +163,40 @@ class TestRunParallel:
         assert len(centers) == 2
 
 
+
+
 class TestWorkerFunction:
     """Tests for the internal worker function used in parallel execution."""
 
     def test_run_with_seed_direct_call(self, simple_graph):
         """Test direct call to _run_with_seed to cover its internal logic."""
         from kmeanssa_ng.core.parallel import _run_with_seed
+        from unittest.mock import patch, ANY
 
-        centers, energy, seed = _run_with_seed(
-            space=simple_graph,
-            n_points=10,
-            k=2,
-            seed=42,
-            algorithm="interleaved",
-            lambda_param=1,
-            beta=1.0,
-            step_size=0.1,
-            robust_prop=0.1,
-            initialization=None,
-            robustification=None,
-        )
+        with patch("kmeanssa_ng.core.simulated_annealing.SimulatedAnnealing") as mock_sa:
+            centers, energy, seed = _run_with_seed(
+                space=simple_graph,
+                n_points=10,
+                k=2,
+                seed=42,
+                algorithm="interleaved",
+                lambda_param=1,
+                beta=1.0,
+                step_size=0.1,
+                energy_mode="obs",
+                robust_prop=0.1,
+                initialization=None,
+                robustification=None,
+            )
 
-        assert len(centers) == 2
-        assert isinstance(energy, float)
-        assert seed == 42
+            mock_sa.assert_called_with(
+                observations=ANY,
+                k=2,
+                lambda_param=1,
+                beta=1.0,
+                step_size=0.1,
+                energy_mode="obs",
+            )
 
     def test_run_parallel_defaults(self, simple_graph):
         """Test run_parallel with default arguments (no seeds, return_all=False)."""

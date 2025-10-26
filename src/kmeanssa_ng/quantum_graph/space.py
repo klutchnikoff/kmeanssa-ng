@@ -91,7 +91,7 @@ def _batch_distances_numba(
 
 
 @njit(cache=True, fastmath=True)
-def _calculate_energy_numba(
+def _calculate_energy_uniform_numba(
     center_edges_0: np.ndarray,
     center_edges_1: np.ndarray,
     center_positions: np.ndarray,
@@ -170,6 +170,72 @@ def _calculate_energy_numba(
         total_energy += min_dist_sq
 
     return total_energy / n_points
+
+
+@njit(cache=True, fastmath=True)
+def _calculate_energy_obs_numba(
+    center_edges_0: np.ndarray,
+    center_edges_1: np.ndarray,
+    center_positions: np.ndarray,
+    center_lengths: np.ndarray,
+    point_edges_0: np.ndarray,
+    point_edges_1: np.ndarray,
+    point_positions: np.ndarray,
+    point_lengths: np.ndarray,
+    point_nb_obs: np.ndarray,
+    node_dist_matrix: np.ndarray,
+) -> float:
+    n_points = len(point_positions)
+    k = len(center_positions)
+    total_energy = 0.0
+    total_obs = 0
+
+    for p_idx in range(n_points):
+        nb_obs = point_nb_obs[p_idx]
+        if nb_obs == 0:
+            continue
+
+        p_edge_0 = point_edges_0[p_idx]
+        p_edge_1 = point_edges_1[p_idx]
+        p_pos = point_positions[p_idx]
+        p_length = point_lengths[p_idx]
+
+        min_dist_sq = np.inf
+
+        for c_idx in range(k):
+            c_edge_0 = center_edges_0[c_idx]
+            c_edge_1 = center_edges_1[c_idx]
+            c_pos = center_positions[c_idx]
+            c_length = center_lengths[c_idx]
+
+            d0 = node_dist_matrix[c_edge_0, p_edge_0] + c_pos + p_pos
+            d1 = node_dist_matrix[c_edge_0, p_edge_1] + c_pos + (p_length - p_pos)
+            d2 = node_dist_matrix[c_edge_1, p_edge_0] + (c_length - c_pos) + p_pos
+            d3 = (
+                node_dist_matrix[c_edge_1, p_edge_1]
+                + (c_length - c_pos)
+                + (p_length - p_pos)
+            )
+
+            d_min = min(d0, d1, d2, d3)
+
+            if c_edge_0 == p_edge_1 and c_edge_1 == p_edge_0:
+                d_same_rev = abs(c_length - c_pos - p_pos)
+                if d_same_rev < d_min:
+                    d_min = d_same_rev
+
+            if c_edge_0 == p_edge_0 and c_edge_1 == p_edge_1:
+                d_same = abs(c_pos - p_pos)
+                if d_same < d_min:
+                    d_min = d_same
+
+            if d_min * d_min < min_dist_sq:
+                min_dist_sq = d_min * d_min
+
+        total_energy += min_dist_sq * nb_obs
+        total_obs += nb_obs
+
+    return total_energy / total_obs if total_obs > 0 else 0.0
 
 
 class QuantumGraph(nx.Graph, Space):
@@ -730,7 +796,7 @@ class QuantumGraph(nx.Graph, Space):
 
             return energy / total_obs if total_obs > 0 else 0.0
 
-    def calculate_energy_numba(self, centers: list[QGCenter]) -> float:
+    def calculate_energy_numba(self, centers: list[QGCenter], how: str = "uniform") -> float:
         """Numba-accelerated energy calculation for centers.
 
         Uses precomputed distance matrix for fast computation. This method is
@@ -738,6 +804,9 @@ class QuantumGraph(nx.Graph, Space):
 
         Args:
             centers: List of cluster centers.
+            how: Energy calculation mode:
+                - "uniform": Use uniform distribution over nodes
+                - "obs": Weight by observed point counts at nodes
 
         Returns:
             Average squared distance to nearest center.
@@ -780,18 +849,32 @@ class QuantumGraph(nx.Graph, Space):
             point_edges_1[i] = self._node_to_index[edge[1]]
             point_lengths[i] = self.get_edge_length(*edge)
 
-        # Call Numba function
-        return _calculate_energy_numba(
-            center_edges_0,
-            center_edges_1,
-            center_positions,
-            center_lengths,
-            point_edges_0,
-            point_edges_1,
-            point_positions,
-            point_lengths,
-            self._pairwise_nodes_distance_array,
-        )
+        if how == "uniform":
+            return _calculate_energy_uniform_numba(
+                center_edges_0,
+                center_edges_1,
+                center_positions,
+                center_lengths,
+                point_edges_0,
+                point_edges_1,
+                point_positions,
+                point_lengths,
+                self._pairwise_nodes_distance_array,
+            )
+        else:  # how == "obs"
+            point_nb_obs = np.array([data.get("nb_obs", 0) for _, data in self.nodes(data=True)], dtype=np.int32)
+            return _calculate_energy_obs_numba(
+                center_edges_0,
+                center_edges_1,
+                center_positions,
+                center_lengths,
+                point_edges_0,
+                point_edges_1,
+                point_positions,
+                point_lengths,
+                point_nb_obs,
+                self._pairwise_nodes_distance_array,
+            )
 
     def distance_matrix(self) -> np.ndarray:
         """Compute the pairwise distance matrix between all nodes.

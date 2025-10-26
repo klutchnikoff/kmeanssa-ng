@@ -77,6 +77,24 @@ class TestQuantumGraph:
         energy = graph.calculate_energy(centers, how="obs")
         assert energy == 0.0
 
+    def test_calculate_energy_numba_obs(self):
+        """Test Numba-accelerated energy calculation with how='obs'."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 2, length=2.0)
+        nx.set_node_attributes(graph, {0: {"nb_obs": 5}, 1: {"nb_obs": 10}, 2: {"nb_obs": 0}})
+        graph.precomputing()
+
+        centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
+
+        # Calculate with pure Python
+        energy_python = graph.calculate_energy(centers, how="obs")
+
+        # Calculate with Numba
+        energy_numba = graph.calculate_energy_numba(centers, how="obs")
+
+        assert np.isclose(energy_python, energy_numba)
+
     def test_batch_distances_special_cases(self):
         """Test batch_distances for same-edge and reversed-edge cases."""
         graph = QuantumGraph()

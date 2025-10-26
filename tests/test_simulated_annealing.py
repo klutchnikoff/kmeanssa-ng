@@ -194,6 +194,22 @@ class TestSimulatedAnnealing:
 
         assert energy >= 0  # Energy should be non-negative
 
+    def test_energy_mode_obs(self):
+        """Test that energy_mode='obs' uses the correct energy calculation."""
+        graph = generate_simple_graph(n_a=3)
+        import networkx as nx
+        nx.set_node_attributes(graph, {0: {"nb_obs": 5}, 1: {"nb_obs": 10}, 2: {"nb_obs": 0}})
+        points = graph.sample_points(20)
+
+        sa = SimulatedAnnealing(points, k=2, energy_mode="obs")
+        centers = graph.sample_centers(2)
+
+        # Mock the space's calculate_energy and calculate_energy_numba methods
+        from unittest.mock import patch
+        with patch.object(sa.space, 'calculate_energy_numba', create=True) as mock_calculate_energy_numba:
+            sa.calculate_energy_for_centers(centers)
+            mock_calculate_energy_numba.assert_called_with(centers, how="obs")
+
     def test_centers_property(self):
         """Test centers property (covers line 113)."""
         graph = generate_simple_graph(n_a=3)

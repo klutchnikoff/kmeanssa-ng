@@ -69,18 +69,5 @@ class MinimizeEnergy(RobustificationStrategy[list["Center"]]):
     def _calculate_energy(
         self, sa: SimulatedAnnealing, centers: list["Center"]
     ) -> float:
-        """Calculate energy using optimized method if available.
-
-        Checks for calculate_energy_numba method on the space for accelerated
-        computation, otherwise uses standard calculate_energy.
-
-        Args:
-            sa: SimulatedAnnealing instance
-            centers: Centers to calculate energy for
-
-        Returns:
-            Energy value
-        """
-        if hasattr(sa.space, "calculate_energy_numba"):
-            return sa.space.calculate_energy_numba(centers)
-        return sa.space.calculate_energy(centers)
+        """Calculate energy using the SimulatedAnnealing instance."""
+        return sa.calculate_energy_for_centers(centers)

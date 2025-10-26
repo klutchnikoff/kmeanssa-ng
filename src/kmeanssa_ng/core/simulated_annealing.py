@@ -51,6 +51,7 @@ class SimulatedAnnealing:
         lambda_param: int = 1,
         beta: float = 1.0,
         step_size: float = 0.1,
+        energy_mode: str = "uniform",
     ) -> None:
         """Initialize the simulated annealing algorithm.
 
@@ -106,6 +107,7 @@ class SimulatedAnnealing:
         self._lambda = lambda_float
         self._beta = beta_float
         self._step_size = step_size_float
+        self._energy_mode = energy_mode
 
         rd.shuffle(self._observations)
         self._centers: list[Center] = []
@@ -181,6 +183,12 @@ class SimulatedAnnealing:
             for point in points
         )
         return energy / len(points)
+
+    def calculate_energy_for_centers(self, centers: list[Center]) -> float:
+        """Calculate k-means energy for given centers based on the energy mode."""
+        if hasattr(self.space, "calculate_energy_numba"):
+            return self.space.calculate_energy_numba(centers, how=self._energy_mode)
+        return self.space.calculate_energy(centers, how=self._energy_mode)
 
     def _prepare_run(
         self,
