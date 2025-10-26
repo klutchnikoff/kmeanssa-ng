@@ -24,7 +24,7 @@ Results are collected as they complete, sorted by energy (ascending), and the be
 
 The simplest way to run multiple executions in parallel:
 
-```python
+```{python}
 from kmeanssa_ng import run_parallel, generate_sbm
 
 # Generate a graph with two communities
@@ -52,7 +52,7 @@ print(f"Best result has {len(best_centers)} centers")
 
 To analyze the distribution of results across different seeds:
 
-```python
+```{python}
 best_centers, all_results = run_parallel(
     graph,
     n_points=100,
@@ -76,7 +76,7 @@ print(f"Std energy: {np.std(energies):.4f}")
 
 For long-running experiments, use `run_parallel_with_callback` to monitor progress:
 
-```python
+```{python}
 from kmeanssa_ng import run_parallel_with_callback
 
 def show_progress(run_idx, seed, energy):
@@ -101,7 +101,7 @@ The callback function receives three arguments:
 
 To ensure reproducibility, provide a fixed list of seeds:
 
-```python
+```{python}
 # Define specific seeds
 seeds = [42, 123, 456, 789, 101112]
 
@@ -118,7 +118,7 @@ result2 = run_parallel(graph, n_points=100, k=2, n_runs=5, seeds=seeds)
 
 You can pass all `SimulatedAnnealing` parameters:
 
-```python
+```{python}
 centers = run_parallel(
     graph,
     n_points=150,
@@ -147,7 +147,7 @@ centers = run_parallel(
 
 Here's a complete example analyzing clustering stability:
 
-```python
+```{python}
 from kmeanssa_ng import run_parallel, generate_sbm
 import numpy as np
 
