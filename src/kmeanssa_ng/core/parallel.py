@@ -7,6 +7,7 @@ statistical analysis.
 
 from __future__ import annotations
 
+import multiprocessing as mp
 import random as rd
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Callable, Literal
@@ -110,6 +111,7 @@ def run_parallel(
     n_jobs: int = -1,
     seeds: list[int] | None = None,
     return_all: bool = False,
+    mp_context: Literal["fork", "spawn", "forkserver"] | None = None,
 ) -> list[Center] | tuple[list[Center], list[tuple[list[Center], float, int]]]:
     """Run simulated annealing multiple times in parallel with different seeds.
 
@@ -133,6 +135,8 @@ def run_parallel(
         n_jobs: Number of parallel jobs. -1 uses all available cores.
         seeds: Optional list of specific seeds to use. If None, generates random seeds.
         return_all: If True, return all results; if False, return only the best.
+        mp_context: Multiprocessing context to use ('fork', 'spawn', 'forkserver').
+            If None, uses the system default. Use 'fork' for Jupyter/Quarto compatibility.
 
     Returns:
         If return_all is False: List of best centers (lowest energy).
@@ -161,6 +165,23 @@ def run_parallel(
     if n_runs <= 0:
         raise ValueError(f"n_runs must be positive, got {n_runs}")
 
+    # Check n_jobs and issue a warning if it's too high
+    import os
+    import warnings
+    cpu_count = os.cpu_count() or 1
+    if n_jobs > cpu_count:
+        warnings.warn(
+            f"n_jobs={n_jobs} is greater than the number of available CPUs ({cpu_count}). "
+            "This may lead to performance degradation.",
+            UserWarning
+        )
+
+    # Determine number of workers
+    if n_jobs == -1:
+        n_jobs = cpu_count
+    elif n_jobs == -2:
+        n_jobs = max(1, cpu_count - 1)
+
     # Generate seeds if not provided
     if seeds is None:
         rng = np.random.default_rng()
@@ -168,16 +189,18 @@ def run_parallel(
     elif len(seeds) != n_runs:
         raise ValueError(f"Length of seeds ({len(seeds)}) must match n_runs ({n_runs})")
 
-    # Determine number of workers
-    if n_jobs == -1:
-        import os
-
-        n_jobs = os.cpu_count() or 1
-
     # Run all jobs in parallel
     results: list[tuple[list[Center], float, int]] = []
 
-    with ProcessPoolExecutor(max_workers=n_jobs) as executor:
+    # Set up multiprocessing context if specified
+    executor_kwargs = {'max_workers': n_jobs}
+    if mp_context is not None:
+        if mp_context not in mp.get_all_start_methods():
+            raise ValueError(f"Multiprocessing context '{mp_context}' not available on this platform. "
+                           f"Available: {mp.get_all_start_methods()}")
+        executor_kwargs['mp_context'] = mp.get_context(mp_context)
+
+    with ProcessPoolExecutor(**executor_kwargs) as executor:
         # Submit all jobs
         futures = [
             executor.submit(
@@ -225,6 +248,7 @@ def run_parallel_with_callback(
     n_jobs: int = -1,
     seeds: list[int] | None = None,
     callback: Callable[[int, int, float], None] | None = None,
+    mp_context: Literal["fork", "spawn", "forkserver"] | None = None,
 ) -> list[Center]:
     """Run parallel simulated annealing with progress callback.
 
@@ -245,6 +269,8 @@ def run_parallel_with_callback(
         n_jobs: Number of parallel jobs (-1 = all cores).
         seeds: Optional list of specific seeds.
         callback: Optional function(run_index, seed, energy) called after each run.
+        mp_context: Multiprocessing context to use ('fork', 'spawn', 'forkserver').
+            If None, uses the system default. Use 'fork' for Jupyter/Quarto compatibility.
 
     Returns:
         List of best centers (lowest energy).
@@ -263,6 +289,23 @@ def run_parallel_with_callback(
     if n_runs <= 0:
         raise ValueError(f"n_runs must be positive, got {n_runs}")
 
+    # Check n_jobs and issue a warning if it's too high
+    import os
+    import warnings
+    cpu_count = os.cpu_count() or 1
+    if n_jobs > cpu_count:
+        warnings.warn(
+            f"n_jobs={n_jobs} is greater than the number of available CPUs ({cpu_count}). "
+            "This may lead to performance degradation.",
+            UserWarning
+        )
+
+    # Determine number of workers
+    if n_jobs == -1:
+        n_jobs = cpu_count
+    elif n_jobs == -2:
+        n_jobs = max(1, cpu_count - 1)
+
     # Generate seeds if not provided
     if seeds is None:
         rng = np.random.default_rng()
@@ -270,17 +313,19 @@ def run_parallel_with_callback(
     elif len(seeds) != n_runs:
         raise ValueError(f"Length of seeds ({len(seeds)}) must match n_runs ({n_runs})")
 
-    # Determine number of workers
-    if n_jobs == -1:
-        import os
-
-        n_jobs = os.cpu_count() or 1
-
     # Run all jobs in parallel with progress tracking
     results: list[tuple[list[Center], float, int]] = []
     completed_count = 0
 
-    with ProcessPoolExecutor(max_workers=n_jobs) as executor:
+    # Set up multiprocessing context if specified
+    executor_kwargs = {'max_workers': n_jobs}
+    if mp_context is not None:
+        if mp_context not in mp.get_all_start_methods():
+            raise ValueError(f"Multiprocessing context '{mp_context}' not available on this platform. "
+                           f"Available: {mp.get_all_start_methods()}")
+        executor_kwargs['mp_context'] = mp.get_context(mp_context)
+
+    with ProcessPoolExecutor(**executor_kwargs) as executor:
         # Submit all jobs
         future_to_index = {
             executor.submit(

@@ -1,5 +1,8 @@
 """Tests for parallel simulated annealing execution."""
 
+import multiprocessing as mp
+import sys
+
 import pytest
 
 from kmeanssa_ng import run_parallel, run_parallel_with_callback
@@ -110,6 +113,45 @@ class TestRunParallel:
         with pytest.raises(ValueError, match="Length of seeds .* must match n_runs"):
             run_parallel(simple_graph, n_points=20, k=2, n_runs=5, seeds=[1, 2, 3])
 
+    @pytest.mark.parametrize("mp_context", mp.get_all_start_methods())
+    def test_parallel_with_mp_context(self, simple_graph, mp_context):
+        """Test parallel execution with all available multiprocessing contexts."""
+        if mp_context == 'spawn' and sys.platform == 'win32':
+            pytest.skip("spawn is default on Windows, no need to test explicitly")
+
+        centers = run_parallel(
+            simple_graph, n_points=20, k=2, n_runs=3, n_jobs=2, mp_context=mp_context
+        )
+        
+        assert len(centers) == 2
+
+    def test_parallel_with_invalid_context(self, simple_graph):
+        """Test that invalid mp_context raises ValueError."""
+        with pytest.raises(ValueError, match="Multiprocessing context .* not available"):
+            run_parallel(simple_graph, n_points=20, k=2, n_runs=3, mp_context='invalid')
+
+    def test_parallel_default_context(self, simple_graph):
+        """Test that default context (None) works correctly."""
+        # This uses the system default
+        centers = run_parallel(
+            simple_graph, n_points=20, k=2, n_runs=3, n_jobs=2, mp_context=None
+        )
+        
+        assert len(centers) == 2
+
+    def test_parallel_with_too_many_jobs(self, simple_graph):
+        """Test that a warning is issued when n_jobs > cpu_count."""
+        import os
+        cpu_count = os.cpu_count() or 1
+        
+        with pytest.warns(UserWarning, match="n_jobs.* is greater than the number of available CPUs"):
+            run_parallel(simple_graph, n_points=20, k=2, n_runs=3, n_jobs=cpu_count + 1)
+
+    def test_parallel_with_n_jobs_minus_two(self, simple_graph):
+        """Test that n_jobs=-2 works correctly."""
+        centers = run_parallel(simple_graph, n_points=20, k=2, n_runs=3, n_jobs=-2)
+        assert len(centers) == 2
+
 
 class TestWorkerFunction:
     """Tests for the internal worker function used in parallel execution."""
@@ -210,6 +252,62 @@ class TestRunParallelWithCallback:
                 simple_graph, n_points=20, k=2, n_runs=2, n_jobs=1, callback=bad_callback
             )
 
+    @pytest.mark.parametrize("mp_context", mp.get_all_start_methods())
+    def test_callback_with_mp_context(self, simple_graph, mp_context):
+        """Test callback execution with all available multiprocessing contexts."""
+        if mp_context == 'spawn' and sys.platform == 'win32':
+            pytest.skip("spawn is default on Windows, no need to test explicitly")
+
+        callback_calls = []
+        
+        def callback(run_idx, seed, energy):
+            callback_calls.append((run_idx, seed, energy))
+        
+        centers = run_parallel_with_callback(
+            simple_graph, n_points=20, k=2, n_runs=3, n_jobs=2,
+            callback=callback, mp_context=mp_context
+        )
+        
+        assert len(centers) == 2
+        assert len(callback_calls) == 3
+
+    def test_callback_with_invalid_context(self, simple_graph):
+        """Test that invalid mp_context raises ValueError with callback."""
+        def callback(run_idx, seed, energy):
+            pass
+        
+        with pytest.raises(ValueError, match="Multiprocessing context .* not available"):
+            run_parallel_with_callback(
+                simple_graph, n_points=20, k=2, n_runs=3,
+                callback=callback, mp_context='invalid'
+            )
+
+    def test_callback_with_too_many_jobs(self, simple_graph):
+        """Test that a warning is issued when n_jobs > cpu_count with callback."""
+        import os
+        cpu_count = os.cpu_count() or 1
+        
+        def callback(run_idx, seed, energy):
+            pass
+        
+        with pytest.warns(UserWarning, match="n_jobs.* is greater than the number of available CPUs"):
+            run_parallel_with_callback(
+                simple_graph, n_points=20, k=2, n_runs=3, n_jobs=cpu_count + 1, callback=callback
+            )
+
+    def test_callback_with_n_jobs_minus_two(self, simple_graph):
+        """Test that n_jobs=-2 works correctly with callback."""
+        callback_calls = []
+
+        def callback(run_idx, seed, energy):
+            callback_calls.append((run_idx, seed, energy))
+
+        centers = run_parallel_with_callback(
+            simple_graph, n_points=20, k=2, n_runs=3, n_jobs=-2, callback=callback
+        )
+
+        assert len(centers) == 2
+        assert len(callback_calls) == 3
 
 class TestParallelPerformance:
     """Performance and integration tests for parallel execution."""

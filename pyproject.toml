@@ -63,6 +63,7 @@ servedoc = "mkdocs serve"
 benchmark = "pytest tests/test_benchmarks.py --benchmark-only -m 'not slow'"
 benchmark-all = "pytest tests/test_benchmarks.py --benchmark-only"
 benchmark-compare = "pytest tests/test_benchmarks.py --benchmark-only -m 'not slow' --benchmark-compare"
+test = "bash -c 'coverage run -p -m pytest -n 0; coverage combine; coverage report'"
 
 [tool.pdm.dev-dependencies]
 lint = [
@@ -83,6 +84,11 @@ markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')",
   "benchmark: marks tests as performance benchmarks",
 ]
+
+[tool.coverage.run]
+parallel = true
+source = ["kmeanssa_ng"]
+omit = ["**/__main__.py"]
 
 [tool.coverage.report]
 exclude_lines = [
