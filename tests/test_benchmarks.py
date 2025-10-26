@@ -42,6 +42,19 @@ def medium_graph_precomputed(medium_graph):
     return medium_graph
 
 
+@pytest.fixture
+def medium_graph_with_obs(medium_graph_precomputed):
+    """Medium graph with observations for 'obs' mode benchmarks."""
+    import networkx as nx
+    import numpy as np
+
+    graph = medium_graph_precomputed
+    # Add some observations to the nodes
+    for node in graph.nodes:
+        nx.set_node_attributes(graph, {node: {"nb_obs": np.random.randint(0, 10)}})
+    return graph
+
+
 class TestBenchmarks:
     """Performance benchmark tests for critical operations."""
 
@@ -179,12 +192,14 @@ class TestEnergyCalculationBenchmark:
         """Generate k=10 centers for the medium graph."""
         return medium_graph_precomputed.sample_kpp_centers(k=10)
 
-    def test_benchmark_energy_numba(
+    def test_benchmark_energy_numba_uniform(
         self, benchmark, medium_graph_precomputed, centers_for_benchmark
     ):
-        """Benchmark Numba-accelerated energy calculation."""
+        """Benchmark Numba-accelerated energy calculation with how='uniform'."""
         benchmark(
-            medium_graph_precomputed.calculate_energy_numba, centers_for_benchmark
+            medium_graph_precomputed.calculate_energy_numba,
+            centers_for_benchmark,
+            how="uniform",
         )
 
     def test_benchmark_energy_python_uniform(
@@ -195,4 +210,20 @@ class TestEnergyCalculationBenchmark:
             medium_graph_precomputed.calculate_energy,
             centers_for_benchmark,
             how="uniform",
+        )
+
+    def test_benchmark_energy_python_obs(
+        self, benchmark, medium_graph_with_obs, centers_for_benchmark
+    ):
+        """Benchmark pure Python energy calculation with how='obs'."""
+        benchmark(
+            medium_graph_with_obs.calculate_energy, centers_for_benchmark, how="obs"
+        )
+
+    def test_benchmark_energy_numba_obs(
+        self, benchmark, medium_graph_with_obs, centers_for_benchmark
+    ):
+        """Benchmark Numba-accelerated energy calculation with how='obs'."""
+        benchmark(
+            medium_graph_with_obs.calculate_energy_numba, centers_for_benchmark, how="obs"
         )

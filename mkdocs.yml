@@ -49,6 +49,7 @@ nav:
     - "Parallel Execution": parallel-execution.md
     - "Generators": generators.md
     - "Custom Spaces": custom-spaces.md
+    - "Performance": performance.md
   # - "Examples":
   #   - "Basic Clustering": basic-clustering.md
   #   - "Advanced Usage": advanced-usage.md

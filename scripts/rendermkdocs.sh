@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Generate performance documentation from benchmark results
+python scripts/generate_benchmark_docs.py
+
 # Render all Quarto documents as a project
 # This respects _quarto.yml settings (freeze, seed, etc.)
 cd docs-src
