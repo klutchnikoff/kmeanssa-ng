@@ -40,9 +40,12 @@ graph = generate_sbm(sizes=[50, 50], p=[[0.7, 0.1], [0.1, 0.7]])
 
 # Run 10 times in parallel (uses all available CPU cores)
 # Each run samples its own 100 points with a different seed
-best_centers = run_parallel(graph, n_points=100, k=2, n_runs=10)
+# Note: mp_context='fork' is needed for Jupyter/Quarto compatibility
+best_centers = run_parallel(graph, n_points=100, k=2, n_runs=10, mp_context='fork')
 print(f"Best result has {len(best_centers)} centers")
 ```
+
+    Best result has 2 centers
 
 **Parameters**:
 
@@ -68,7 +71,8 @@ best_centers, all_results = run_parallel(
     n_points=100,
     k=2, 
     n_runs=20, 
-    return_all=True
+    return_all=True,
+    mp_context='fork'
 )
 
 # all_results is a list of (centers, energy, seed) sorted by energy
@@ -81,6 +85,11 @@ energies = [energy for _, energy, _ in all_results]
 print(f"Mean energy: {np.mean(energies):.4f}")
 print(f"Std energy: {np.std(energies):.4f}")
 ```
+
+    Best energy: 1.2700
+    Worst energy: 2.0700
+    Mean energy: 1.7389
+    Std energy: 0.2119
 
 ## Progress Monitoring
 
@@ -98,9 +107,31 @@ centers = run_parallel_with_callback(
     n_points=100,
     k=2,
     n_runs=20,
-    callback=show_progress
+    callback=show_progress,
+    mp_context='fork'
 )
 ```
+
+    ✓ Run 3/20 completed - Energy: 1.6445 (seed=1865891371)
+    ✓ Run 1/20 completed - Energy: 1.7500 (seed=2065733851)
+    ✓ Run 5/20 completed - Energy: 2.0437 (seed=1975453637)
+    ✓ Run 11/20 completed - Energy: 1.4892 (seed=1763747087)
+    ✓ Run 2/20 completed - Energy: 1.8700 (seed=1132241394)
+    ✓ Run 4/20 completed - Energy: 1.5800 (seed=302477183)
+    ✓ Run 6/20 completed - Energy: 1.7200 (seed=576982928)
+    ✓ Run 12/20 completed - Energy: 1.9500 (seed=69342730)
+    ✓ Run 10/20 completed - Energy: 1.7700 (seed=139435824)
+    ✓ Run 8/20 completed - Energy: 2.1079 (seed=38634729)
+    ✓ Run 13/20 completed - Energy: 1.8982 (seed=663075728)
+    ✓ Run 14/20 completed - Energy: 1.3000 (seed=2064342863)
+    ✓ Run 15/20 completed - Energy: 1.6995 (seed=601267390)
+    ✓ Run 7/20 completed - Energy: 1.6800 (seed=1362954710)
+    ✓ Run 16/20 completed - Energy: 1.7800 (seed=1996405383)
+    ✓ Run 17/20 completed - Energy: 1.6800 (seed=1381181429)
+    ✓ Run 9/20 completed - Energy: 1.4149 (seed=1670222637)
+    ✓ Run 18/20 completed - Energy: 1.3900 (seed=1063076906)
+    ✓ Run 19/20 completed - Energy: 2.3700 (seed=1040798019)
+    ✓ Run 20/20 completed - Energy: 1.7400 (seed=92480030)
 
 The callback function receives three arguments:
 
@@ -117,8 +148,8 @@ To ensure reproducibility, provide a fixed list of seeds:
 seeds = [42, 123, 456, 789, 101112]
 
 # These runs will produce consistent results
-result1 = run_parallel(graph, n_points=100, k=2, n_runs=5, seeds=seeds)
-result2 = run_parallel(graph, n_points=100, k=2, n_runs=5, seeds=seeds)
+result1 = run_parallel(graph, n_points=100, k=2, n_runs=5, seeds=seeds, mp_context='fork')
+result2 = run_parallel(graph, n_points=100, k=2, n_runs=5, seeds=seeds, mp_context='fork')
 
 # Results will be highly similar (same data, same initialization)
 ```
@@ -146,9 +177,26 @@ centers = run_parallel(
     # Parallel execution parameters
     algorithm="sequential",
     n_jobs=4,              # Use only 4 cores
-    seeds=list(range(100, 150))  # Specific seeds
+    seeds=list(range(100, 150)),  # Specific seeds
+    mp_context='fork'      # For Jupyter/Quarto compatibility
 )
 ```
+
+## Multiprocessing Context
+
+The `mp_context` parameter controls how Python creates worker processes:
+
+- **`None` (default)**: Uses the system default (`spawn` on
+  macOS/Windows, `fork` on Linux)
+- **`'fork'`**: Fast process creation, shares memory (Unix only).
+  **Required for Jupyter/Quarto**.
+- **`'spawn'`**: Safer isolation, slower startup. Recommended for
+  production code.
+- **`'forkserver'`**: Hybrid approach (Unix only)
+
+For **production scripts**, omit `mp_context` to use the safer default.
+For **documentation/notebooks**, use `mp_context='fork'` to avoid
+serialization issues.
 
 ## Performance Considerations
 
@@ -178,7 +226,8 @@ best, all_results = run_parallel(
     n_points=150,
     k=2, 
     n_runs=100, 
-    return_all=True
+    return_all=True,
+    mp_context='fork'
 )
 
 # Analyze results
@@ -194,6 +243,14 @@ best_energy = energies[0]
 n_optimal = sum(1 for e in energies if abs(e - best_energy) < 0.01)
 print(f"\nFound optimal solution in {n_optimal}/100 runs ({n_optimal}%)")
 ```
+
+    Energy statistics:
+      Min:    0.8932
+      Median: 1.5267
+      Max:    2.2467
+      Std:    0.2404
+
+    Found optimal solution in 1/100 runs (1%)
 
 ## API Reference
 
