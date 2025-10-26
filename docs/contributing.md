@@ -144,8 +144,12 @@ This checklist outlines the steps to publish a new version of
 - [ ] **Update `CHANGELOG.md`:** Add a new section for the version with
   a list of changes.
 
-- [ ] **Update `pyproject.toml`:** Increment the version number (e.g.,
-  `version = "X.Y.Z"`).
+- [ ] **Bump the version:** Use `pdm bump` to increment the version
+  number.
+
+  ``` bash
+  pdm bump minor  # or patch, major
+  ```
 
 - [ ] **Update the lock file:**
 
