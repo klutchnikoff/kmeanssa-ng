@@ -17,6 +17,7 @@ ENV/
 .pytest_cache/
 .coverage
 htmlcov/
+coverage.xml
 
 # Linter Cache
 .ruff_cache/
