@@ -796,7 +796,9 @@ class QuantumGraph(nx.Graph, Space):
 
             return energy / total_obs if total_obs > 0 else 0.0
 
-    def calculate_energy_numba(self, centers: list[QGCenter], how: str = "uniform") -> float:
+    def calculate_energy_numba(
+        self, centers: list[QGCenter], how: str = "uniform"
+    ) -> float:
         """Numba-accelerated energy calculation for centers.
 
         Uses precomputed distance matrix for fast computation. This method is
@@ -862,7 +864,10 @@ class QuantumGraph(nx.Graph, Space):
                 self._pairwise_nodes_distance_array,
             )
         else:  # how == "obs"
-            point_nb_obs = np.array([data.get("nb_obs", 0) for _, data in self.nodes(data=True)], dtype=np.int32)
+            point_nb_obs = np.array(
+                [data.get("nb_obs", 0) for _, data in self.nodes(data=True)],
+                dtype=np.int32,
+            )
             return _calculate_energy_obs_numba(
                 center_edges_0,
                 center_edges_1,

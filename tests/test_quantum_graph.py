@@ -82,7 +82,9 @@ class TestQuantumGraph:
         graph = QuantumGraph()
         graph.add_edge(0, 1, length=1.0)
         graph.add_edge(1, 2, length=2.0)
-        nx.set_node_attributes(graph, {0: {"nb_obs": 5}, 1: {"nb_obs": 10}, 2: {"nb_obs": 0}})
+        nx.set_node_attributes(
+            graph, {0: {"nb_obs": 5}, 1: {"nb_obs": 10}, 2: {"nb_obs": 0}}
+        )
         graph.precomputing()
 
         centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]

@@ -198,7 +198,10 @@ class TestSimulatedAnnealing:
         """Test that energy_mode='obs' uses the correct energy calculation."""
         graph = generate_simple_graph(n_a=3)
         import networkx as nx
-        nx.set_node_attributes(graph, {0: {"nb_obs": 5}, 1: {"nb_obs": 10}, 2: {"nb_obs": 0}})
+
+        nx.set_node_attributes(
+            graph, {0: {"nb_obs": 5}, 1: {"nb_obs": 10}, 2: {"nb_obs": 0}}
+        )
         points = graph.sample_points(20)
 
         sa = SimulatedAnnealing(points, k=2, energy_mode="obs")
@@ -206,7 +209,10 @@ class TestSimulatedAnnealing:
 
         # Mock the space's calculate_energy and calculate_energy_numba methods
         from unittest.mock import patch
-        with patch.object(sa.space, 'calculate_energy_numba', create=True) as mock_calculate_energy_numba:
+
+        with patch.object(
+            sa.space, "calculate_energy_numba", create=True
+        ) as mock_calculate_energy_numba:
             sa.calculate_energy_for_centers(centers)
             mock_calculate_energy_numba.assert_called_with(centers, how="obs")
 

@@ -225,5 +225,7 @@ class TestEnergyCalculationBenchmark:
     ):
         """Benchmark Numba-accelerated energy calculation with how='obs'."""
         benchmark(
-            medium_graph_with_obs.calculate_energy_numba, centers_for_benchmark, how="obs"
+            medium_graph_with_obs.calculate_energy_numba,
+            centers_for_benchmark,
+            how="obs",
         )

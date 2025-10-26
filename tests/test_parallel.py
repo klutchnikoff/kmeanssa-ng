@@ -163,8 +163,6 @@ class TestRunParallel:
         assert len(centers) == 2
 
 
-
-
 class TestWorkerFunction:
     """Tests for the internal worker function used in parallel execution."""
 
@@ -173,7 +171,9 @@ class TestWorkerFunction:
         from kmeanssa_ng.core.parallel import _run_with_seed
         from unittest.mock import patch, ANY
 
-        with patch("kmeanssa_ng.core.simulated_annealing.SimulatedAnnealing") as mock_sa:
+        with patch(
+            "kmeanssa_ng.core.simulated_annealing.SimulatedAnnealing"
+        ) as mock_sa:
             centers, energy, seed = _run_with_seed(
                 space=simple_graph,
                 n_points=10,
