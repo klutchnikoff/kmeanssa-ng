@@ -98,3 +98,112 @@ made and link to any relevant issues. We will review your contribution
 as soon as possible.
 
 Thank you for contributing!
+
+## Release Process
+
+This checklist outlines the steps to publish a new version of
+`kmeanssa-ng`.
+
+#### 1. Preparation
+
+- [ ] **Sync the main branch:**
+
+  ``` bash
+  git checkout main
+  git pull
+  ```
+
+- [ ] **Create a release branch:**
+
+  ``` bash
+  git checkout -b release/vX.Y.Z  # e.g., release/v0.5.0
+  ```
+
+#### 2. Verification and Cleanup
+
+- [ ] **Format the code:**
+
+  ``` bash
+  pdm run format
+  ```
+
+- [ ] **Lint the code:**
+
+  ``` bash
+  pdm run check
+  ```
+
+- [ ] **Run the test suite:**
+
+  ``` bash
+  pdm run test
+  ```
+
+#### 3. Version Bump
+
+- [ ] **Update `CHANGELOG.md`:** Add a new section for the version with
+  a list of changes.
+
+- [ ] **Update `pyproject.toml`:** Increment the version number (e.g.,
+  `version = "X.Y.Z"`).
+
+- [ ] **Update the lock file:**
+
+  ``` bash
+  pdm install
+  ```
+
+#### 4. Documentation
+
+- [ ] **Render the documentation:**
+
+  ``` bash
+  pdm run makedoc
+  ```
+
+#### 5. Commit and Pull Request
+
+- [ ] **Add all modified files:**
+
+  ``` bash
+  git add .
+  ```
+
+- [ ] **Create the release commit:**
+
+  ``` bash
+  git commit -m "chore(release): version X.Y.Z"
+  ```
+
+- [ ] **Push the branch and create a Pull/Merge Request** to `main`.
+
+  ``` bash
+  git push -u origin release/vX.Y.Z
+  ```
+
+#### 6. Publication (after PR merge)
+
+- [ ] **Check out and sync the main branch:**
+
+  ``` bash
+  git checkout main
+  git pull
+  ```
+
+- [ ] **Create a Git tag:**
+
+  ``` bash
+  git tag vX.Y.Z
+  ```
+
+- [ ] **Push the tag to the remote repository:**
+
+  ``` bash
+  git push origin vX.Y.Z
+  ```
+
+- [ ] **Publish to PyPI:**
+
+  ``` bash
+  pdm publish
+  ```
