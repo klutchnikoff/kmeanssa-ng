@@ -118,10 +118,10 @@ class TestQuantumGraph:
         graph = QuantumGraph()
         graph.add_edge(0, 1, length=1.0)
         graph.add_edge(1, 2, length=1.0)
-        
+
         centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
         target = QGPoint(graph, (1, 2), 0.3)
-        
+
         with pytest.raises(ValueError, match="Must call precomputing"):
             graph.distances_from_centers(centers, target)
 
@@ -129,9 +129,9 @@ class TestQuantumGraph:
         """Test k-means++ initialization with k=1."""
         graph = generate_simple_graph(n_a=3)
         graph.precomputing()
-        
+
         centers = graph.sample_kpp_centers(k=1)
-        
+
         assert len(centers) == 1
         assert isinstance(centers[0], QGCenter)
         assert centers[0].space == graph

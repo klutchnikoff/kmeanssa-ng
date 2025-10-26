@@ -74,7 +74,9 @@ class TestBenchmarks:
         )
         assert len(result) == 5
 
-    def test_benchmark_batch_distances_medium(self, benchmark, medium_graph_precomputed):
+    def test_benchmark_batch_distances_medium(
+        self, benchmark, medium_graph_precomputed
+    ):
         """Benchmark batch distance computation on medium graph (10 centers).
 
         Tests scaling with more centers.
@@ -87,7 +89,9 @@ class TestBenchmarks:
         )
         assert len(result) == 10
 
-    def test_benchmark_kpp_initialization_small(self, benchmark, small_graph_precomputed):
+    def test_benchmark_kpp_initialization_small(
+        self, benchmark, small_graph_precomputed
+    ):
         """Benchmark k-means++ initialization (k=3, 40 nodes).
 
         This is used at the start of the simulated annealing algorithm.
@@ -95,7 +99,9 @@ class TestBenchmarks:
         result = benchmark(small_graph_precomputed.sample_kpp_centers, k=3)
         assert len(result) == 3
 
-    def test_benchmark_kpp_initialization_medium(self, benchmark, medium_graph_precomputed):
+    def test_benchmark_kpp_initialization_medium(
+        self, benchmark, medium_graph_precomputed
+    ):
         """Benchmark k-means++ initialization (k=5, 100 nodes).
 
         Tests scaling of k-means++ with graph size.
@@ -150,7 +156,9 @@ class TestBenchmarks:
         assert len(result) == 3
 
     @pytest.mark.slow
-    def test_benchmark_sa_interleaved_mostfrequentnode_medium(self, benchmark, medium_graph_precomputed):
+    def test_benchmark_sa_interleaved_mostfrequentnode_medium(
+        self, benchmark, medium_graph_precomputed
+    ):
         """Benchmark interleaved SA with MostFrequentNode strategy on medium graph."""
         points = medium_graph_precomputed.sample_points(150)
         sa = SimulatedAnnealing(points, k=3, lambda_param=1, beta=1.0, step_size=0.1)
@@ -171,10 +179,20 @@ class TestEnergyCalculationBenchmark:
         """Generate k=10 centers for the medium graph."""
         return medium_graph_precomputed.sample_kpp_centers(k=10)
 
-    def test_benchmark_energy_numba(self, benchmark, medium_graph_precomputed, centers_for_benchmark):
+    def test_benchmark_energy_numba(
+        self, benchmark, medium_graph_precomputed, centers_for_benchmark
+    ):
         """Benchmark Numba-accelerated energy calculation."""
-        benchmark(medium_graph_precomputed.calculate_energy_numba, centers_for_benchmark)
+        benchmark(
+            medium_graph_precomputed.calculate_energy_numba, centers_for_benchmark
+        )
 
-    def test_benchmark_energy_python_uniform(self, benchmark, medium_graph_precomputed, centers_for_benchmark):
+    def test_benchmark_energy_python_uniform(
+        self, benchmark, medium_graph_precomputed, centers_for_benchmark
+    ):
         """Benchmark pure Python energy calculation with how='uniform'."""
-        benchmark(medium_graph_precomputed.calculate_energy, centers_for_benchmark, how="uniform")
+        benchmark(
+            medium_graph_precomputed.calculate_energy,
+            centers_for_benchmark,
+            how="uniform",
+        )

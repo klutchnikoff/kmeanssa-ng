@@ -365,6 +365,7 @@ class TestSamplePointEdgeMode:
 
         def distrib():
             return rd.uniform(0, 2.0)
+
         graph.add_edge(0, 1, length=2.0, weight=1.0, distribution=distrib)
 
         point = graph._sample_point(where="Edge")
@@ -381,6 +382,7 @@ class TestSamplePointEdgeMode:
 
         def distrib1():
             return rd.uniform(0, 1.0)
+
         def distrib2():
             return rd.uniform(0, 2.0)
 
@@ -406,7 +408,7 @@ class TestDrawingCoverage:
         graph.add_edge(0, 1, length=1.0)
 
         # Simulate ImportError for matplotlib
-        with patch.dict('sys.modules', {'matplotlib.pyplot': None}):
+        with patch.dict("sys.modules", {"matplotlib.pyplot": None}):
             with pytest.raises(ImportError, match="Plotting requires matplotlib"):
                 graph.draw()
 

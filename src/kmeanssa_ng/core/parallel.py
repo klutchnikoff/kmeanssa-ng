@@ -168,12 +168,13 @@ def run_parallel(
     # Check n_jobs and issue a warning if it's too high
     import os
     import warnings
+
     cpu_count = os.cpu_count() or 1
     if n_jobs > cpu_count:
         warnings.warn(
             f"n_jobs={n_jobs} is greater than the number of available CPUs ({cpu_count}). "
             "This may lead to performance degradation.",
-            UserWarning
+            UserWarning,
         )
 
     # Determine number of workers
@@ -193,12 +194,14 @@ def run_parallel(
     results: list[tuple[list[Center], float, int]] = []
 
     # Set up multiprocessing context if specified
-    executor_kwargs = {'max_workers': n_jobs}
+    executor_kwargs = {"max_workers": n_jobs}
     if mp_context is not None:
         if mp_context not in mp.get_all_start_methods():
-            raise ValueError(f"Multiprocessing context '{mp_context}' not available on this platform. "
-                           f"Available: {mp.get_all_start_methods()}")
-        executor_kwargs['mp_context'] = mp.get_context(mp_context)
+            raise ValueError(
+                f"Multiprocessing context '{mp_context}' not available on this platform. "
+                f"Available: {mp.get_all_start_methods()}"
+            )
+        executor_kwargs["mp_context"] = mp.get_context(mp_context)
 
     with ProcessPoolExecutor(**executor_kwargs) as executor:
         # Submit all jobs
@@ -292,12 +295,13 @@ def run_parallel_with_callback(
     # Check n_jobs and issue a warning if it's too high
     import os
     import warnings
+
     cpu_count = os.cpu_count() or 1
     if n_jobs > cpu_count:
         warnings.warn(
             f"n_jobs={n_jobs} is greater than the number of available CPUs ({cpu_count}). "
             "This may lead to performance degradation.",
-            UserWarning
+            UserWarning,
         )
 
     # Determine number of workers
@@ -318,12 +322,14 @@ def run_parallel_with_callback(
     completed_count = 0
 
     # Set up multiprocessing context if specified
-    executor_kwargs = {'max_workers': n_jobs}
+    executor_kwargs = {"max_workers": n_jobs}
     if mp_context is not None:
         if mp_context not in mp.get_all_start_methods():
-            raise ValueError(f"Multiprocessing context '{mp_context}' not available on this platform. "
-                           f"Available: {mp.get_all_start_methods()}")
-        executor_kwargs['mp_context'] = mp.get_context(mp_context)
+            raise ValueError(
+                f"Multiprocessing context '{mp_context}' not available on this platform. "
+                f"Available: {mp.get_all_start_methods()}"
+            )
+        executor_kwargs["mp_context"] = mp.get_context(mp_context)
 
     with ProcessPoolExecutor(**executor_kwargs) as executor:
         # Submit all jobs
