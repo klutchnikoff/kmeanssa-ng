@@ -83,3 +83,13 @@ markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')",
   "benchmark: marks tests as performance benchmarks",
 ]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "    raise NotImplementedError",
+    "    @abstractmethod",
+    "    @njit",
+    "    def draw\\(",
+]
