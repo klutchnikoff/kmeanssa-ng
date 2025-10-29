@@ -47,10 +47,32 @@ test = [
   "pytest-xdist>=3.3.0",
   "tomli>=2.0.1",
 ]
+docs = [
+    "mkdocs>=1.5.3",
+    "mkdocs-material>=9.1.21",
+    "mkdocstrings[python]>=0.22.0",
+    "jupyter>=1.0.0",
+    "tabulate>=0.9.0",
+]
 
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
+
+[tool.coverage.run]
+parallel = true
+source = ["kmeanssa_ng"]
+omit = ["**/__main__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "    raise NotImplementedError",
+  "    @abstractmethod",
+  "    @njit",
+  "    def draw\\(",
+]
 
 [tool.pdm]
 distribution = true
@@ -61,19 +83,13 @@ check = "ruff check"
 makedoc = "bash scripts/rendermkdocs.sh"
 servedoc = "mkdocs serve"
 benchmark = "pytest tests/test_benchmarks.py --benchmark-only -m 'not slow'"
-benchmark-all = "pytest tests/test_benchmarks.py --benchmark-only"
+benchmark-all = "pytest tests/test_benchmarks.py --benchmark-only --benchmark-autosave"
 benchmark-compare = "pytest tests/test_benchmarks.py --benchmark-only -m 'not slow' --benchmark-compare"
 test = "bash -c 'coverage run -p -m pytest -n 0; coverage combine; coverage report'"
 
 [tool.pdm.dev-dependencies]
 lint = [
   "ruff>=0.1.0",
-]
-docs = [
-  "mkdocs>=1.5.3",
-  "mkdocs-material>=9.1.21",
-  "mkdocstrings[python]>=0.22.0",
-  "jupyter>=1.0.0",
 ]
 plot = [
   "matplotlib>=3.0.0",
@@ -83,19 +99,4 @@ plot = [
 markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')",
   "benchmark: marks tests as performance benchmarks",
-]
-
-[tool.coverage.run]
-parallel = true
-source = ["kmeanssa_ng"]
-omit = ["**/__main__.py"]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "if TYPE_CHECKING:",
-    "    raise NotImplementedError",
-    "    @abstractmethod",
-    "    @njit",
-    "    def draw\\(",
 ]

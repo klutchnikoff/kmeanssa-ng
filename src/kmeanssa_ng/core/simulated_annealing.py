@@ -186,7 +186,7 @@ class SimulatedAnnealing:
 
     def calculate_energy_for_centers(self, centers: list[Center]) -> float:
         """Calculate k-means energy for given centers based on the energy mode."""
-        if hasattr(self.space, "calculate_energy_numba"):
+        if hasattr(self.space, "calculate_energy_numba") and self.space.calculate_energy_numba is not None:
             return self.space.calculate_energy_numba(centers, how=self._energy_mode)
         return self.space.calculate_energy(centers, how=self._energy_mode)
 

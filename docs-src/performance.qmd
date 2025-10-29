@@ -2,17 +2,164 @@
 title: "Performance"
 ---
 
-This page presents some performance benchmarks for critical operations in `kmeanssa-ng`.
+```{python}
+# | echo: false
+import json
+import pandas as pd
+import matplotlib.pyplot as plt
 
-## Energy Calculation
+# Load benchmark data
+with open("benchmark_data.json") as f:
+    data = json.load(f)
 
-The following table shows the performance of the k-means energy calculation for different implementations and modes. The benchmarks were run on a medium-sized graph with 100 nodes and 10 centers.
+metadata = data["metadata"]
+categories = data["categories"]
+comparisons = data["comparisons"]
 
-| Method | Mode      | Mean Time (µs) | Speedup vs. Python |
-| :------- | :-------- | :--------------- | :----------------- |
-| Python | `uniform` | 0.0           | 1x                 |
-| Numba  | `uniform` | 0.0             | 0.0x             |
-| Python | `obs`     | 0.0           | 1x                 |
-| Numba  | `obs`     | 0.0             | 0.0x             |
+# Helper function to create benchmark table
+from IPython.display import Markdown
 
-As you can see, the Numba-accelerated versions are significantly faster than the pure Python implementations.
+
+def benchmark_table(category_name):
+    benchmarks = categories[category_name]
+    df = pd.DataFrame(benchmarks)
+    # Clean up benchmark names for better readability
+    if category_name == "Robustification Strategies":
+        df["name"] = df["name"].str.replace("Robustification ", "")
+    elif category_name == "K-means++ Initialization":
+        df["name"] = df["name"].str.replace("Kpp Initialization ", "")
+    elif category_name == "Simulated Annealing":
+        df["name"] = df["name"].str.replace("Sa ", "")
+    elif category_name == "Energy Calculation":
+        df["name"] = df["name"].str.replace("Energy ", "")
+    elif category_name == "Graph Precomputing":
+        df["name"] = df["name"].str.replace("Precomputing ", "")
+    elif category_name == "Batch Distance Computation":
+        df["name"] = df["name"].str.replace("Batch Distances ", "")
+    df = df.set_index("name")
+    df = df[["mean_us", "min_us", "max_us", "rounds"]]
+    df.columns = ["Mean Time (µs)", "Min Time (µs)", "Max Time (µs)", "Rounds"]
+    df.index.name = "Benchmark"
+    for col in ["Mean Time (µs)", "Min Time (µs)", "Max Time (µs)"]:
+        df[col] = df[col].apply(lambda x: f"{x:.2f}")
+    return Markdown(df.to_markdown())
+
+
+def benchmark_boxplot(category_name):
+    benchmarks = categories[category_name]
+    labels = [
+        b["name"]
+        .replace("Robustification ", "")
+        .replace("Kpp Initialization ", "")
+        .replace("Sa ", "")
+        .replace("Energy ", "")
+        .replace("Precomputing ", "")
+        .replace("Batch Distances ", "")
+        for b in benchmarks
+    ]
+
+    stats = []
+    for b in benchmarks:
+        stats.append(
+            {
+                "label": b["name"],
+                "med": b["median_us"],
+                "q1": b["q1_us"],
+                "q3": b["q3_us"],
+                "whislo": b["min_us"],
+                "whishi": b["max_us"],
+                "fliers": [],
+            }
+        )
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.bxp(stats, showfliers=False, vert=False)
+    ax.set_yticklabels(labels)
+    ax.set_xlabel("Time (µs)")
+    ax.set_title(f"Benchmark Performance: {category_name}")
+    plt.show()
+```
+
+This page presents performance benchmarks for critical operations in
+`kmeanssa-ng`. The generation of this document is automated and follows
+these steps:
+
+1.  **Benchmark Execution**: The performance benchmarks are executed
+    using `pytest` with the `pytest-benchmark` plugin. This is done by
+    running the `pdm benchmark-all` command, which saves the results in
+    a JSON file.
+2.  **Data Processing**: A script then processes this raw benchmark
+    data, structuring it into the `docs-src/benchmark_data.json` file.
+    This is handled by the `scripts/generate_benchmark_docs.py` script.
+3.  **Documentation Rendering**: Finally, the Quarto document
+    (`performance.qmd`) is rendered to markdown. This document reads the
+    data from `benchmark_data.json` to generate the tables and plots you
+    see on this page. The entire process is orchestrated by the
+    `pdm makedoc` command.
+
+*Benchmarks generated from: `{python} metadata["source_file"]`*
+
+## Robustification Strategies
+
+The kmeanssa-ng library offers two main robustification strategies to improve the position of the centers at the end of the simulated annealing algorithm. Instead of keeping the last position of the centers, robustification analyzes the final steps of the simulation (e.g., the final 10%) to determine an optimal position.
+
+Two robustification strategies are available:
+
+   * `MostFrequentNode`: This strategy selects the most frequently visited node (position) during the final stages of the simulated annealing as the final center. It is a fast and effective approach if the centers converge to a stable position.
+   * `MinimizeEnergy`: This strategy searches for the position among those
+  visited during the last steps that minimizes the system’s energy. This
+  approach is more computationally expensive but can lead to better
+  results by identifying more energetically stable center
+  configurations. The energy can be calculated in two ways: `uniform` (the energy is calculated with respect to a uniform distribution on the nodes of the Quantum Graph) and `obs` (the energy is calculated using an empirical distribution based only on the observations, that is, the data points).
+
+To optimize performance, `MinimizeEnergy` and its core component, `calculate_energy`, are provided in two implementations:
+
+   * Pure Python: A readable and easy-to-understand version.
+   * Numba: A just-in-time (JIT) compiled version that provides a significant speedup for the computationally heavy parts of the algorithm. kmeanssa-ng will automatically use the Numba version if it is available.
+
+```{python}
+#| echo: false
+rc = comparisons["robustification"]
+baseline = rc["baseline"]
+strategies = rc["strategies"]
+nsr = rc["numba_speedup_range"]
+ec = comparisons["energy_calculation"]
+```
+
+The following table compares the different robustification strategies. `MostFrequentNode` is used as the baseline reference (1.0x).
+
+| Strategy | Implementation | Mode | Mean Time | Ratio vs. MostFrequentNode |
+| :------- | :------------- | :--- | :-------- | :------------------------- |
+| `{python} baseline["name"]` | - | - | `{python} f"{baseline['mean_us']:.2f}"` µs | 1.0x |
+| `{python} strategies[0]["name"]` | `{python} strategies[0]["implementation"]` | `{python} strategies[0]["mode"]` | `{python} f"{strategies[0]['mean_us']:.2f}"` µs | **`{python} f"{strategies[0]['ratio_vs_baseline']:.2f}"`x (slower)** |
+| `{python} strategies[1]["name"]` | `{python} strategies[1]["implementation"]` | `{python} strategies[1]["mode"]` | `{python} f"{strategies[1]['mean_us']:.2f}"` µs | **`{python} f"{strategies[1]['ratio_vs_baseline']:.2f}"`x (slower)** |
+| `{python} strategies[2]["name"]` | `{python} strategies[2]["implementation"]` | `{python} strategies[2]["mode"]` | `{python} f"{strategies[2]['mean_us']:.2f}"` µs | **`{python} f"{strategies[2]['ratio_vs_baseline']:.2f}"`x (slower)** |
+| `{python} strategies[3]["name"]` | `{python} strategies[3]["implementation"]` | `{python} strategies[3]["mode"]` | `{python} f"{strategies[3]['mean_us']:.2f}"` µs | **`{python} f"{strategies[3]['ratio_vs_baseline']:.2f}"`x (slower)** |
+
+The `MinimizeEnergy` strategy is significantly slower than `MostFrequentNode` because it relies on the `calculate_energy` function, which is computationally intensive. While `calculate_energy` is heavily accelerated by Numba (see table below), `MinimizeEnergy` calls it repeatedly within a loop (15 times for a 10% robustification with 150 observations).
+
+This overhead, combined with other non-accelerated Python operations, dilutes the overall performance gain. The Numba-accelerated version of `MinimizeEnergy` is still `{python} f"{nsr['min']:.0f}"`-`{python} f"{nsr['max']:.0f}"`x faster than its pure Python equivalent, but the final speedup is lower than that of `calculate_energy` alone. This reveals an algorithmic trade-off between solution quality and computational complexity: while `MinimizeEnergy` produces higher-quality clusterings than `MostFrequentNode` by optimizing center selection more thoroughly, this improvement comes at a substantial increase in computational expense.
+
+
+The following table compares the performance of pure Python vs Numba-accelerated implementations for the `calculate_energy` function:
+
+| Method | Mode | Mean Time | Speedup vs. Python |
+| :----- | :--- | :-------- | :----------------- |
+| Python | `uniform` | `{python} f"{ec['python_uniform_us']:.2f}"` µs | 1.0x |
+| Numba | `uniform` | `{python} f"{ec['numba_uniform_us']:.2f}"` µs | **`{python} f"{ec['speedup_uniform']:.1f}"`x** |
+| Python | `obs` | `{python} f"{ec['python_obs_us']:.2f}"` µs | 1.0x |
+| Numba | `obs` | `{python} f"{ec['numba_obs_us']:.2f}"` µs | **`{python} f"{ec['speedup_obs']:.1f}"`x** |
+
+## Detailed Benchmark Data
+
+This section provides the raw performance data for all benchmarked operations, including mean, min, and max execution times.
+
+```{python}
+#| echo: false
+#| results: asis
+for category_name in sorted(categories.keys()):
+    display(Markdown(f"### {category_name}"))
+    benchmark_boxplot(category_name)
+    plt.show()
+    display(benchmark_table(category_name))
+```
