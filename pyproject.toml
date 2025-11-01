@@ -94,6 +94,9 @@ lint = [
 plot = [
   "matplotlib>=3.0.0",
 ]
+release = [
+  "pdm-bump>=0.9.12",
+]
 
 [tool.pytest.ini_options]
 markers = [

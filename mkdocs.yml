@@ -42,18 +42,16 @@ nav:
   - "Getting Started":
     - "Quickstart": quickstart.md
     - "Concepts": concepts.md
-    - "Contributing": contributing.md
   - "User Guide":
     - "Quantum Graphs": quantum-graphs.md
     - "Simulated Annealing": simulated-annealing.md
     - "Parallel Execution": parallel-execution.md
     - "Generators": generators.md
-    - "Custom Spaces": custom-spaces.md
+    - "Advanced Usage": advanced-usage.md
     - "Performance": performance.md
-  # - "Examples":
-  #   - "Basic Clustering": basic-clustering.md
-  #   - "Advanced Usage": advanced-usage.md
-  #   - "Performance": performance.md
+  - "Developer Guide":
+    - "Contributing": contributing.md
+    - "Custom Spaces": custom-spaces.md
   - "API":
     - "Overview": api/index.md
     - "Core": api/core.md

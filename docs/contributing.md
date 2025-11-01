@@ -85,10 +85,13 @@ providing a path to the test file.
 ## Code Formatting and Quality
 
 We use [Ruff](https://github.com/astral-sh/ruff) for code formatting and
-linting. Before committing your code, please run the following commands:
+linting. Before committing your code, please run the following commands
+to format your code automatically and check for any linting errors:
 
-- To format your code automatically: `bash     pdm run format`
-- To check for any linting errors: `bash     pdm run check`
+``` bash
+pdm run format
+pdm run check
+```
 
 ## Submitting Changes
 
@@ -104,32 +107,18 @@ Thank you for contributing!
 This checklist outlines the steps to publish a new version of
 `kmeanssa-ng`.
 
-#### 1. Preparation
-
-- [ ] **Sync the main branch:**
+- [ ] **Sync the main branch and create a release branch:**
 
   ``` bash
   git checkout main
   git pull
+  git checkout -b release
   ```
 
-- [ ] **Create a release branch:**
-
-  ``` bash
-  git checkout -b release/vX.Y.Z  # e.g., release/v0.5.0
-  ```
-
-#### 2. Verification and Cleanup
-
-- [ ] **Format the code:**
+- [ ] **Format and check the code:**
 
   ``` bash
   pdm run format
-  ```
-
-- [ ] **Lint the code:**
-
-  ``` bash
   pdm run check
   ```
 
@@ -139,16 +128,13 @@ This checklist outlines the steps to publish a new version of
   pdm run test
   ```
 
-#### 3. Version Bump
-
 - [ ] **Update `CHANGELOG.md`:** Add a new section for the version with
   a list of changes.
 
-- [ ] **Bump the version:** Use `pdm bump` to increment the version
-  number.
+- [ ] **Bump the version:**
 
   ``` bash
-  pdm bump minor  # or patch, major
+  pdm bump minor  # or patch, major (increment the version number accordingly)
   ```
 
 - [ ] **Update the lock file:**
@@ -157,17 +143,13 @@ This checklist outlines the steps to publish a new version of
   pdm install
   ```
 
-#### 4. Documentation
-
 - [ ] **Render the documentation:**
 
   ``` bash
   pdm run makedoc
   ```
 
-#### 5. Commit and Pull Request
-
-- [ ] **Add all modified files:**
+- [ ] **Git add all modified files:**
 
   ``` bash
   git add .
@@ -176,34 +158,33 @@ This checklist outlines the steps to publish a new version of
 - [ ] **Create the release commit:**
 
   ``` bash
-  git commit -m "chore(release): version X.Y.Z"
+  # Automatically read the version from pyproject.toml
+  VERSION=$(grep 'version = ' pyproject.toml | awk -F'"' '{print $2}')
+  git commit -m "chore(release): version $VERSION"
   ```
 
 - [ ] **Push the branch and create a Pull/Merge Request** to `main`.
 
   ``` bash
-  git push -u origin release/vX.Y.Z
+  git push -u origin release
   ```
 
-#### 6. Publication (after PR merge)
-
-- [ ] **Check out and sync the main branch:**
+- [ ] **After the PR is merged, check out and sync the main branch:**
 
   ``` bash
   git checkout main
   git pull
   ```
 
-- [ ] **Create a Git tag:**
+- [ ] **Create and push the Git tag:**
 
   ``` bash
-  git tag vX.Y.Z
-  ```
+  # Read the final version from pyproject.toml
+  VERSION=$(grep 'version = ' pyproject.toml | awk -F'"' '{print $2}')
 
-- [ ] **Push the tag to the remote repository:**
-
-  ``` bash
-  git push origin vX.Y.Z
+  # Create and push the tag
+  git tag "v$VERSION"
+  git push origin "v$VERSION"
   ```
 
 - [ ] **Publish to PyPI:**
