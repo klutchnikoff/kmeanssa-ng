@@ -48,8 +48,8 @@ class SimulatedAnnealing:
         self,
         observations: list[Point],
         k: int,
-        lambda_param: int = 1,
-        beta: float = 1.0,
+        lambda0: float = 1.0,
+        beta0: float = 1.0,
         step_size: float = 0.1,
         energy_mode: str = "uniform",
     ) -> None:
@@ -58,8 +58,8 @@ class SimulatedAnnealing:
         Args:
             observations: List of points to cluster, all in the same metric space.
             k: Number of clusters.
-            lambda_param: Intensity parameter for Poisson process (must be > 0).
-            beta: Inverse temperature parameter (must be > 0, higher = faster convergence).
+            lambda0: Initial intensity parameter for Poisson process (must be > 0).
+            beta0: Initial inverse temperature parameter (must be > 0, higher = faster convergence).
             step_size: Time step for updating centers (must be > 0).
 
         Raises:
@@ -75,19 +75,21 @@ class SimulatedAnnealing:
 
         # Validate lambda_param
         try:
-            lambda_float = float(lambda_param)
+            lambda_float = float(lambda0)
         except (TypeError, ValueError) as e:
             raise ValueError(
-                f"lambda_param must be a number, got {type(lambda_param).__name__}"
+                f"lambda_param must be a number, got {type(lambda0).__name__}"
             ) from e
         if lambda_float <= 0:
             raise ValueError(f"lambda_param must be positive, got {lambda_float}")
 
         # Validate beta
         try:
-            beta_float = float(beta)
+            beta_float = float(beta0)
         except (TypeError, ValueError) as e:
-            raise ValueError(f"beta must be a number, got {type(beta).__name__}") from e
+            raise ValueError(
+                f"beta must be a number, got {type(beta0).__name__}"
+            ) from e
         if beta_float <= 0:
             raise ValueError(f"beta must be positive, got {beta_float}")
 
@@ -168,7 +170,9 @@ class SimulatedAnnealing:
             T[i + 1] = np.sqrt(poiss_sum + 1) - 1
         return T
 
-    def calculate_energy(self, centers: list[Center], points: list[Point]) -> float:
+    def calculate_energy_fallback(
+        self, centers: list[Center], points: list[Point]
+    ) -> float:
         """Calculate k-means energy for given centers.
 
         Args:
@@ -184,9 +188,12 @@ class SimulatedAnnealing:
         )
         return energy / len(points)
 
-    def calculate_energy_for_centers(self, centers: list[Center]) -> float:
+    def calculate_energy(self, centers: list[Center]) -> float:
         """Calculate k-means energy for given centers based on the energy mode."""
-        if hasattr(self.space, "calculate_energy_numba") and self.space.calculate_energy_numba is not None:
+        if (
+            hasattr(self.space, "calculate_energy_numba")
+            and self.space.calculate_energy_numba is not None
+        ):
             return self.space.calculate_energy_numba(centers, how=self._energy_mode)
         return self.space.calculate_energy(centers, how=self._energy_mode)
 

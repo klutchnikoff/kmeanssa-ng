@@ -26,13 +26,13 @@ def _run_with_seed(
     k: int,
     seed: int,
     algorithm: Literal["interleaved", "sequential"],
-    lambda_param: int,
-    beta: float,
+    lambda0: float,
+    beta0: float,
     step_size: float,
     energy_mode: str,
     robust_prop: float,
-    initialization: str | None,
-    robustification: str | None,
+    initialization_strategy: "InitializationStrategy | None",
+    robustification_strategy: "RobustificationStrategy | None",
 ) -> tuple[list[Center], float, int]:
     """Run simulated annealing with a specific seed.
 
@@ -48,8 +48,8 @@ def _run_with_seed(
         beta: Inverse temperature parameter.
         step_size: Time step size.
         robust_prop: Proportion of observations for robustification.
-        initialization: Name of initialization strategy (None for default).
-        robustification: Name of robustification strategy (None for default).
+        initialization_strategy: Strategy instance for initializing centers.
+        robustification_strategy: Strategy instance for robustifying results.
 
     Returns:
         Tuple of (centers, energy, seed) for this run.
@@ -68,32 +68,28 @@ def _run_with_seed(
     sa = SimulatedAnnealing(
         observations=observations,
         k=k,
-        lambda_param=lambda_param,
-        beta=beta,
+        lambda0=lambda0,
+        beta0=beta0,
         step_size=step_size,
         energy_mode=energy_mode,
     )
-
-    # Parse strategies (could be extended to support more strategies)
-    init_strategy = None  # Use default
-    robust_strategy = None  # Use default
 
     # Run the algorithm
     if algorithm == "interleaved":
         centers = sa.run_interleaved(
             robust_prop=robust_prop,
-            initialization_strategy=init_strategy,
-            robustification_strategy=robust_strategy,
+            initialization_strategy=initialization_strategy,
+            robustification_strategy=robustification_strategy,
         )
     else:  # sequential
         centers = sa.run_sequential(
             robust_prop=robust_prop,
-            initialization_strategy=init_strategy,
-            robustification_strategy=robust_strategy,
+            initialization_strategy=initialization_strategy,
+            robustification_strategy=robustification_strategy,
         )
 
     # Calculate final energy
-    energy = sa.calculate_energy(centers, observations)
+    energy = sa.calculate_energy_fallback(centers, observations)
 
     return centers, energy, seed
 
@@ -104,8 +100,8 @@ def run_parallel(
     k: int,
     n_runs: int = 10,
     algorithm: Literal["interleaved", "sequential"] = "interleaved",
-    lambda_param: int = 1,
-    beta: float = 1.0,
+    lambda0: float = 1,
+    beta0: float = 1.0,
     step_size: float = 0.1,
     energy_mode: str = "uniform",
     robust_prop: float = 0.0,
@@ -216,13 +212,13 @@ def run_parallel(
                 k,
                 seed,
                 algorithm,
-                lambda_param,
-                beta,
+                lambda0,
+                beta0,
                 step_size,
                 energy_mode,
                 robust_prop,
-                None,  # initialization
-                None,  # robustification
+                initialization_strategy,
+                robustification_strategy,
             )
             for seed in seeds
         ]
@@ -248,8 +244,8 @@ def run_parallel_with_callback(
     k: int,
     n_runs: int = 10,
     algorithm: Literal["interleaved", "sequential"] = "interleaved",
-    lambda_param: int = 1,
-    beta: float = 1.0,
+    lambda0: float = 1.0,
+    beta0: float = 1.0,
     step_size: float = 0.1,
     energy_mode: str = "uniform",
     robust_prop: float = 0.0,
@@ -346,8 +342,8 @@ def run_parallel_with_callback(
                 k,
                 seed,
                 algorithm,
-                lambda_param,
-                beta,
+                lambda0,
+                beta0,
                 step_size,
                 energy_mode,
                 robust_prop,
