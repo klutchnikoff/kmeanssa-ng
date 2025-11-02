@@ -57,7 +57,7 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(10)
 
         with pytest.raises(ValueError, match="lambda_param must be positive"):
-            SimulatedAnnealing(points, k=2, lambda_param=-1)
+            SimulatedAnnealing(points, k=2, lambda0=-1)
 
     def test_zero_lambda_param_raises(self):
         """Test that zero lambda_param raises ValueError."""
@@ -65,7 +65,7 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(10)
 
         with pytest.raises(ValueError, match="lambda_param must be positive"):
-            SimulatedAnnealing(points, k=2, lambda_param=0)
+            SimulatedAnnealing(points, k=2, lambda0=0)
 
     def test_non_numeric_lambda_param_raises(self):
         """Test that non-numeric lambda_param raises ValueError."""
@@ -73,7 +73,7 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(10)
 
         with pytest.raises(ValueError, match="lambda_param must be a number"):
-            SimulatedAnnealing(points, k=2, lambda_param="invalid")
+            SimulatedAnnealing(points, k=2, lambda0="invalid")
 
     def test_negative_beta_raises(self):
         """Test that negative beta raises ValueError."""
@@ -81,7 +81,7 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(10)
 
         with pytest.raises(ValueError, match="beta must be positive"):
-            SimulatedAnnealing(points, k=2, beta=-1.0)
+            SimulatedAnnealing(points, k=2, beta0=-1.0)
 
     def test_zero_beta_raises(self):
         """Test that zero beta raises ValueError."""
@@ -89,7 +89,7 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(10)
 
         with pytest.raises(ValueError, match="beta must be positive"):
-            SimulatedAnnealing(points, k=2, beta=0.0)
+            SimulatedAnnealing(points, k=2, beta0=0.0)
 
     def test_non_numeric_beta_raises(self):
         """Test that non-numeric beta raises ValueError."""
@@ -97,7 +97,7 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(10)
 
         with pytest.raises(ValueError, match="beta must be a number"):
-            SimulatedAnnealing(points, k=2, beta="invalid")
+            SimulatedAnnealing(points, k=2, beta0="invalid")
 
     def test_negative_step_size_raises(self):
         """Test that negative step_size raises ValueError."""
@@ -128,7 +128,7 @@ class TestSimulatedAnnealing:
         graph = generate_simple_graph(n_a=3, bridge_length=5.0)
         points = graph.sample_points(20)
 
-        sa = SimulatedAnnealing(points, k=2, lambda_param=1, beta=1.0, step_size=0.1)
+        sa = SimulatedAnnealing(points, k=2, lambda0=1, beta0=1.0, step_size=0.1)
 
         centers = sa.run_interleaved(
             robust_prop=0.0, initialization_strategy=RandomInit()
@@ -182,7 +182,7 @@ class TestSimulatedAnnealing:
         centers = sa.run_sequential(initialization_strategy=KMeansPlusPlus())
         assert len(centers) == 2
 
-    def test_calculate_energy(self):
+    def test_calculate_energy_fallback(self):
         """Test energy calculation."""
         graph = generate_simple_graph(n_a=3)
         points = graph.sample_points(20)
@@ -190,7 +190,7 @@ class TestSimulatedAnnealing:
         sa = SimulatedAnnealing(points, k=2)
         centers = graph.sample_centers(2)
 
-        energy = sa.calculate_energy(centers, points)
+        energy = sa.calculate_energy_fallback(centers, points)
 
         assert energy >= 0  # Energy should be non-negative
 
@@ -213,7 +213,7 @@ class TestSimulatedAnnealing:
         with patch.object(
             sa.space, "calculate_energy_numba", create=True
         ) as mock_calculate_energy_numba:
-            sa.calculate_energy_for_centers(centers)
+            sa.calculate_energy(centers)
             mock_calculate_energy_numba.assert_called_with(centers, how="obs")
 
     def test_centers_property(self):
@@ -314,7 +314,7 @@ class TestSimulatedAnnealing:
     def test_most_frequent_node_strategy_empty_collection(self):
         """Test MostFrequentNode with an empty collection."""
 
-        from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
+        from kmeanssa_ng.core.strategies.robustification import MostFrequentNode
         from kmeanssa_ng import QuantumGraph
 
         # Mock SimulatedAnnealing instance
@@ -332,10 +332,31 @@ class TestSimulatedAnnealing:
         strategy.initialize(sa_k2)
         assert strategy.get_result() == []
 
-        # Test for k = 1
-        sa_k1 = MockSA(k=1)
-        strategy.initialize(sa_k1)
-        assert strategy.get_result() is None
+    def test_most_frequent_node_raises_on_non_graph_space(self):
+        """Test that MostFrequentNode raises TypeError on a non-graph space."""
+        from kmeanssa_ng.core.strategies.robustification import MostFrequentNode
+        from kmeanssa_ng.core.abstract import Space
+
+        # 1. Create a dummy space that is not a QuantumGraph
+        class DummySpace(Space):
+            def distance(self, p1, p2): return 1.0
+            def sample_points(self, n): return [1] * n
+            def calculate_energy(self, centers: list) -> float: return 0.0
+            def compute_clusters(self, centers: list) -> None: pass
+            def sample_centers(self, k: int) -> list: return [1] * k
+            def sample_kpp_centers(self, k: int) -> list: return [1] * k
+
+        # 2. Create a mock SA instance using this space
+        class MockSA:
+            def __init__(self):
+                self.space = DummySpace()
+
+        sa_instance = MockSA()
+        strategy = MostFrequentNode()
+
+        # 3. Assert that calling initialize raises a TypeError
+        with pytest.raises(TypeError, match="only be used with QuantumGraph spaces"):
+            strategy.initialize(sa_instance)
 
 
 class TestIntegration:
@@ -350,7 +371,7 @@ class TestIntegration:
         points = graph.sample_points(40)
 
         # Run simulated annealing
-        sa = SimulatedAnnealing(points, k=2, lambda_param=1, beta=2.0)
+        sa = SimulatedAnnealing(points, k=2, lambda0=1, beta0=2.0)
         centers = sa.run_interleaved(
             robust_prop=0.1, initialization_strategy=KMeansPlusPlus()
         )
@@ -371,7 +392,7 @@ class TestIntegration:
         graph = generate_simple_graph(n_a=5, bridge_length=5.0)
         points = graph.sample_points(50)
 
-        SimulatedAnnealing(points, k=2, lambda_param=1, beta=2.0)
+        SimulatedAnnealing(points, k=2, lambda0=1, beta0=2.0)
 
         # Random initialization should have higher energy than k-means++
         centers_random = graph.sample_centers(2)

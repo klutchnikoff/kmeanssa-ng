@@ -129,7 +129,7 @@ class TestBenchmarks:
         This is the main clustering algorithm.
         """
         points = small_graph_precomputed.sample_points(50)
-        sa = SimulatedAnnealing(points, k=2, lambda_param=1, beta=1.0, step_size=0.1)
+        sa = SimulatedAnnealing(points, k=2, lambda0=1.0, beta0=1.0, step_size=0.1)
 
         result = benchmark(sa.run_interleaved, initialization_strategy=KMeansPlusPlus())
         assert len(result) == 2
@@ -141,7 +141,7 @@ class TestBenchmarks:
         This test is marked as slow and can be skipped with: -m "not slow"
         """
         points = medium_graph_precomputed.sample_points(150)
-        sa = SimulatedAnnealing(points, k=3, lambda_param=1, beta=1.0, step_size=0.1)
+        sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1)
 
         result = benchmark(sa.run_interleaved, initialization_strategy=KMeansPlusPlus())
         assert len(result) == 3
@@ -152,7 +152,7 @@ class TestBenchmarks:
         Compares sequential vs interleaved algorithm performance.
         """
         points = small_graph_precomputed.sample_points(50)
-        sa = SimulatedAnnealing(points, k=2, lambda_param=1, beta=1.0, step_size=0.1)
+        sa = SimulatedAnnealing(points, k=2, lambda0=1.0, beta0=1.0, step_size=0.1)
 
         result = benchmark(sa.run_sequential, initialization_strategy=KMeansPlusPlus())
         assert len(result) == 2
@@ -164,7 +164,7 @@ class TestBenchmarks:
         This test is marked as slow and can be skipped with: -m "not slow"
         """
         points = medium_graph_precomputed.sample_points(150)
-        sa = SimulatedAnnealing(points, k=3, lambda_param=1, beta=1.0, step_size=0.1)
+        sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1)
 
         result = benchmark(sa.run_sequential, initialization_strategy=KMeansPlusPlus())
         assert len(result) == 3
@@ -173,9 +173,8 @@ class TestBenchmarks:
     def test_benchmark_sa_interleaved_mostfrequentnode_medium(
         self, benchmark, medium_graph_precomputed
     ):
-        """Benchmark interleaved SA with MostFrequentNode strategy on medium graph."""
         points = medium_graph_precomputed.sample_points(150)
-        sa = SimulatedAnnealing(points, k=3, lambda_param=1, beta=1.0, step_size=0.1)
+        sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1)
 
         result = benchmark(
             sa.run_interleaved,
@@ -244,7 +243,7 @@ class TestRobustificationBenchmark:
     def sa_prepared(self, medium_graph_precomputed):
         """Prepare a SA instance with initialized centers."""
         points = medium_graph_precomputed.sample_points(150)
-        sa = SimulatedAnnealing(points, k=3, lambda_param=1, beta=1.0, step_size=0.1)
+        sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1)
         # Initialize centers using k-means++
         sa._centers = KMeansPlusPlus().initialize_centers(sa)
         return sa
@@ -253,9 +252,7 @@ class TestRobustificationBenchmark:
     def sa_prepared_obs(self, medium_graph_with_obs):
         """Prepare a SA instance with initialized centers for obs mode."""
         points = medium_graph_with_obs.sample_points(150)
-        sa = SimulatedAnnealing(
-            points, k=3, lambda_param=1, beta=1.0, step_size=0.1, energy_mode="obs"
-        )
+        sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1, energy_mode="obs")
         # Initialize centers using k-means++
         sa._centers = KMeansPlusPlus().initialize_centers(sa)
         return sa
