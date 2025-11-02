@@ -67,7 +67,6 @@ class MinimizeEnergy(RobustificationStrategy[list["Center"]]):
         return self._best_centers
 
 
-
 class MostFrequentNode(RobustificationStrategy[list["Center"]]):
     """Select the most frequently visited node as the final center.
 

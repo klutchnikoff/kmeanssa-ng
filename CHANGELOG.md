@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-11-01
+
+### Changed
+- **Breaking:** Renamed `lambda_param` and `beta` arguments to `lambda0` and `beta0` in `SimulatedAnnealing` and parallel functions to clarify they are initial values.
+- Improved parallel strategy handling by allowing strategy objects to be passed directly to `run_parallel`, enabling user-defined strategies.
+
+### Refactor
+- Renamed core energy calculation methods in `SimulatedAnnealing` for clarity:
+    - `calculate_energy_for_centers` is now the primary public method `calculate_energy`.
+    - The old `calculate_energy` is now `calculate_energy_fallback`.
+- Refactored `MostFrequentNode` strategy to correctly implement the `RobustificationStrategy` interface.
+
+### Fixed
+- Added context validation to `MostFrequentNode` to ensure it is only used with `QuantumGraph` spaces.
+- Corrected the entire test suite to align with recent refactoring and API changes, restoring full test pass rate.
+
+### Docs
+- Overhauled the benchmark documentation, separating user-facing performance results from the developer guide.
+- Simplified the script for generating benchmark data from `pytest-benchmark` output.
+
 ## [Unreleased]
 
 ## [0.3.0] - 2025-01-27

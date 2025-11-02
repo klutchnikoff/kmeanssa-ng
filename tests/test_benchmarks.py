@@ -252,7 +252,9 @@ class TestRobustificationBenchmark:
     def sa_prepared_obs(self, medium_graph_with_obs):
         """Prepare a SA instance with initialized centers for obs mode."""
         points = medium_graph_with_obs.sample_points(150)
-        sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1, energy_mode="obs")
+        sa = SimulatedAnnealing(
+            points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1, energy_mode="obs"
+        )
         # Initialize centers using k-means++
         sa._centers = KMeansPlusPlus().initialize_centers(sa)
         return sa

@@ -339,12 +339,23 @@ class TestSimulatedAnnealing:
 
         # 1. Create a dummy space that is not a QuantumGraph
         class DummySpace(Space):
-            def distance(self, p1, p2): return 1.0
-            def sample_points(self, n): return [1] * n
-            def calculate_energy(self, centers: list) -> float: return 0.0
-            def compute_clusters(self, centers: list) -> None: pass
-            def sample_centers(self, k: int) -> list: return [1] * k
-            def sample_kpp_centers(self, k: int) -> list: return [1] * k
+            def distance(self, p1, p2):
+                return 1.0
+
+            def sample_points(self, n):
+                return [1] * n
+
+            def calculate_energy(self, centers: list) -> float:
+                return 0.0
+
+            def compute_clusters(self, centers: list) -> None:
+                pass
+
+            def sample_centers(self, k: int) -> list:
+                return [1] * k
+
+            def sample_kpp_centers(self, k: int) -> list:
+                return [1] * k
 
         # 2. Create a mock SA instance using this space
         class MockSA:
