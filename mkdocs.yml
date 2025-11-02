@@ -52,6 +52,7 @@ nav:
   - "Developer Guide":
     - "Contributing": contributing.md
     - "Custom Spaces": custom-spaces.md
+    - "Benchmarks": benchmarks.md
   - "API":
     - "Overview": api/index.md
     - "Core": api/core.md
