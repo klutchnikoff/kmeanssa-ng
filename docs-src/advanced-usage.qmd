@@ -45,10 +45,11 @@ Now, you can instantiate your custom strategy and pass it to the `run_interleave
 
 ```{python}
 # Example setup
-from kmeanssa_ng.quantum_graph.space import QuantumGraph
+from kmeanssa_ng import generate_sbm
 
-# Create a space and some data
-my_space = QuantumGraph(n_nodes=20)
+# Generate space and data
+my_space = generate_sbm(sizes=[50, 50], p=[[0.8, 0.1], [0.1, 0.8]])
+
 observations = my_space.sample_points(200)
 k = 4
 

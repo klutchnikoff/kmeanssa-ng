@@ -56,10 +56,11 @@ object.
 
 ``` python
 # Example setup
-from kmeanssa_ng.quantum_graph.space import QuantumGraph
+from kmeanssa_ng import generate_sbm
 
-# Create a space and some data
-my_space = QuantumGraph(n_nodes=20)
+# Generate space and data
+my_space = generate_sbm(sizes=[50, 50], p=[[0.8, 0.1], [0.1, 0.8]])
+
 observations = my_space.sample_points(200)
 k = 4
 
@@ -75,6 +76,10 @@ final_centers = sa.run_interleaved(initialization_strategy=my_strategy)
 
 print("\nClustering completed successfully using a custom strategy.")
 ```
+
+    Using a custom fixed initialization strategy!
+
+    Clustering completed successfully using a custom strategy.
 
 This same principle applies to other strategic components in the
 library, such as `RobustificationStrategy`, allowing for a high degree
