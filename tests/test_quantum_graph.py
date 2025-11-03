@@ -4,7 +4,7 @@ import networkx as nx
 import numpy as np
 import pytest
 
-from kmeanssa_ng.core.strategies import UniformSampling
+from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 from kmeanssa_ng import (
     QGCenter,
     QGPoint,
@@ -122,7 +122,7 @@ class TestQuantumGraph:
         graph = generate_simple_graph(n_a=3)
         graph.precomputing()
         centers = graph.sample_centers(k=3)
-        target = graph.sample_points(1, strategy=UniformSampling())[0]
+        target = graph.sample_points(1, strategy=UniformNodeSampling())[0]
 
         distances = graph.distances_from_centers(centers, target)
 
@@ -551,7 +551,7 @@ class TestGenerators:
         """Test sampling points from a graph."""
         graph = generate_simple_graph(n_a=3)
 
-        points = graph.sample_points(10, strategy=UniformSampling())
+        points = graph.sample_points(10, strategy=UniformNodeSampling())
         assert len(points) == 10
         assert all(isinstance(p, QGPoint) for p in points)
 
