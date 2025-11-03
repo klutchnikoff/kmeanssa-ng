@@ -155,6 +155,23 @@ class TestRiemannianManifold:
         with pytest.raises(ValueError, match="Centers list cannot be empty"):
             space.calculate_energy([])
 
+    def test_calculate_energy_with_how_parameter(self):
+        """Test energy calculation accepts 'how' parameter for API compatibility."""
+        sphere = Hypersphere(dim=2)
+        space = RiemannianManifold(sphere)
+        space.sample_points(20)
+        centers = space.sample_centers(3)
+
+        # Both calls should give the same result since 'how' is ignored
+        energy_default = space.calculate_energy(centers)
+        energy_obs = space.calculate_energy(centers, how="obs")
+        energy_uniform = space.calculate_energy(centers, how="uniform")
+
+        assert energy_default == energy_obs
+        assert energy_default == energy_uniform  # 'uniform' is ignored
+        assert isinstance(energy_default, float)
+        assert energy_default >= 0
+
     def test_compute_clusters(self):
         """Test compute_clusters (stub implementation)."""
         sphere = Hypersphere(dim=2)
@@ -163,6 +180,28 @@ class TestRiemannianManifold:
 
         # Should not raise an error
         space.compute_clusters(centers)
+
+    def test_distances_from_centers(self):
+        """Test computing distances from multiple centers to a target point."""
+        sphere = Hypersphere(dim=2)
+        space = RiemannianManifold(sphere)
+
+        # Sample centers and a target point
+        centers = space.sample_centers(5)
+        target = space.sample_points(1)[0]
+
+        # Compute distances
+        distances = space.distances_from_centers(centers, target)
+
+        # Verify result
+        assert isinstance(distances, np.ndarray)
+        assert distances.shape == (5,)
+        assert np.all(distances >= 0)  # All distances should be non-negative
+
+        # Verify distances match individual distance calculations
+        for i, center in enumerate(centers):
+            individual_dist = space.distance(center, target)
+            assert np.isclose(distances[i], individual_dist)
 
 
 class TestRiemannianPoint:

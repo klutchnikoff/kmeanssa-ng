@@ -26,6 +26,9 @@ class DummySpace(Space):
     def calculate_energy(self, centers: list[Center]) -> float:
         return super().calculate_energy(centers)
 
+    def distances_from_centers(self, centers: list[Center], target: Point):
+        return super().distances_from_centers(centers, target)
+
 
 class DummyPoint(Point):
     """A concrete implementation of Point for testing."""
@@ -78,3 +81,6 @@ def test_abstract_methods_raise_not_implemented():
 
     with pytest.raises(NotImplementedError):
         space.calculate_energy([center])
+
+    with pytest.raises(NotImplementedError):
+        space.distances_from_centers([center], point)

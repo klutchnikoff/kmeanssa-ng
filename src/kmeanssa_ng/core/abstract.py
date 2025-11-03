@@ -150,3 +150,28 @@ class Space(ABC):
             The total energy (sum of squared distances).
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def distances_from_centers(self, centers: list[Center], target: Point):
+        """Compute distances from multiple centers to a single target point.
+
+        This method is used by the simulated annealing algorithm to efficiently
+        find the nearest center to a given observation point.
+
+        Args:
+            centers: List of k centers to compute distances from.
+            target: The target point.
+
+        Returns:
+            Array of shape (k,) with distances from each center to target.
+
+        Example:
+            ```python
+            centers = space.sample_centers(5)
+            target = space.sample_points(1)[0]
+            distances = space.distances_from_centers(centers, target)
+            closest_idx = np.argmin(distances)
+            closest_center = centers[closest_idx]
+            ```
+        """
+        raise NotImplementedError

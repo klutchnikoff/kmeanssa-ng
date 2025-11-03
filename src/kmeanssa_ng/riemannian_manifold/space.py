@@ -190,7 +190,35 @@ class RiemannianManifold(Space):
         # This could be extended to track cluster assignments if needed
         pass
 
-    def calculate_energy(self, centers: list[RiemannianCenter]) -> float:
+    def distances_from_centers(
+        self, centers: list[RiemannianCenter], target: RiemannianPoint
+    ) -> np.ndarray:
+        """Compute distances from multiple centers to a single target point.
+
+        Args:
+            centers: List of k centers to compute distances from.
+            target: The target point.
+
+        Returns:
+            Array of shape (k,) with distances from each center to target.
+
+        Example:
+            ```python
+            centers = space.sample_centers(5)
+            target = space.sample_points(1)[0]
+            distances = space.distances_from_centers(centers, target)
+            closest_idx = np.argmin(distances)
+            closest_center = centers[closest_idx]
+            ```
+        """
+        distances = np.empty(len(centers))
+        for i, center in enumerate(centers):
+            distances[i] = self.distance(center, target)
+        return distances
+
+    def calculate_energy(
+        self, centers: list[RiemannianCenter], how: str = "obs"
+    ) -> float:
         """Calculate the k-means energy for the given centers.
 
         The energy is the sum of squared distances from each observation
@@ -198,12 +226,22 @@ class RiemannianManifold(Space):
 
         Args:
             centers: List of cluster centers.
+            how: Energy calculation mode. For Riemannian manifolds, only "obs"
+                mode is supported (uses sampled observations). The "uniform"
+                mode is not applicable as there's no natural notion of uniform
+                distribution over all points of a continuous manifold.
+                This parameter is kept for API compatibility but ignored.
 
         Returns:
             The k-means energy (average squared distance to nearest center).
 
         Raises:
             ValueError: If no observations are available or centers list is empty.
+
+        Note:
+            Unlike discrete spaces (e.g., quantum graphs), continuous manifolds
+            don't support a "uniform" distribution over all possible points.
+            Energy is always computed using the sampled observations.
         """
         if len(self.observations) == 0:
             raise ValueError("No observations available for energy calculation")

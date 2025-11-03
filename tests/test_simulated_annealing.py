@@ -357,6 +357,10 @@ class TestSimulatedAnnealing:
             def sample_kpp_centers(self, k: int) -> list:
                 return [1] * k
 
+            def distances_from_centers(self, centers: list, target):
+                import numpy as np
+                return np.zeros(len(centers))
+
         # 2. Create a mock SA instance using this space
         class MockSA:
             def __init__(self):
