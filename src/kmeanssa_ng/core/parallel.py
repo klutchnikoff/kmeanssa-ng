@@ -14,12 +14,11 @@ from typing import TYPE_CHECKING, Callable, Literal
 
 import numpy as np
 
-from .strategies import UniformSampling
-
 if TYPE_CHECKING:
     from .abstract import Center, Space
     from .strategies.initialization import InitializationStrategy
     from .strategies.robustification import RobustificationStrategy
+    from .strategies.sampling import SamplingStrategy
 
 
 def _run_with_seed(
@@ -33,6 +32,7 @@ def _run_with_seed(
     step_size: float,
     energy_mode: str,
     robust_prop: float,
+    sampling_strategy: "SamplingStrategy",
     initialization_strategy: "InitializationStrategy | None",
     robustification_strategy: "RobustificationStrategy | None",
 ) -> tuple[list[Center], float, int]:
@@ -46,10 +46,12 @@ def _run_with_seed(
         k: Number of clusters.
         seed: Random seed for reproducibility.
         algorithm: Which algorithm to use ("interleaved" or "sequential").
-        lambda_param: Poisson process intensity parameter.
-        beta: Inverse temperature parameter.
+        lambda0: Poisson process intensity parameter.
+        beta0: Inverse temperature parameter.
         step_size: Time step size.
+        energy_mode: Energy calculation mode ('uniform' or 'obs').
         robust_prop: Proportion of observations for robustification.
+        sampling_strategy: Strategy for sampling points from the space.
         initialization_strategy: Strategy instance for initializing centers.
         robustification_strategy: Strategy instance for robustifying results.
 
@@ -64,7 +66,7 @@ def _run_with_seed(
     np.random.seed(seed)
 
     # Sample observations with this seed
-    observations = space.sample_points(n_points, strategy=UniformSampling())
+    observations = space.sample_points(n_points, strategy=sampling_strategy)
 
     # Create algorithm instance
     sa = SimulatedAnnealing(
@@ -100,6 +102,7 @@ def run_parallel(
     space: "Space",
     n_points: int,
     k: int,
+    sampling_strategy: "SamplingStrategy",
     n_runs: int = 10,
     algorithm: Literal["interleaved", "sequential"] = "interleaved",
     lambda0: float = 1,
@@ -219,6 +222,7 @@ def run_parallel(
                 step_size,
                 energy_mode,
                 robust_prop,
+                sampling_strategy,
                 initialization_strategy,
                 robustification_strategy,
             )
@@ -244,6 +248,7 @@ def run_parallel_with_callback(
     space: "Space",
     n_points: int,
     k: int,
+    sampling_strategy: "SamplingStrategy",
     n_runs: int = 10,
     algorithm: Literal["interleaved", "sequential"] = "interleaved",
     lambda0: float = 1.0,
@@ -349,6 +354,7 @@ def run_parallel_with_callback(
                 step_size,
                 energy_mode,
                 robust_prop,
+                sampling_strategy,
                 None,
                 None,
             ): (idx, seed)

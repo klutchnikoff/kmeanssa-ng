@@ -105,37 +105,33 @@ class Space(ABC):
         """
         raise NotImplementedError
 
-    def sample_points(self, n: int, strategy=None) -> list[Point]:
+    def sample_points(self, n: int, strategy) -> list[Point]:
         """Sample n points using the specified sampling strategy.
 
         Args:
             n: Number of points to sample
             strategy: Sampling strategy defining the probability distribution.
-                     If None, uses UniformSampling() as default.
+                     Must be a SamplingStrategy instance specific to the space type.
 
         Returns:
             List of n sampled points
 
         Example:
             ```python
-            from kmeanssa_ng.core.strategies import UniformSampling
+            # For quantum graphs
+            from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
+            points = graph.sample_points(100, strategy=UniformNodeSampling())
 
-            # Uniform sampling (explicit)
-            points = space.sample_points(100, strategy=UniformSampling())
-
-            # Uniform sampling (default)
-            points = space.sample_points(100)
+            # For Riemannian manifolds
+            from kmeanssa_ng.riemannian_manifold.sampling import UniformManifoldSampling
+            points = manifold.sample_points(100, strategy=UniformManifoldSampling())
             ```
 
         Note:
-            The strategy parameter defaults to None, which uses UniformSampling().
-            This is consistent with initialization_strategy and robustification_strategy
-            parameters in SimulatedAnnealing.run_*() methods.
+            The strategy parameter is REQUIRED to avoid ambiguity about which
+            probability distribution to use. Each space type has its own
+            specific sampling strategies in space-specific modules.
         """
-        if strategy is None:
-            from .strategies import UniformSampling
-
-            strategy = UniformSampling()
         return strategy.sample(self, n)
 
     @abstractmethod
