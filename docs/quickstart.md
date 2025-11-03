@@ -67,8 +67,8 @@ from kmeanssa_ng import SimulatedAnnealing, MostFrequentNode, KMeansPlusPlus
 sa = SimulatedAnnealing(
     observations=points,
     k=2,  # We know there are 2 clusters
-    lambda_param=1.0,  # Cooling rate: higher values mean slower cooling
-    beta=1.0,  # Drift strength: higher values attract centers to dense areas more strongly
+    lambda0=1.0,  # Cooling rate: higher values mean slower cooling
+    beta0=1.0,  # Drift strength: higher values attract centers to dense areas more strongly
     step_size=0.1,  # Step size for center updates in each iteration
 )
 
@@ -85,8 +85,8 @@ for center in centers:
 ```
 
     Cluster centers (position in edge):
-    Center near node 77 [edge (77, 68), pos=0.000]
-    Center near node 26 [edge (26, 24), pos=0.000]
+    Center near node 49 [edge (49, 60), pos=0.000]
+    Center near node 24 [edge (24, 13), pos=0.000]
 
 ## 4. Visualize the Results
 

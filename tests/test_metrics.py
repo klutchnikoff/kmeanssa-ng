@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 
+from kmeanssa_ng.core.strategies import UniformSampling
 from kmeanssa_ng.core.metrics import (
     adjusted_rand_index,
     calinski_harabasz,
@@ -187,7 +188,7 @@ class TestSilhouette:
 
     def test_basic_silhouette(self, simple_graph, points_at_nodes):
         """Test basic silhouette computation."""
-        points = simple_graph.sample_points(10)
+        points = simple_graph.sample_points(10, strategy=UniformSampling())
         centers = simple_graph.sample_centers(k=2)
         labels = compute_labels(simple_graph, points, centers)
 
@@ -201,7 +202,7 @@ class TestSilhouette:
     def test_with_precomputed_labels(self, simple_graph, points_at_nodes):
         """Test silhouette with pre-computed labels."""
         # Use sample_points to get more diverse points for better clustering
-        points = simple_graph.sample_points(10)
+        points = simple_graph.sample_points(10, strategy=UniformSampling())
         centers = simple_graph.sample_centers(k=2)
         labels = compute_labels(simple_graph, points, centers)
 
@@ -282,7 +283,7 @@ class TestCalinskiHarabasz:
 
     def test_basic_score(self, simple_graph, points_at_nodes):
         """Test basic CH score computation."""
-        points = simple_graph.sample_points(10)
+        points = simple_graph.sample_points(10, strategy=UniformSampling())
         centers = simple_graph.sample_centers(k=2)
         labels = compute_labels(simple_graph, points, centers)
 
@@ -295,7 +296,7 @@ class TestCalinskiHarabasz:
 
     def test_with_precomputed_labels(self, simple_graph, points_at_nodes):
         """Test CH with pre-computed labels."""
-        points = simple_graph.sample_points(10)
+        points = simple_graph.sample_points(10, strategy=UniformSampling())
         centers = simple_graph.sample_centers(k=2)
         labels = compute_labels(simple_graph, points, centers)
 
@@ -333,7 +334,7 @@ class TestDaviesBouldin:
 
     def test_basic_score(self, simple_graph, points_at_nodes):
         """Test basic DB score computation."""
-        points = simple_graph.sample_points(10)
+        points = simple_graph.sample_points(10, strategy=UniformSampling())
         centers = simple_graph.sample_centers(k=2)
         labels = compute_labels(simple_graph, points, centers)
 
@@ -346,7 +347,7 @@ class TestDaviesBouldin:
 
     def test_with_precomputed_labels(self, simple_graph, points_at_nodes):
         """Test DB with pre-computed labels."""
-        points = simple_graph.sample_points(10)
+        points = simple_graph.sample_points(10, strategy=UniformSampling())
         centers = simple_graph.sample_centers(k=2)
         labels = compute_labels(simple_graph, points, centers)
 

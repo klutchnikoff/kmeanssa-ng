@@ -14,6 +14,8 @@ from typing import TYPE_CHECKING, Callable, Literal
 
 import numpy as np
 
+from .strategies import UniformSampling
+
 if TYPE_CHECKING:
     from .abstract import Center, Space
     from .strategies.initialization import InitializationStrategy
@@ -62,7 +64,7 @@ def _run_with_seed(
     np.random.seed(seed)
 
     # Sample observations with this seed
-    observations = space.sample_points(n_points)
+    observations = space.sample_points(n_points, strategy=UniformSampling())
 
     # Create algorithm instance
     sa = SimulatedAnnealing(

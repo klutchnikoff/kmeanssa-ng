@@ -55,8 +55,8 @@ print(f"Best result has {len(best_centers)} centers")
 - `n_runs`: Number of parallel executions (default: 10)
 - `n_jobs`: Number of worker processes (default: -1 = all cores)
 - `algorithm`: `"interleaved"` (default) or `"sequential"`
-- Other parameters are passed to `SimulatedAnnealing` (lambda_param,
-  beta, step_size, robust_prop)
+- Other parameters are passed to `SimulatedAnnealing` (lambda0, beta0,
+  step_size, robust_prop)
 
 **Note**: Each run samples its own observations, ensuring complete
 independence between runs.
@@ -86,10 +86,10 @@ print(f"Mean energy: {np.mean(energies):.4f}")
 print(f"Std energy: {np.std(energies):.4f}")
 ```
 
-    Best energy: 1.2700
-    Worst energy: 2.0700
-    Mean energy: 1.7389
-    Std energy: 0.2119
+    Best energy: 1.2833
+    Worst energy: 2.3900
+    Mean energy: 1.9009
+    Std energy: 0.2992
 
 ## Progress Monitoring
 
@@ -112,26 +112,26 @@ centers = run_parallel_with_callback(
 )
 ```
 
-    ✓ Run 3/20 completed - Energy: 1.6445 (seed=1865891371)
-    ✓ Run 1/20 completed - Energy: 1.7500 (seed=2065733851)
-    ✓ Run 5/20 completed - Energy: 2.0437 (seed=1975453637)
-    ✓ Run 11/20 completed - Energy: 1.4892 (seed=1763747087)
-    ✓ Run 2/20 completed - Energy: 1.8700 (seed=1132241394)
-    ✓ Run 4/20 completed - Energy: 1.5800 (seed=302477183)
-    ✓ Run 6/20 completed - Energy: 1.7200 (seed=576982928)
-    ✓ Run 12/20 completed - Energy: 1.9500 (seed=69342730)
-    ✓ Run 10/20 completed - Energy: 1.7700 (seed=139435824)
-    ✓ Run 8/20 completed - Energy: 2.1079 (seed=38634729)
-    ✓ Run 13/20 completed - Energy: 1.8982 (seed=663075728)
-    ✓ Run 14/20 completed - Energy: 1.3000 (seed=2064342863)
-    ✓ Run 15/20 completed - Energy: 1.6995 (seed=601267390)
-    ✓ Run 7/20 completed - Energy: 1.6800 (seed=1362954710)
-    ✓ Run 16/20 completed - Energy: 1.7800 (seed=1996405383)
-    ✓ Run 17/20 completed - Energy: 1.6800 (seed=1381181429)
-    ✓ Run 9/20 completed - Energy: 1.4149 (seed=1670222637)
-    ✓ Run 18/20 completed - Energy: 1.3900 (seed=1063076906)
-    ✓ Run 19/20 completed - Energy: 2.3700 (seed=1040798019)
-    ✓ Run 20/20 completed - Energy: 1.7400 (seed=92480030)
+    ✓ Run 1/20 completed - Energy: 1.7000 (seed=1240678749)
+    ✓ Run 3/20 completed - Energy: 2.0700 (seed=1565416569)
+    ✓ Run 2/20 completed - Energy: 1.8200 (seed=1955912884)
+    ✓ Run 6/20 completed - Energy: 1.5400 (seed=1817219079)
+    ✓ Run 8/20 completed - Energy: 1.8700 (seed=1492852829)
+    ✓ Run 11/20 completed - Energy: 1.7054 (seed=362737107)
+    ✓ Run 5/20 completed - Energy: 1.7300 (seed=662231304)
+    ✓ Run 9/20 completed - Energy: 2.4900 (seed=67222383)
+    ✓ Run 12/20 completed - Energy: 2.7800 (seed=626125205)
+    ✓ Run 4/20 completed - Energy: 0.7750 (seed=2079473044)
+    ✓ Run 13/20 completed - Energy: 1.7100 (seed=1053309165)
+    ✓ Run 10/20 completed - Energy: 2.1798 (seed=642192747)
+    ✓ Run 14/20 completed - Energy: 1.7654 (seed=633572147)
+    ✓ Run 7/20 completed - Energy: 1.5845 (seed=1618989349)
+    ✓ Run 15/20 completed - Energy: 1.8100 (seed=1609215882)
+    ✓ Run 16/20 completed - Energy: 1.9124 (seed=702220675)
+    ✓ Run 17/20 completed - Energy: 1.8200 (seed=1963011372)
+    ✓ Run 18/20 completed - Energy: 1.6700 (seed=26834392)
+    ✓ Run 19/20 completed - Energy: 2.1875 (seed=1115085706)
+    ✓ Run 20/20 completed - Energy: 1.8889 (seed=992928303)
 
 The callback function receives three arguments:
 
@@ -170,8 +170,8 @@ centers = run_parallel(
     k=3,
     n_runs=50,
     # SimulatedAnnealing parameters
-    lambda_param=2,        # Poisson intensity
-    beta=0.5,              # Inverse temperature
+    lambda0=2,             # Poisson intensity
+    beta0=0.5,             # Inverse temperature
     step_size=0.05,        # Time step
     robust_prop=0.1,       # Use 10% of observations for robustification
     # Parallel execution parameters
@@ -245,10 +245,10 @@ print(f"\nFound optimal solution in {n_optimal}/100 runs ({n_optimal}%)")
 ```
 
     Energy statistics:
-      Min:    0.8932
-      Median: 1.5267
-      Max:    2.2467
-      Std:    0.2404
+      Min:    0.8230
+      Median: 1.4953
+      Max:    2.3400
+      Std:    0.2653
 
     Found optimal solution in 1/100 runs (1%)
 

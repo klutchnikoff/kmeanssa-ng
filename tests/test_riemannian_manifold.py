@@ -5,6 +5,7 @@ import pytest
 from geomstats.geometry.hypersphere import Hypersphere
 from geomstats.geometry.hyperboloid import Hyperboloid
 
+from kmeanssa_ng.core.strategies import UniformSampling
 from kmeanssa_ng.riemannian_manifold import (
     RiemannianCenter,
     RiemannianManifold,
@@ -50,7 +51,7 @@ class TestRiemannianManifold:
         space = RiemannianManifold(sphere)
 
         n = 10
-        points = space.sample_points(n)
+        points = space.sample_points(n, strategy=UniformSampling())
 
         assert len(points) == n
         assert all(isinstance(p, RiemannianPoint) for p in points)
@@ -84,7 +85,7 @@ class TestRiemannianManifold:
         space = RiemannianManifold(sphere)
 
         # First sample observations
-        space.sample_points(50)
+        space.sample_points(50, strategy=UniformSampling())
 
         k = 3
         centers = space.sample_kpp_centers(k)
@@ -111,7 +112,7 @@ class TestRiemannianManifold:
         """Test k-means++ with invalid k."""
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
-        space.sample_points(10)
+        space.sample_points(10, strategy=UniformSampling())
 
         with pytest.raises(ValueError, match="k must be positive"):
             space.sample_kpp_centers(0)
@@ -125,7 +126,7 @@ class TestRiemannianManifold:
         space = RiemannianManifold(sphere)
 
         # Sample observations
-        space.sample_points(20)
+        space.sample_points(20, strategy=UniformSampling())
 
         # Sample centers
         centers = space.sample_centers(3)
@@ -150,7 +151,7 @@ class TestRiemannianManifold:
         """Test energy calculation fails without centers."""
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
-        space.sample_points(10)
+        space.sample_points(10, strategy=UniformSampling())
 
         with pytest.raises(ValueError, match="Centers list cannot be empty"):
             space.calculate_energy([])
@@ -159,7 +160,7 @@ class TestRiemannianManifold:
         """Test energy calculation accepts 'how' parameter for API compatibility."""
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
-        space.sample_points(20)
+        space.sample_points(20, strategy=UniformSampling())
         centers = space.sample_centers(3)
 
         # Both calls should give the same result since 'how' is ignored
@@ -188,7 +189,7 @@ class TestRiemannianManifold:
 
         # Sample centers and a target point
         centers = space.sample_centers(5)
-        target = space.sample_points(1)[0]
+        target = space.sample_points(1, strategy=UniformSampling())[0]
 
         # Compute distances
         distances = space.distances_from_centers(centers, target)
@@ -523,7 +524,7 @@ class TestIntegration:
         sphere = create_sphere(dim=2)
 
         # Sample observations
-        points = sphere.sample_points(50)
+        points = sphere.sample_points(50, strategy=UniformSampling())
         assert len(points) == 50
 
         # Initialize centers with k-means++
@@ -558,7 +559,7 @@ class TestIntegration:
 
         for space in manifolds:
             # Sample and compute
-            points = space.sample_points(20)
+            points = space.sample_points(20, strategy=UniformSampling())
             centers = space.sample_kpp_centers(3)
             energy = space.calculate_energy(centers)
 

@@ -617,18 +617,21 @@ class QuantumGraph(nx.Graph, Space):
         else:
             raise ValueError('The parameter "where" must be either "Node" or "Edge".')
 
-    def sample_points(self, n: int, where: str = "Node") -> list[QGPoint]:
-        """Sample n random points from the graph.
+    def _sample_uniform(self, n: int) -> list[QGPoint]:
+        """Sample n points uniformly from graph nodes.
+
+        Implementation of uniform sampling for quantum graphs.
+        Uses node weights if available, otherwise uniform over nodes.
+        Tracks number of observations per node in nb_obs attribute.
 
         Args:
-            n: Number of points to sample.
-            where: Sampling mode ("Node" or "Edge").
+            n: Number of points to sample
 
         Returns:
-            List of n sampled points.
+            List of n points sampled from nodes
         """
         nx.set_node_attributes(self, 0, "nb_obs")
-        return [self._sample_point(where) for _ in range(n)]
+        return [self._sample_point("Node") for _ in range(n)]
 
     def light_sample_points(self, n: int) -> list[QGPoint]:
         """Fast sampling of points at random nodes.

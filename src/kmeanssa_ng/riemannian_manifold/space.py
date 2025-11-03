@@ -63,17 +63,17 @@ class RiemannianManifold(Space):
         # Handle both scalar and 0-d array results
         return float(np.asarray(dist).item())
 
-    def sample_points(self, n: int) -> list[RiemannianPoint]:
+    def _sample_uniform(self, n: int) -> list[RiemannianPoint]:
         """Sample n points uniformly from the manifold.
 
-        Uses geomstats' random_uniform or random_point method to sample points
-        according to the natural measure on the manifold.
+        Uses geomstats' random_uniform or random_point method to sample
+        according to the natural volume measure on the manifold.
 
         Args:
-            n: Number of points to sample.
+            n: Number of points to sample
 
         Returns:
-            List of n uniformly sampled RiemannianPoint objects.
+            List of n uniformly sampled points
         """
         # Sample coordinates from the manifold
         # Use random_uniform if available, otherwise random_point
