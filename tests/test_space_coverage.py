@@ -1,5 +1,4 @@
 """Additional tests for QuantumGraph space.py to improve coverage."""
-from kmeanssa_ng.core.strategies import UniformSampling
 
 import networkx as nx
 import pytest
@@ -352,53 +351,6 @@ class TestSamplingEdgeCases:
         assert len(points) == 5
         assert all(isinstance(p, QGPoint) for p in points)
         assert all(p.position == 0.0 for p in points)  # All at nodes
-
-
-@pytest.mark.skip(reason="Edge-based sampling removed during Strategy Pattern refactoring")
-class TestSamplePointEdgeMode:
-    """Tests for edge-based point sampling."""
-
-    def test_sample_point_edge_mode(self):
-        """Test sampling points on edges with proper attributes."""
-        graph = QuantumGraph()
-
-        # Add edge with required attributes
-        import random as rd
-
-        def distrib():
-            return rd.uniform(0, 2.0)
-
-        graph.add_edge(0, 1, length=2.0, weight=1.0, distribution=distrib)
-
-        point = graph._sample_point(where="Edge")
-
-        assert isinstance(point, QGPoint)
-        assert point.edge == (0, 1)
-        assert 0 <= point.position <= 2.0
-
-    def test_sample_points_edge_mode(self):
-        """Test sampling multiple points on edges."""
-        graph = QuantumGraph()
-
-        import random as rd
-
-        def distrib1():
-            return rd.uniform(0, 1.0)
-
-        def distrib2():
-            return rd.uniform(0, 2.0)
-
-        graph.add_edge(0, 1, length=1.0, weight=0.3, distribution=distrib1)
-        graph.add_edge(1, 2, length=2.0, weight=0.7, distribution=distrib2)
-
-        points = graph.sample_points(10, where="Edge")
-
-        assert len(points) == 10
-        assert all(isinstance(p, QGPoint) for p in points)
-
-        # All points should be on valid edges
-        valid_edges = {(0, 1), (1, 2), (1, 0), (2, 1)}
-        assert all(p.edge in valid_edges for p in points)
 
 
 class TestDrawingCoverage:

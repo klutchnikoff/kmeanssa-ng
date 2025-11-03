@@ -28,13 +28,15 @@ class TestUniformSampling:
         assert len(points) == 100
         assert all(hasattr(p, "coordinates") for p in points)
 
-    def test_sample_points_requires_strategy(self):
-        """Test that sample_points requires strategy parameter."""
+    def test_sample_points_default_strategy(self):
+        """Test that sample_points uses UniformSampling by default."""
         sphere = create_sphere(dim=2)
 
-        # Should fail without strategy
-        with pytest.raises(TypeError, match="missing.*required.*argument"):
-            sphere.sample_points(100)
+        # Should work without strategy (uses UniformSampling as default)
+        points = sphere.sample_points(100)
+
+        assert len(points) == 100
+        assert all(hasattr(p, "coordinates") for p in points)
 
     def test_uniform_sampling_multiple_calls(self):
         """Test multiple uniform sampling calls."""

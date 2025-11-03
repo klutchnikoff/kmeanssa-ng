@@ -105,13 +105,13 @@ class Space(ABC):
         """
         raise NotImplementedError
 
-    def sample_points(self, n: int, strategy) -> list[Point]:
+    def sample_points(self, n: int, strategy=None) -> list[Point]:
         """Sample n points using the specified sampling strategy.
 
         Args:
             n: Number of points to sample
             strategy: Sampling strategy defining the probability distribution.
-                     This parameter is REQUIRED.
+                     If None, uses UniformSampling() as default.
 
         Returns:
             List of n sampled points
@@ -122,13 +122,20 @@ class Space(ABC):
 
             # Uniform sampling (explicit)
             points = space.sample_points(100, strategy=UniformSampling())
+
+            # Uniform sampling (default)
+            points = space.sample_points(100)
             ```
 
         Note:
-            Unlike previous versions, the strategy parameter is now mandatory.
-            There is no default behavior - users must explicitly choose
-            their sampling distribution.
+            The strategy parameter defaults to None, which uses UniformSampling().
+            This is consistent with initialization_strategy and robustification_strategy
+            parameters in SimulatedAnnealing.run_*() methods.
         """
+        if strategy is None:
+            from .strategies import UniformSampling
+
+            strategy = UniformSampling()
         return strategy.sample(self, n)
 
     @abstractmethod

@@ -97,7 +97,9 @@ class TestBenchmarks:
         Tests scaling with more centers.
         """
         centers = medium_graph_precomputed.sample_centers(k=10)
-        target = medium_graph_precomputed.sample_points(1, strategy=UniformSampling())[0]
+        target = medium_graph_precomputed.sample_points(1, strategy=UniformSampling())[
+            0
+        ]
 
         result = benchmark(
             medium_graph_precomputed.distances_from_centers, centers, target
