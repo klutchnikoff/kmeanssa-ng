@@ -45,7 +45,7 @@ print(f"Best result has {len(best_centers)} centers")
 - `n_runs`: Number of parallel executions (default: 10)
 - `n_jobs`: Number of worker processes (default: -1 = all cores)
 - `algorithm`: `"interleaved"` (default) or `"sequential"`
-- Other parameters are passed to `SimulatedAnnealing` (lambda_param, beta, step_size, robust_prop)
+- Other parameters are passed to `SimulatedAnnealing` (lambda0, beta0, step_size, robust_prop)
 
 **Note**: Each run samples its own observations, ensuring complete independence between runs.
 
@@ -128,8 +128,8 @@ centers = run_parallel(
     k=3,
     n_runs=50,
     # SimulatedAnnealing parameters
-    lambda_param=2,        # Poisson intensity
-    beta=0.5,              # Inverse temperature
+    lambda0=2,             # Poisson intensity
+    beta0=0.5,             # Inverse temperature
     step_size=0.05,        # Time step
     robust_prop=0.1,       # Use 10% of observations for robustification
     # Parallel execution parameters

@@ -1,0 +1,193 @@
+# Exemple : Clustering K-means sur des Variétés Riemanniennes
+
+Ce guide montre comment utiliser `kmeanssa-ng` pour effectuer du clustering sur des variétés riemanniennes (sphères, espaces hyperboliques, etc.) en utilisant la bibliothèque Geomstats.
+
+## Prérequis
+
+Pour utiliser le module des variétés riemanniennes, vous devez installer `kmeanssa-ng` avec geomstats :
+
+```bash
+pip install kmeanssa-ng
+# geomstats est installé automatiquement comme dépendance
+```
+
+## 1. Créer une Variété Riemannienne
+
+Le module fournit des générateurs pour créer facilement des variétés courantes.
+
+### Exemple : Sphère 2D (plongée dans R³)
+
+```python
+from kmeanssa_ng.riemannian_manifold import create_sphere
+
+# Créer une sphère de dimension 2 (surface de la sphère dans R³)
+sphere = create_sphere(dim=2)
+```
+
+### Exemple : Espace Hyperbolique 2D
+
+```python
+from kmeanssa_ng.riemannian_manifold import create_hyperbolic_space
+
+# Créer un espace hyperbolique de dimension 2
+hyperbolic = create_hyperbolic_space(dim=2)
+```
+
+## 2. Échantillonner des Points
+
+Les points sont échantillonnés uniformément sur la variété selon la mesure naturelle (mesure de volume riemannienne).
+
+```python
+# Échantillonner 100 points uniformément sur la sphère
+points = sphere.sample_points(100)
+
+print(f"Nombre de points échantillonnés : {len(points)}")
+print(f"Premier point : {points[0]}")
+```
+
+## 3. Initialiser les Centres
+
+Vous pouvez initialiser les centres de plusieurs façons :
+
+### Option A : Échantillonnage Uniforme
+
+```python
+# Échantillonner k centres uniformément
+k = 3
+centers = sphere.sample_centers(k)
+```
+
+### Option B : K-means++ (Recommandé)
+
+L'initialisation k-means++ donne généralement de meilleurs résultats en choisissant des centres bien espacés.
+
+```python
+# Utiliser k-means++ pour initialiser les centres
+# Note : Nécessite d'avoir déjà échantillonné des points (observations)
+centers = sphere.sample_kpp_centers(k=3)
+```
+
+## 4. Exécuter l'Algorithme de Recuit Simulé
+
+```python
+from kmeanssa_ng import SimulatedAnnealing
+
+# Configurer et exécuter l'algorithme
+sa = SimulatedAnnealing(
+    observations=points,
+    k=3,  # Nombre de clusters
+    lambda0=1.0,  # Taux de refroidissement
+    beta0=1.0,  # Force de dérive vers les observations
+    step_size=0.1,  # Taille de pas pour les mouvements browniens
+)
+
+# Exécuter l'algorithme avec la méthode entrelacée
+centers = sa.run_interleaved(
+    robust_prop=0.1,  # 10% du temps en mode robuste
+    initialization_strategy=None,  # Utiliser les centres par défaut
+)
+
+print("Centres finaux :")
+for i, center in enumerate(centers):
+    print(f"Centre {i+1}: {center.coordinates}")
+```
+
+## 5. Calculer l'Énergie et les Clusters
+
+```python
+# Calculer l'énergie finale (somme des distances² aux centres les plus proches)
+energy = sphere.calculate_energy(centers)
+print(f"Énergie finale : {energy:.6f}")
+
+# Assigner les observations aux clusters
+sphere.compute_clusters(centers)
+```
+
+## Exemple Complet : Clustering sur une Sphère
+
+Voici un exemple complet qui met tout ensemble :
+
+```python
+from kmeanssa_ng.riemannian_manifold import create_sphere
+from kmeanssa_ng import SimulatedAnnealing
+
+# 1. Créer la variété
+sphere = create_sphere(dim=2)
+
+# 2. Échantillonner des points
+points = sphere.sample_points(200)
+
+# 3. Initialiser les centres avec k-means++
+k = 4
+centers = sphere.sample_kpp_centers(k)
+
+# 4. Calculer l'énergie initiale
+initial_energy = sphere.calculate_energy(centers)
+print(f"Énergie initiale : {initial_energy:.6f}")
+
+# 5. Exécuter le recuit simulé
+sa = SimulatedAnnealing(
+    observations=points,
+    k=k,
+    lambda0=1.0,
+    beta0=1.0,
+    step_size=0.1,
+)
+
+final_centers = sa.run_interleaved(robust_prop=0.1)
+
+# 6. Calculer l'énergie finale
+final_energy = sphere.calculate_energy(final_centers)
+print(f"Énergie finale : {final_energy:.6f}")
+print(f"Amélioration : {(1 - final_energy/initial_energy)*100:.2f}%")
+
+# 7. Afficher les coordonnées des centres finaux
+print("\nCoordonnées des centres finaux :")
+for i, center in enumerate(final_centers):
+    print(f"Centre {i+1}: {center.coordinates}")
+```
+
+## Utilisation Avancée : Utiliser Directement Geomstats
+
+Pour des cas d'usage plus avancés, vous pouvez créer n'importe quelle variété supportée par Geomstats :
+
+```python
+from geomstats.geometry.hypersphere import Hypersphere
+from geomstats.geometry.special_orthogonal import SpecialOrthogonal
+from kmeanssa_ng.riemannian_manifold import RiemannianManifold
+
+# Exemple 1 : Sphère de dimension 5
+high_dim_sphere = Hypersphere(dim=5)
+space = RiemannianManifold(high_dim_sphere)
+
+# Exemple 2 : Groupe des rotations SO(3)
+rotations = SpecialOrthogonal(n=3)
+rotation_space = RiemannianManifold(rotations)
+
+# Utiliser comme n'importe quel autre espace
+points = space.sample_points(100)
+centers = space.sample_kpp_centers(k=3)
+```
+
+## Notes Importantes
+
+### Limitation : Géodésiques Non-Uniques
+
+Sur certaines variétés comme la sphère, les géodésiques entre deux points peuvent ne pas être uniques (par exemple, entre deux points antipodaux). Dans ces cas rares, l'opération de dérive peut ne pas déplacer le centre. Cependant :
+
+- Cette situation a une probabilité nulle en pratique
+- Le mouvement brownien de l'algorithme permet d'échapper à ces configurations
+- Cela n'affecte généralement pas la convergence de l'algorithme
+
+### Choix des Paramètres
+
+- **lambda0** : Contrôle la vitesse de refroidissement. Valeurs typiques : 0.5 à 2.0
+- **beta0** : Force de dérive vers les observations. Valeurs typiques : 0.5 à 2.0
+- **step_size** : Taille des pas browniens. Valeurs typiques : 0.01 à 0.5
+- **robust_prop** : Proportion du temps en mode robuste. Valeurs typiques : 0.05 à 0.2
+
+## Prochaines Étapes
+
+- Consultez la documentation de [Geomstats](https://geomstats.github.io/) pour explorer d'autres variétés
+- Voir `IDEAS/future_refactoring_sampling_strategies.md` pour les améliorations futures planifiées
+- Expérimentez avec différents paramètres pour optimiser la convergence

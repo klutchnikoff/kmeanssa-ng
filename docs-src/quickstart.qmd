@@ -55,8 +55,8 @@ from kmeanssa_ng import SimulatedAnnealing, MostFrequentNode, KMeansPlusPlus
 sa = SimulatedAnnealing(
     observations=points,
     k=2,  # We know there are 2 clusters
-    lambda_param=1.0,  # Cooling rate: higher values mean slower cooling
-    beta=1.0,  # Drift strength: higher values attract centers to dense areas more strongly
+    lambda0=1.0,  # Cooling rate: higher values mean slower cooling
+    beta0=1.0,  # Drift strength: higher values attract centers to dense areas more strongly
     step_size=0.1,  # Step size for center updates in each iteration
 )
 
