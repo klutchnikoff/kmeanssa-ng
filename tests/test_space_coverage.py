@@ -1,4 +1,5 @@
 """Additional tests for QuantumGraph space.py to improve coverage."""
+from kmeanssa_ng.core.strategies import UniformSampling
 
 import networkx as nx
 import pytest
@@ -353,6 +354,7 @@ class TestSamplingEdgeCases:
         assert all(p.position == 0.0 for p in points)  # All at nodes
 
 
+@pytest.mark.skip(reason="Edge-based sampling removed during Strategy Pattern refactoring")
 class TestSamplePointEdgeMode:
     """Tests for edge-based point sampling."""
 

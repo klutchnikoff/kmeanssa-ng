@@ -6,6 +6,7 @@ import sys
 import pytest
 
 from kmeanssa_ng import run_parallel, run_parallel_with_callback
+from kmeanssa_ng.core.strategies import UniformSampling
 from kmeanssa_ng.quantum_graph import generate_simple_graph
 
 
@@ -386,7 +387,7 @@ class TestParallelPerformance:
         centers = run_parallel(simple_graph, n_points=20, k=2, n_runs=5)
 
         # Sample points to test clustering
-        points = simple_graph.sample_points(20)
+        points = simple_graph.sample_points(20, strategy=UniformSampling())
         labels = compute_labels(simple_graph, points, centers)
         assert len(labels) == len(points)
         assert all(0 <= label < 2 for label in labels)

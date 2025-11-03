@@ -86,16 +86,50 @@ class Space(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def sample_points(self, n: int) -> list[Point]:
-        """Sample random points from the space.
+    def _sample_uniform(self, n: int) -> list[Point]:
+        """Sample n points uniformly from the space.
+
+        This method implements the natural uniform distribution for the space.
+        For discrete spaces: uniform over discrete elements.
+        For continuous spaces: natural volume measure.
 
         Args:
-            n: Number of points to sample.
+            n: Number of points to sample
 
         Returns:
-            List of n randomly sampled points.
+            List of n uniformly sampled points
+
+        Note:
+            This is a protected method called by SamplingStrategy.
+            Users should use sample_points() with a strategy instead.
         """
         raise NotImplementedError
+
+    def sample_points(self, n: int, strategy) -> list[Point]:
+        """Sample n points using the specified sampling strategy.
+
+        Args:
+            n: Number of points to sample
+            strategy: Sampling strategy defining the probability distribution.
+                     This parameter is REQUIRED.
+
+        Returns:
+            List of n sampled points
+
+        Example:
+            ```python
+            from kmeanssa_ng.core.strategies import UniformSampling
+
+            # Uniform sampling (explicit)
+            points = space.sample_points(100, strategy=UniformSampling())
+            ```
+
+        Note:
+            Unlike previous versions, the strategy parameter is now mandatory.
+            There is no default behavior - users must explicitly choose
+            their sampling distribution.
+        """
+        return strategy.sample(self, n)
 
     @abstractmethod
     def sample_centers(self, k: int) -> list[Center]:
