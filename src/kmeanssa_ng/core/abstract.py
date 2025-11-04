@@ -85,26 +85,6 @@ class Space(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
-    def _sample_uniform(self, n: int) -> list[Point]:
-        """Sample n points uniformly from the space.
-
-        This method implements the natural uniform distribution for the space.
-        For discrete spaces: uniform over discrete elements.
-        For continuous spaces: natural volume measure.
-
-        Args:
-            n: Number of points to sample
-
-        Returns:
-            List of n uniformly sampled points
-
-        Note:
-            This is a protected method called by SamplingStrategy.
-            Users should use sample_points() with a strategy instead.
-        """
-        raise NotImplementedError
-
     def sample_points(self, n: int, strategy) -> list[Point]:
         """Sample n points using the specified sampling strategy.
 
@@ -133,33 +113,6 @@ class Space(ABC):
             specific sampling strategies in space-specific modules.
         """
         return strategy.sample(self, n)
-
-    @abstractmethod
-    def sample_centers(self, k: int) -> list[Center]:
-        """Sample random centers from the space.
-
-        Args:
-            k: Number of centers to sample.
-
-        Returns:
-            List of k randomly sampled centers.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def sample_kpp_centers(self, k: int) -> list[Center]:
-        """Sample centers using k-means++ initialization.
-
-        The k-means++ algorithm chooses initial centers to be spread out,
-        improving convergence compared to random initialization.
-
-        Args:
-            k: Number of centers to sample.
-
-        Returns:
-            List of k centers sampled using k-means++ procedure.
-        """
-        raise NotImplementedError
 
     @abstractmethod
     def compute_clusters(self, centers: list[Center]) -> None:
@@ -208,7 +161,11 @@ class Space(ABC):
             target = space.sample_points(1)[0]
             distances = space.distances_from_centers(centers, target)
             closest_idx = np.argmin(distances)
-            closest_center = centers[closest_idx]
             ```
         """
+        raise NotImplementedError
+
+    @abstractmethod
+    def center_from_point(self, point: Point) -> Center:
+        """Create a Center object from a Point object."""
         raise NotImplementedError
