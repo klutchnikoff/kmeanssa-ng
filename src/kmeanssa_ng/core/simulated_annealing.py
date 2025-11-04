@@ -205,18 +205,12 @@ class SimulatedAnnealing:
     def _prepare_run(
         self,
         robust_prop: float,
-        initialization_strategy: InitializationStrategy | None,
-        robustification_strategy: RobustificationStrategy | None,
+        initialization_strategy: InitializationStrategy,
+        robustification_strategy: RobustificationStrategy,
     ) -> tuple[int, RobustificationStrategy]:
         """Prepare the simulation by initializing centers and strategy."""
         if robust_prop < 0 or robust_prop > 1:
             raise ValueError("The proportion must be in [0,1]")
-
-        if robustification_strategy is None:
-            robustification_strategy = MinimizeEnergy()
-
-        if initialization_strategy is None:
-            initialization_strategy = KMeansPlusPlus()
 
         i0 = int(np.floor((self.n - 1) * (1 - robust_prop)))
 
@@ -227,9 +221,9 @@ class SimulatedAnnealing:
 
     def run_interleaved(
         self,
+        initialization_strategy: InitializationStrategy,
+        robustification_strategy: RobustificationStrategy,
         robust_prop: float = 0.0,
-        initialization_strategy: InitializationStrategy | None = None,
-        robustification_strategy: RobustificationStrategy | None = None,
     ):
         """Run SA with interleaved drift and brownian motion."""
         i0, strategy = self._prepare_run(
@@ -262,9 +256,9 @@ class SimulatedAnnealing:
 
     def run_sequential(
         self,
+        initialization_strategy: InitializationStrategy,
+        robustification_strategy: RobustificationStrategy,
         robust_prop: float = 0.0,
-        initialization_strategy: InitializationStrategy | None = None,
-        robustification_strategy: RobustificationStrategy | None = None,
     ):
         """Run SA with sequential brownian motion then drift."""
         i0, strategy = self._prepare_run(
