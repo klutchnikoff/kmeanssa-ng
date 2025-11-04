@@ -5,10 +5,12 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+import random as rd
+import numpy as np
+
 if TYPE_CHECKING:
     from ..abstract import Center
     from ..simulated_annealing import SimulatedAnnealing
-    from .sampling import SamplingStrategy
 
 
 class InitializationStrategy(ABC):
@@ -42,12 +44,6 @@ class RandomInit(InitializationStrategy):
 
         points = rd.choices(sa.observations, k=sa.k)
         return [sa.space.center_from_point(p) for p in points]
-
-
-import numpy as np
-import random as rd
-
-from ..abstract import Center
 
 
 class KMeansPlusPlus(InitializationStrategy):

@@ -356,7 +356,6 @@ class TestSimulatedAnnealing:
     def test_most_frequent_node_strategy_empty_collection(self):
         """Test MostFrequentNode with an empty collection."""
 
-        from kmeanssa_ng.core.strategies.robustification import MostFrequentNode
         from kmeanssa_ng import QuantumGraph
 
         # Mock SimulatedAnnealing instance
