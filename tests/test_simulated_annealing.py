@@ -12,7 +12,11 @@ from kmeanssa_ng.core.strategies.initialization import (
     KMeansPlusPlus,
     RandomInit,
 )
-from kmeanssa_ng.core.strategies.robustification import RobustificationStrategy
+from kmeanssa_ng.core.strategies.robustification import (
+    RobustificationStrategy,
+    MinimizeEnergy,
+)
+from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
 
 
 class TestSimulatedAnnealing:
@@ -132,7 +136,9 @@ class TestSimulatedAnnealing:
         sa = SimulatedAnnealing(points, k=2, lambda0=1, beta0=1.0, step_size=0.1)
 
         centers = sa.run_interleaved(
-            robust_prop=0.0, initialization_strategy=RandomInit()
+            initialization_strategy=RandomInit(),
+            robustification_strategy=MinimizeEnergy(),
+            robust_prop=0.0,
         )
 
         assert len(centers) == 2
@@ -146,7 +152,10 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_interleaved(initialization_strategy=KMeansPlusPlus())
+        centers = sa.run_interleaved(
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+        )
 
         assert len(centers) == 2
 
@@ -157,7 +166,9 @@ class TestSimulatedAnnealing:
         sa = SimulatedAnnealing(points, k=2)
 
         centers = sa.run_interleaved(
-            robust_prop=0.1, initialization_strategy=KMeansPlusPlus()
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+            robust_prop=0.1,
         )
 
         assert len(centers) == 2
@@ -169,10 +180,18 @@ class TestSimulatedAnnealing:
         sa = SimulatedAnnealing(points, k=2)
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run_interleaved(robust_prop=1.5)
+            sa.run_interleaved(
+                initialization_strategy=KMeansPlusPlus(),
+                robustification_strategy=MinimizeEnergy(),
+                robust_prop=1.5,
+            )
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run_interleaved(robust_prop=-0.1)
+            sa.run_interleaved(
+                initialization_strategy=KMeansPlusPlus(),
+                robustification_strategy=MinimizeEnergy(),
+                robust_prop=-0.1,
+            )
 
     def test_sequential_algorithm(self):
         """Test running the sequential algorithm."""
@@ -180,7 +199,10 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(20, strategy=UniformNodeSampling())
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_sequential(initialization_strategy=KMeansPlusPlus())
+        centers = sa.run_sequential(
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+        )
         assert len(centers) == 2
 
     def test_calculate_energy_fallback(self):
@@ -228,7 +250,10 @@ class TestSimulatedAnnealing:
         assert sa.centers == []
 
         # After running, should have centers
-        sa.run_interleaved(initialization_strategy=KMeansPlusPlus())
+        sa.run_interleaved(
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+        )
         # Note: centers property returns the private _centers, which is set during run
         assert len(sa.centers) == 2
 
@@ -242,7 +267,9 @@ class TestSimulatedAnnealing:
         sa = SimulatedAnnealing(points, k=1)
 
         center = sa.run_interleaved(
-            robust_prop=0.1, robustification_strategy=MostFrequentNode()
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MostFrequentNode(),
+            robust_prop=0.1,
         )
 
         # Should return a single QGCenter object
@@ -258,7 +285,10 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(20, strategy=UniformNodeSampling())
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_interleaved(robustification_strategy=MostFrequentNode())
+        centers = sa.run_interleaved(
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MostFrequentNode(),
+        )
         assert isinstance(centers, list)
         assert len(centers) == 2
         assert all(isinstance(c, QGCenter) for c in centers)
@@ -272,12 +302,16 @@ class TestSimulatedAnnealing:
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
             sa.run_interleaved(
-                robust_prop=1.5, robustification_strategy=MostFrequentNode()
+                initialization_strategy=KMeansPlusPlus(),
+                robustification_strategy=MostFrequentNode(),
+                robust_prop=1.5,
             )
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
             sa.run_interleaved(
-                robust_prop=-0.1, robustification_strategy=MostFrequentNode()
+                initialization_strategy=KMeansPlusPlus(),
+                robustification_strategy=MostFrequentNode(),
+                robust_prop=-0.1,
             )
 
     def test_run_for_kmeans_invalid_robust_prop_raises(self):
@@ -289,12 +323,16 @@ class TestSimulatedAnnealing:
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
             sa.run_interleaved(
-                robust_prop=1.5, robustification_strategy=MostFrequentNode()
+                initialization_strategy=KMeansPlusPlus(),
+                robustification_strategy=MostFrequentNode(),
+                robust_prop=1.5,
             )
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
             sa.run_interleaved(
-                robust_prop=-0.1, robustification_strategy=MostFrequentNode()
+                initialization_strategy=KMeansPlusPlus(),
+                robustification_strategy=MostFrequentNode(),
+                robust_prop=-0.1,
             )
 
     def test_run_for_kmeans(self):
@@ -306,7 +344,10 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_interleaved(robustification_strategy=MostFrequentNode())
+        centers = sa.run_interleaved(
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MostFrequentNode(),
+        )
 
         assert len(centers) == 2
         assert all(isinstance(c, QGCenter) for c in centers)
@@ -393,7 +434,9 @@ class TestIntegration:
         # Run simulated annealing
         sa = SimulatedAnnealing(points, k=2, lambda0=1, beta0=2.0)
         centers = sa.run_interleaved(
-            robust_prop=0.1, initialization_strategy=KMeansPlusPlus()
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+            robust_prop=0.1,
         )
 
         # Compute clusters

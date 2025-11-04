@@ -140,7 +140,11 @@ class TestBenchmarks:
         points = small_graph_precomputed.sample_points(50, strategy=UniformNodeSampling())
         sa = SimulatedAnnealing(points, k=2, lambda0=1.0, beta0=1.0, step_size=0.1)
 
-        result = benchmark(sa.run_interleaved, initialization_strategy=KMeansPlusPlus())
+        result = benchmark(
+            sa.run_interleaved,
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+        )
         assert len(result) == 2
 
     @pytest.mark.slow
@@ -152,7 +156,11 @@ class TestBenchmarks:
         points = medium_graph_precomputed.sample_points(150, strategy=UniformNodeSampling())
         sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1)
 
-        result = benchmark(sa.run_interleaved, initialization_strategy=KMeansPlusPlus())
+        result = benchmark(
+            sa.run_interleaved,
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+        )
         assert len(result) == 3
 
     def test_benchmark_sa_sequential_small(self, benchmark, small_graph_precomputed):
@@ -163,7 +171,11 @@ class TestBenchmarks:
         points = small_graph_precomputed.sample_points(50, strategy=UniformNodeSampling())
         sa = SimulatedAnnealing(points, k=2, lambda0=1.0, beta0=1.0, step_size=0.1)
 
-        result = benchmark(sa.run_sequential, initialization_strategy=KMeansPlusPlus())
+        result = benchmark(
+            sa.run_sequential,
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+        )
         assert len(result) == 2
 
     @pytest.mark.slow
@@ -175,7 +187,11 @@ class TestBenchmarks:
         points = medium_graph_precomputed.sample_points(150, strategy=UniformNodeSampling())
         sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1)
 
-        result = benchmark(sa.run_sequential, initialization_strategy=KMeansPlusPlus())
+        result = benchmark(
+            sa.run_sequential,
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+        )
         assert len(result) == 3
 
     @pytest.mark.slow

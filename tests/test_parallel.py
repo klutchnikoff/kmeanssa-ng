@@ -6,6 +6,8 @@ import sys
 import pytest
 
 from kmeanssa_ng import run_parallel, run_parallel_with_callback
+from kmeanssa_ng.core.strategies.initialization import KMeansPlusPlus
+from kmeanssa_ng.core.strategies.robustification import MinimizeEnergy
 from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 from kmeanssa_ng.quantum_graph import generate_simple_graph
 
@@ -22,7 +24,7 @@ class TestRunParallel:
 
     def test_basic_parallel_execution(self, simple_graph):
         """Test basic parallel execution returns centers."""
-        centers = run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, n_jobs=2)
+        centers = run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, n_jobs=2)
 
         assert centers is not None
         assert len(centers) == 2
@@ -30,7 +32,7 @@ class TestRunParallel:
     def test_parallel_with_return_all(self, simple_graph):
         """Test parallel execution with return_all=True."""
         best_centers, all_results = run_parallel(
-            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=5, n_jobs=2, return_all=True
+            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=5, n_jobs=2, return_all=True
         )
 
         assert len(best_centers) == 2
@@ -47,7 +49,7 @@ class TestRunParallel:
         """Test parallel execution with specific seeds."""
         seeds = [42, 123, 456]
         best, all_results = run_parallel(
-            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, seeds=seeds, return_all=True
+            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, seeds=seeds, return_all=True
         )
 
         # Check that all seeds were used
@@ -59,10 +61,10 @@ class TestRunParallel:
         # Run multiple times with same seeds
         seeds = [42, 43, 44]
         _, all_results1 = run_parallel(
-            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, seeds=seeds, return_all=True
+            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, seeds=seeds, return_all=True
         )
         _, all_results2 = run_parallel(
-            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, seeds=seeds, return_all=True
+            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, seeds=seeds, return_all=True
         )
 
         # Extract energies
@@ -78,7 +80,7 @@ class TestRunParallel:
     def test_parallel_with_sequential_algorithm(self, simple_graph):
         """Test parallel execution with sequential algorithm."""
         centers = run_parallel(
-            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, algorithm="sequential", n_jobs=2
+            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, algorithm="sequential", n_jobs=2
         )
 
         assert len(centers) == 2
@@ -90,6 +92,8 @@ class TestRunParallel:
             n_points=20,
             k=3,
             sampling_strategy=UniformNodeSampling(),
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
             n_runs=3,
             lambda0=2,
             beta0=0.5,
@@ -103,22 +107,22 @@ class TestRunParallel:
 
     def test_parallel_with_single_job(self, simple_graph):
         """Test that n_jobs=1 works (sequential processing)."""
-        centers = run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, n_jobs=1)
+        centers = run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, n_jobs=1)
 
         assert len(centers) == 2
 
     def test_parallel_invalid_n_runs(self, simple_graph):
         """Test that invalid n_runs raises ValueError."""
         with pytest.raises(ValueError, match="n_runs must be positive"):
-            run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=0)
+            run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=0)
 
         with pytest.raises(ValueError, match="n_runs must be positive"):
-            run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=-1)
+            run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=-1)
 
     def test_parallel_seeds_length_mismatch(self, simple_graph):
         """Test that mismatched seeds length raises ValueError."""
         with pytest.raises(ValueError, match="Length of seeds .* must match n_runs"):
-            run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=5, seeds=[1, 2, 3])
+            run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=5, seeds=[1, 2, 3])
 
     @pytest.mark.parametrize("mp_context", mp.get_all_start_methods())
     def test_parallel_with_mp_context(self, simple_graph, mp_context):
@@ -127,7 +131,7 @@ class TestRunParallel:
             pytest.skip("spawn is default on Windows, no need to test explicitly")
 
         centers = run_parallel(
-            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, n_jobs=2, mp_context=mp_context
+            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, n_jobs=2, mp_context=mp_context
         )
 
         assert len(centers) == 2
@@ -137,13 +141,13 @@ class TestRunParallel:
         with pytest.raises(
             ValueError, match="Multiprocessing context .* not available"
         ):
-            run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, mp_context="invalid")
+            run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, mp_context="invalid")
 
     def test_parallel_default_context(self, simple_graph):
         """Test that default context (None) works correctly."""
         # This uses the system default
         centers = run_parallel(
-            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, n_jobs=2, mp_context=None
+            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, n_jobs=2, mp_context=None
         )
 
         assert len(centers) == 2
@@ -157,11 +161,11 @@ class TestRunParallel:
         with pytest.warns(
             UserWarning, match="n_jobs.* is greater than the number of available CPUs"
         ):
-            run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, n_jobs=cpu_count + 1)
+            run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, n_jobs=cpu_count + 1)
 
     def test_parallel_with_n_jobs_minus_two(self, simple_graph):
         """Test that n_jobs=-2 works correctly."""
-        centers = run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, n_jobs=-2)
+        centers = run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, n_jobs=-2)
         assert len(centers) == 2
 
 
@@ -209,6 +213,8 @@ class TestWorkerFunction:
             n_points=20,
             k=2,
             sampling_strategy=UniformNodeSampling(),
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
             n_runs=2,
             # No seeds provided
             # return_all is False by default
@@ -230,7 +236,7 @@ class TestRunParallelWithCallback:
             callback_calls.append((run_idx, seed, energy))
 
         centers = run_parallel_with_callback(
-            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, n_jobs=2, callback=callback
+            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, n_jobs=2, callback=callback
         )
 
         assert len(centers) == 2
@@ -246,7 +252,7 @@ class TestRunParallelWithCallback:
     def test_callback_without_function(self, simple_graph):
         """Test execution without callback (should work fine)."""
         centers = run_parallel_with_callback(
-            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, n_jobs=2, callback=None
+            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, n_jobs=2, callback=None
         )
 
         assert len(centers) == 2
@@ -264,6 +270,8 @@ class TestRunParallelWithCallback:
             n_points=20,
             k=2,
             sampling_strategy=UniformNodeSampling(),
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
             n_runs=3,
             seeds=seeds,
             n_jobs=2,
@@ -285,6 +293,8 @@ class TestRunParallelWithCallback:
                 n_points=20,
                 k=2,
                 sampling_strategy=UniformNodeSampling(),
+                initialization_strategy=KMeansPlusPlus(),
+                robustification_strategy=MinimizeEnergy(),
                 n_runs=2,
                 n_jobs=1,
                 callback=bad_callback,
@@ -306,6 +316,8 @@ class TestRunParallelWithCallback:
             n_points=20,
             k=2,
             sampling_strategy=UniformNodeSampling(),
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
             n_runs=3,
             n_jobs=2,
             callback=callback,
@@ -329,6 +341,8 @@ class TestRunParallelWithCallback:
                 n_points=20,
                 k=2,
                 sampling_strategy=UniformNodeSampling(),
+                initialization_strategy=KMeansPlusPlus(),
+                robustification_strategy=MinimizeEnergy(),
                 n_runs=3,
                 callback=callback,
                 mp_context="invalid",
@@ -351,6 +365,8 @@ class TestRunParallelWithCallback:
                 n_points=20,
                 k=2,
                 sampling_strategy=UniformNodeSampling(),
+                initialization_strategy=KMeansPlusPlus(),
+                robustification_strategy=MinimizeEnergy(),
                 n_runs=3,
                 n_jobs=cpu_count + 1,
                 callback=callback,
@@ -364,7 +380,7 @@ class TestRunParallelWithCallback:
             callback_calls.append((run_idx, seed, energy))
 
         centers = run_parallel_with_callback(
-            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=3, n_jobs=-2, callback=callback
+            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=3, n_jobs=-2, callback=callback
         )
 
         assert len(centers) == 2
@@ -381,7 +397,7 @@ class TestParallelPerformance:
 
         start = time.time()
         centers_parallel = run_parallel(
-            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=4, n_jobs=2
+            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=4, n_jobs=2
         )
         parallel_time = time.time() - start
 
@@ -392,7 +408,7 @@ class TestParallelPerformance:
         """Test that parallel runs produce valid clustering."""
         from kmeanssa_ng.core.metrics import compute_labels
 
-        centers = run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=5)
+        centers = run_parallel(simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=5)
 
         # Sample points to test clustering
         points = simple_graph.sample_points(20, strategy=UniformNodeSampling())
@@ -403,7 +419,7 @@ class TestParallelPerformance:
     def test_parallel_with_many_runs(self, simple_graph):
         """Test parallel execution with many runs."""
         best, all_results = run_parallel(
-            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), n_runs=10, n_jobs=4, return_all=True
+            simple_graph, n_points=20, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=10, n_jobs=4, return_all=True
         )
 
         assert len(all_results) == 10
