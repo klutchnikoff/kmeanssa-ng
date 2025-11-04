@@ -81,7 +81,8 @@ class TestBenchmarks:
 
         This operation is called repeatedly during simulated annealing.
         """
-        centers = small_graph_precomputed.sample_centers(k=5)
+        points = small_graph_precomputed.sample_points(5, strategy=UniformNodeSampling())
+        centers = [small_graph_precomputed.center_from_point(p) for p in points]
         target = small_graph_precomputed.sample_points(1, strategy=UniformNodeSampling())[0]
 
         result = benchmark(
@@ -96,7 +97,8 @@ class TestBenchmarks:
 
         Tests scaling with more centers.
         """
-        centers = medium_graph_precomputed.sample_centers(k=10)
+        points = medium_graph_precomputed.sample_points(10, strategy=UniformNodeSampling())
+        centers = [medium_graph_precomputed.center_from_point(p) for p in points]
         target = medium_graph_precomputed.sample_points(1, strategy=UniformNodeSampling())[
             0
         ]
@@ -113,7 +115,9 @@ class TestBenchmarks:
 
         This is used at the start of the simulated annealing algorithm.
         """
-        result = benchmark(small_graph_precomputed.sample_kpp_centers, k=3)
+        points = small_graph_precomputed.sample_points(50, strategy=UniformNodeSampling())
+        sa = SimulatedAnnealing(points, k=3)
+        result = benchmark(KMeansPlusPlus().initialize_centers, sa)
         assert len(result) == 3
 
     def test_benchmark_kpp_initialization_medium(
@@ -123,7 +127,9 @@ class TestBenchmarks:
 
         Tests scaling of k-means++ with graph size.
         """
-        result = benchmark(medium_graph_precomputed.sample_kpp_centers, k=5)
+        points = medium_graph_precomputed.sample_points(150, strategy=UniformNodeSampling())
+        sa = SimulatedAnnealing(points, k=5)
+        result = benchmark(KMeansPlusPlus().initialize_centers, sa)
         assert len(result) == 5
 
     def test_benchmark_sa_interleaved_small(self, benchmark, small_graph_precomputed):
@@ -192,9 +198,10 @@ class TestEnergyCalculationBenchmark:
 
     @pytest.fixture
     def centers_for_benchmark(self, medium_graph_precomputed):
-        """Generate k=10 centers for the medium graph."""
-        return medium_graph_precomputed.sample_kpp_centers(k=10)
-
+            """Generate k=10 centers for the medium graph."""
+            points = medium_graph_precomputed.sample_points(150, strategy=UniformNodeSampling())
+            sa = SimulatedAnnealing(points, k=10)
+            return KMeansPlusPlus().initialize_centers(sa)
     def test_benchmark_energy_numba_uniform(
         self, benchmark, medium_graph_precomputed, centers_for_benchmark
     ):
