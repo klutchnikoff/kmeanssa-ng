@@ -120,6 +120,11 @@ class SimulatedAnnealing:
         return len(self._observations)
 
     @property
+    def observations(self) -> list[Point]:
+        """List of observation points."""
+        return self._observations
+
+    @property
     def centers(self) -> list[Center]:
         """Current cluster centers."""
         return self._centers
