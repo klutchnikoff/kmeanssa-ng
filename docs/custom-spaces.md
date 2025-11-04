@@ -92,42 +92,37 @@ from kmeanssa_ng.core.abstract import Space
 
 class MySpace(Space):
     def distance(self, p1: Point, p2: Point) -> float:
-        '''Compute your metric.'''
+        """Compute your metric."""
         # Your distance computation
         pass
     
-    def sample_points(self, n: int) -> list[Point]:
-        '''Sample random points uniformly (or according to some measure).'''
-        # Your sampling logic
-        pass
-    
-    def sample_centers(self, k: int) -> list[Center]:
-        '''Sample random centers.'''
-        # Your center sampling logic
-        pass
-    
-    def sample_kpp_centers(self, k: int) -> list[Center]:
-        '''Implement k-means++ initialization.'''
-        # Your k-means++ logic
+    def sample_points(self, n: int, strategy) -> list[Point]:
+        """Sample random points using a strategy."""
+        # Your sampling logic, e.g., by delegating to the strategy
+        return strategy.sample(self, n)
+
+    def center_from_point(self, point: Point) -> Center:
+        """Create a Center from a Point."""
+        # e.g., return MyCenter(point)
         pass
     
     def compute_clusters(self, centers: list[Center]) -> None:
-        '''Assign each observation to the nearest center.'''
+        """Assign each observation to the nearest center."""
         # Your cluster assignment logic
         pass
     
     def calculate_energy(self, centers: list[Center]) -> float:
-        '''Compute sum of squared distances to nearest centers.'''
+        """Compute sum of squared distances to nearest centers."""
         # Your energy calculation
         pass
 ```
 
 Key responsibilities: - `distance`: The metric $d(p_1, p_2)$. -
-`sample_points` and `sample_centers`: Factory methods for creating
-points and centers. - `sample_kpp_centers`: An implementation of the
-k-means++ initialization strategy, which is crucial for good
-performance. - `compute_clusters` and `calculate_energy`: Methods for
-assigning points to clusters and calculating the total k-means energy.
+`sample_points`: A factory method for creating points, which typically
+delegates to a `SamplingStrategy`. - `center_from_point`: A factory
+method for creating a `Center` from a `Point`. - `compute_clusters` and
+`calculate_energy`: Methods for assigning points to clusters and
+calculating the total k-means energy.
 
 ## Step 4: Use the Algorithm
 
@@ -139,7 +134,8 @@ from kmeanssa_ng import SimulatedAnnealing
 
 # 1. Create your space and sample observations
 my_space = MySpace(...)
-points = my_space.sample_points(100)
+# Assuming you've implemented a MySamplingStrategy
+points = my_space.sample_points(100, strategy=MySamplingStrategy())
 
 # 2. Run simulated annealing - it works immediately!
 sa = SimulatedAnnealing(observations=points, k=5)
