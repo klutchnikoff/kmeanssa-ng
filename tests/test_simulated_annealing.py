@@ -189,7 +189,7 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(20, strategy=UniformNodeSampling())
 
         sa = SimulatedAnnealing(points, k=2)
-        centers = graph.sample_centers(2)
+        centers = RandomInit().initialize_centers(sa)
 
         energy = sa.calculate_energy_fallback(centers, points)
 
@@ -206,7 +206,7 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(20, strategy=UniformNodeSampling())
 
         sa = SimulatedAnnealing(points, k=2, energy_mode="obs")
-        centers = graph.sample_centers(2)
+        centers = RandomInit().initialize_centers(sa)
 
         # Mock the space's calculate_energy and calculate_energy_numba methods
         from unittest.mock import patch
@@ -352,6 +352,9 @@ class TestSimulatedAnnealing:
             def compute_clusters(self, centers: list) -> None:
                 pass
 
+            def center_from_point(self, point):
+                return point
+
             def sample_centers(self, k: int) -> list:
                 return [1] * k
 
@@ -409,11 +412,11 @@ class TestIntegration:
         graph = generate_simple_graph(n_a=5, bridge_length=5.0)
         points = graph.sample_points(50, strategy=UniformNodeSampling())
 
-        SimulatedAnnealing(points, k=2, lambda0=1, beta0=2.0)
+        sa = SimulatedAnnealing(points, k=2, lambda0=1, beta0=2.0)
 
         # Random initialization should have higher energy than k-means++
-        centers_random = graph.sample_centers(2)
-        centers_kpp = graph.sample_kpp_centers(2)
+        centers_random = RandomInit().initialize_centers(sa)
+        centers_kpp = KMeansPlusPlus().initialize_centers(sa)
 
         energy_random = graph.calculate_energy(centers_random)
         energy_kpp = graph.calculate_energy(centers_kpp)

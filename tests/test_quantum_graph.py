@@ -121,7 +121,8 @@ class TestQuantumGraph:
         """Test distances_from_centers method."""
         graph = generate_simple_graph(n_a=3)
         graph.precomputing()
-        centers = graph.sample_centers(k=3)
+        points = graph.sample_points(3, strategy=UniformNodeSampling())
+        centers = [graph.center_from_point(p) for p in points]
         target = graph.sample_points(1, strategy=UniformNodeSampling())[0]
 
         distances = graph.distances_from_centers(centers, target)
@@ -145,33 +146,6 @@ class TestQuantumGraph:
 
         with pytest.raises(ValueError, match="Must call precomputing"):
             graph.distances_from_centers(centers, target)
-
-    def test_sample_kpp_centers_k1(self):
-        """Test k-means++ initialization with k=1."""
-        graph = generate_simple_graph(n_a=3)
-        graph.precomputing()
-
-        centers = graph.sample_kpp_centers(k=1)
-
-        assert len(centers) == 1
-        assert isinstance(centers[0], QGCenter)
-        assert centers[0].space == graph
-
-    def test_private_sample_point_node_without_weights_raises(self):
-        """Test that sampling from nodes without weights raises NotImplementedError."""
-        graph = QuantumGraph()
-        graph.add_edge(0, 1, length=1.0)
-        with pytest.raises(NotImplementedError, match="requires 'weight' attribute"):
-            graph._sample_point(where="Node")
-
-    def test_sample_point_node_with_weights(self):
-        """Test that sampling from nodes with weights works."""
-        graph = QuantumGraph()
-        graph.add_node(0, weight=1.0)
-        graph.add_node(1, weight=0.0)  # this should not be chosen
-        graph.add_edge(0, 1, length=1.0)
-        point = graph._sample_point(where="Node")
-        assert point.edge[0] == 0
 
 
 class TestQGPoint:
@@ -559,15 +533,8 @@ class TestGenerators:
         """Test sampling centers from a graph."""
         graph = generate_simple_graph(n_a=3)
 
-        centers = graph.sample_centers(3)
-        assert len(centers) == 3
-        assert all(isinstance(c, QGCenter) for c in centers)
-
-    def test_sample_kpp_centers(self):
-        """Test k-means++ center initialization."""
-        graph = generate_simple_graph(n_a=5)
-
-        centers = graph.sample_kpp_centers(3)
+        points = graph.sample_points(3, strategy=UniformNodeSampling())
+        centers = [graph.center_from_point(p) for p in points]
         assert len(centers) == 3
         assert all(isinstance(c, QGCenter) for c in centers)
 

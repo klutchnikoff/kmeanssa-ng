@@ -11,15 +11,6 @@ class DummySpace(Space):
     def distance(self, p1: Point, p2: Point) -> float:
         return super().distance(p1, p2)
 
-    def _sample_uniform(self, n: int) -> list[Point]:
-        return super()._sample_uniform(n)
-
-    def sample_centers(self, k: int) -> list[Center]:
-        return super().sample_centers(k)
-
-    def sample_kpp_centers(self, k: int) -> list[Center]:
-        return super().sample_kpp_centers(k)
-
     def compute_clusters(self, centers: list[Center]) -> None:
         return super().compute_clusters(centers)
 
@@ -28,6 +19,9 @@ class DummySpace(Space):
 
     def distances_from_centers(self, centers: list[Center], target: Point):
         return super().distances_from_centers(centers, target)
+
+    def center_from_point(self, point: Point) -> Center:
+        return super().center_from_point(point)
 
 
 class DummyPoint(Point):
@@ -71,12 +65,6 @@ def test_abstract_methods_raise_not_implemented():
         space.distance(point, point)
 
     with pytest.raises(NotImplementedError):
-        space._sample_uniform(1)
-
-    with pytest.raises(NotImplementedError):
-        space.sample_centers(1)
-
-    with pytest.raises(NotImplementedError):
         space.compute_clusters([center])
 
     with pytest.raises(NotImplementedError):
@@ -84,3 +72,6 @@ def test_abstract_methods_raise_not_implemented():
 
     with pytest.raises(NotImplementedError):
         space.distances_from_centers([center], point)
+
+    with pytest.raises(NotImplementedError):
+        space.center_from_point(point)
