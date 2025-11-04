@@ -12,7 +12,6 @@ from numba import njit
 from ..core import Space
 from .center import QGCenter
 from .point import QGPoint
-from ..quantum_graph.sampling import UniformNodeSampling
 
 if TYPE_CHECKING:
     import matplotlib.pyplot as plt

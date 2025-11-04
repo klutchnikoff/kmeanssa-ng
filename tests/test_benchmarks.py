@@ -81,9 +81,13 @@ class TestBenchmarks:
 
         This operation is called repeatedly during simulated annealing.
         """
-        points = small_graph_precomputed.sample_points(5, strategy=UniformNodeSampling())
+        points = small_graph_precomputed.sample_points(
+            5, strategy=UniformNodeSampling()
+        )
         centers = [small_graph_precomputed.center_from_point(p) for p in points]
-        target = small_graph_precomputed.sample_points(1, strategy=UniformNodeSampling())[0]
+        target = small_graph_precomputed.sample_points(
+            1, strategy=UniformNodeSampling()
+        )[0]
 
         result = benchmark(
             small_graph_precomputed.distances_from_centers, centers, target
@@ -97,11 +101,13 @@ class TestBenchmarks:
 
         Tests scaling with more centers.
         """
-        points = medium_graph_precomputed.sample_points(10, strategy=UniformNodeSampling())
+        points = medium_graph_precomputed.sample_points(
+            10, strategy=UniformNodeSampling()
+        )
         centers = [medium_graph_precomputed.center_from_point(p) for p in points]
-        target = medium_graph_precomputed.sample_points(1, strategy=UniformNodeSampling())[
-            0
-        ]
+        target = medium_graph_precomputed.sample_points(
+            1, strategy=UniformNodeSampling()
+        )[0]
 
         result = benchmark(
             medium_graph_precomputed.distances_from_centers, centers, target
@@ -115,7 +121,9 @@ class TestBenchmarks:
 
         This is used at the start of the simulated annealing algorithm.
         """
-        points = small_graph_precomputed.sample_points(50, strategy=UniformNodeSampling())
+        points = small_graph_precomputed.sample_points(
+            50, strategy=UniformNodeSampling()
+        )
         sa = SimulatedAnnealing(points, k=3)
         result = benchmark(KMeansPlusPlus().initialize_centers, sa)
         assert len(result) == 3
@@ -127,7 +135,9 @@ class TestBenchmarks:
 
         Tests scaling of k-means++ with graph size.
         """
-        points = medium_graph_precomputed.sample_points(150, strategy=UniformNodeSampling())
+        points = medium_graph_precomputed.sample_points(
+            150, strategy=UniformNodeSampling()
+        )
         sa = SimulatedAnnealing(points, k=5)
         result = benchmark(KMeansPlusPlus().initialize_centers, sa)
         assert len(result) == 5
@@ -137,7 +147,9 @@ class TestBenchmarks:
 
         This is the main clustering algorithm.
         """
-        points = small_graph_precomputed.sample_points(50, strategy=UniformNodeSampling())
+        points = small_graph_precomputed.sample_points(
+            50, strategy=UniformNodeSampling()
+        )
         sa = SimulatedAnnealing(points, k=2, lambda0=1.0, beta0=1.0, step_size=0.1)
 
         result = benchmark(
@@ -153,7 +165,9 @@ class TestBenchmarks:
 
         This test is marked as slow and can be skipped with: -m "not slow"
         """
-        points = medium_graph_precomputed.sample_points(150, strategy=UniformNodeSampling())
+        points = medium_graph_precomputed.sample_points(
+            150, strategy=UniformNodeSampling()
+        )
         sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1)
 
         result = benchmark(
@@ -168,7 +182,9 @@ class TestBenchmarks:
 
         Compares sequential vs interleaved algorithm performance.
         """
-        points = small_graph_precomputed.sample_points(50, strategy=UniformNodeSampling())
+        points = small_graph_precomputed.sample_points(
+            50, strategy=UniformNodeSampling()
+        )
         sa = SimulatedAnnealing(points, k=2, lambda0=1.0, beta0=1.0, step_size=0.1)
 
         result = benchmark(
@@ -184,7 +200,9 @@ class TestBenchmarks:
 
         This test is marked as slow and can be skipped with: -m "not slow"
         """
-        points = medium_graph_precomputed.sample_points(150, strategy=UniformNodeSampling())
+        points = medium_graph_precomputed.sample_points(
+            150, strategy=UniformNodeSampling()
+        )
         sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1)
 
         result = benchmark(
@@ -198,7 +216,9 @@ class TestBenchmarks:
     def test_benchmark_sa_interleaved_mostfrequentnode_medium(
         self, benchmark, medium_graph_precomputed
     ):
-        points = medium_graph_precomputed.sample_points(150, strategy=UniformNodeSampling())
+        points = medium_graph_precomputed.sample_points(
+            150, strategy=UniformNodeSampling()
+        )
         sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1)
 
         result = benchmark(
@@ -214,10 +234,13 @@ class TestEnergyCalculationBenchmark:
 
     @pytest.fixture
     def centers_for_benchmark(self, medium_graph_precomputed):
-            """Generate k=10 centers for the medium graph."""
-            points = medium_graph_precomputed.sample_points(150, strategy=UniformNodeSampling())
-            sa = SimulatedAnnealing(points, k=10)
-            return KMeansPlusPlus().initialize_centers(sa)
+        """Generate k=10 centers for the medium graph."""
+        points = medium_graph_precomputed.sample_points(
+            150, strategy=UniformNodeSampling()
+        )
+        sa = SimulatedAnnealing(points, k=10)
+        return KMeansPlusPlus().initialize_centers(sa)
+
     def test_benchmark_energy_numba_uniform(
         self, benchmark, medium_graph_precomputed, centers_for_benchmark
     ):
@@ -268,7 +291,9 @@ class TestRobustificationBenchmark:
     @pytest.fixture
     def sa_prepared(self, medium_graph_precomputed):
         """Prepare a SA instance with initialized centers."""
-        points = medium_graph_precomputed.sample_points(150, strategy=UniformNodeSampling())
+        points = medium_graph_precomputed.sample_points(
+            150, strategy=UniformNodeSampling()
+        )
         sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1)
         # Initialize centers using k-means++
         sa._centers = KMeansPlusPlus().initialize_centers(sa)
@@ -277,7 +302,9 @@ class TestRobustificationBenchmark:
     @pytest.fixture
     def sa_prepared_obs(self, medium_graph_with_obs):
         """Prepare a SA instance with initialized centers for obs mode."""
-        points = medium_graph_with_obs.sample_points(150, strategy=UniformNodeSampling())
+        points = medium_graph_with_obs.sample_points(
+            150, strategy=UniformNodeSampling()
+        )
         sa = SimulatedAnnealing(
             points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1, energy_mode="obs"
         )
