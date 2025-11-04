@@ -24,7 +24,8 @@ print(f"Simple graph: {simple_graph.number_of_nodes()} nodes, {simple_graph.numb
 print(f"Bridge length: {simple_graph.get_edge_data('A0', 'B0')['length']}")
 
 # Graph comes pre-computed and ready to use
-points = simple_graph.sample_points(50)
+from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
+points = simple_graph.sample_points(50, strategy=UniformNodeSampling())
 print(f"Sampled {len(points)} points for clustering")
 ```
 
@@ -95,7 +96,8 @@ print(f"Karate Club: {karate_qg.number_of_nodes()} nodes, {karate_qg.number_of_e
 print(f"All edges have length 1.5: {all(d['length'] == 1.5 for u,v,d in karate_qg.edges(data=True))}")
 
 # Ready for clustering
-karate_points = karate_qg.sample_points(60)
+from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
+karate_points = karate_qg.sample_points(60, strategy=UniformNodeSampling())
 print(f"Sampled {len(karate_points)} points from Karate Club graph")
 ```
 

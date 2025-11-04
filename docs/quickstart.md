@@ -50,8 +50,10 @@ distribution over the nodes of the graph**. We thus generate points
 sampled uniformly from the nodes.
 
 ``` python
+from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
+
 # Sample points to serve as a proxy for a uniform data distribution
-points = graph.sample_points(500)
+points = graph.sample_points(500, strategy=UniformNodeSampling())
 ```
 
 ## 3. Run K-means with Simulated Annealing
@@ -85,8 +87,8 @@ for center in centers:
 ```
 
     Cluster centers (position in edge):
-    Center near node 49 [edge (49, 60), pos=0.000]
-    Center near node 24 [edge (24, 13), pos=0.000]
+    Center near node 44 [edge (44, 48), pos=0.000]
+    Center near node 23 [edge (23, 10), pos=0.000]
 
 ## 4. Visualize the Results
 
