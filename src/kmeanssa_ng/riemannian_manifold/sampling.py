@@ -8,10 +8,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 from ..core.strategies.sampling import SamplingStrategy
+from .point import RiemannianPoint
 
 if TYPE_CHECKING:
     from ..core.abstract import Point, Space
+    from .space import RiemannianManifold
 
 
 class UniformManifoldSampling(SamplingStrategy):
@@ -42,7 +46,7 @@ class UniformManifoldSampling(SamplingStrategy):
         efficient uniform sampling methods.
     """
 
-    def sample(self, space: Space, n: int) -> list[Point]:
+    def sample(self, space: "RiemannianManifold", n: int) -> list["RiemannianPoint"]:
         """Sample n points uniformly from the manifold.
 
         Args:
@@ -52,4 +56,21 @@ class UniformManifoldSampling(SamplingStrategy):
         Returns:
             List of n points sampled uniformly using the volume measure.
         """
-        return space._sample_uniform(n)
+        # Sample coordinates from the manifold
+        # Use random_uniform if available, otherwise random_point
+        if hasattr(space.manifold, "random_uniform"):
+            coords = space.manifold.random_uniform(n_samples=n)
+        else:
+            coords = space.manifold.random_point(n_samples=n)
+
+        # Store observations for energy calculation
+        if n > 0:
+            space.observations = coords if coords.ndim > 1 else coords.reshape(1, -1)
+
+        # Create RiemannianPoint objects
+        points = []
+        for i in range(n):
+            point_coords = coords[i] if coords.ndim > 1 else coords
+            points.append(RiemannianPoint(space, point_coords))
+
+        return points
