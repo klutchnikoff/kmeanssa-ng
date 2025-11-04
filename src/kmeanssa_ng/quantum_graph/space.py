@@ -12,6 +12,7 @@ from numba import njit
 from ..core import Space
 from .center import QGCenter
 from .point import QGPoint
+from ..quantum_graph.sampling import UniformNodeSampling
 
 if TYPE_CHECKING:
     import matplotlib.pyplot as plt
@@ -575,64 +576,6 @@ class QuantumGraph(nx.Graph, Space):
             self._pairwise_nodes_distance_array,
         )
 
-    def _sample_point(self, where: str = "Node") -> QGPoint:
-        """Sample a random point on the graph.
-
-        Args:
-            where: Sampling mode ("Node" or "Edge").
-
-        Returns:
-            A randomly sampled point.
-
-        Raises:
-            ValueError: If 'where' is not "Node" or "Edge".
-            NotImplementedError: If required attributes are missing.
-        """
-        if where == "Node":
-            node_weights = dict(nx.get_node_attributes(self, "weight"))
-            if node_weights:
-                keys = list(node_weights.keys())
-                values = list(node_weights.values())
-                node = rd.choices(keys, weights=values, k=1)[0]
-                nb_obs = nx.get_node_attributes(self, "nb_obs").get(node, 0) + 1
-                nx.set_node_attributes(self, {node: {"nb_obs": nb_obs}})
-                neighbor = rd.choice(list(self.neighbors(node)))
-                return QGPoint(self, (node, neighbor), 0)
-            else:
-                raise NotImplementedError("Node sampling requires 'weight' attribute")
-
-        elif where == "Edge":
-            edge_weights = dict(nx.get_edge_attributes(self, "weight"))
-            edge_distributions = dict(nx.get_edge_attributes(self, "distribution"))
-            if edge_weights and edge_distributions:
-                keys = list(edge_weights.keys())
-                values = list(edge_weights.values())
-                edge = rd.choices(keys, weights=values, k=1)[0]
-                position = edge_distributions[edge]()
-                return QGPoint(self, edge, position)
-            else:
-                raise NotImplementedError(
-                    "Edge sampling requires 'weight' and 'distribution' attributes"
-                )
-        else:
-            raise ValueError('The parameter "where" must be either "Node" or "Edge".')
-
-    def _sample_uniform(self, n: int) -> list[QGPoint]:
-        """Sample n points uniformly from graph nodes.
-
-        Implementation of uniform sampling for quantum graphs.
-        Uses node weights if available, otherwise uniform over nodes.
-        Tracks number of observations per node in nb_obs attribute.
-
-        Args:
-            n: Number of points to sample
-
-        Returns:
-            List of n points sampled from nodes
-        """
-        nx.set_node_attributes(self, 0, "nb_obs")
-        return [self._sample_point("Node") for _ in range(n)]
-
     def light_sample_points(self, n: int) -> list[QGPoint]:
         """Fast sampling of points at random nodes.
 
@@ -649,28 +592,9 @@ class QuantumGraph(nx.Graph, Space):
             points.append(QGPoint(self, (node, neighbor), 0))
         return points
 
-    def _sample_center(self, where: str = "Node") -> QGCenter:
-        """Sample a random center.
-
-        Args:
-            where: Sampling mode ("Node" or "Edge").
-
-        Returns:
-            A randomly sampled center.
-        """
-        return QGCenter(self._sample_point(where))
-
-    def sample_centers(self, k: int, where: str = "Node") -> list[QGCenter]:
-        """Sample k random centers.
-
-        Args:
-            k: Number of centers to sample.
-            where: Sampling mode ("Node" or "Edge").
-
-        Returns:
-            List of k sampled centers.
-        """
-        return [self._sample_center(where) for _ in range(k)]
+    def center_from_point(self, point: QGPoint) -> QGCenter:
+        """Create a QGCenter object from a QGPoint object."""
+        return QGCenter(point)
 
     def nodes_as_points(self) -> list[QGPoint]:
         """Convert all nodes to points.
@@ -696,52 +620,6 @@ class QuantumGraph(nx.Graph, Space):
         neighbor = rd.choice(list(self.neighbors(node)))
         point = QGPoint(self, (node, neighbor), 0)
         return QGCenter(point)
-
-    def sample_kpp_centers(self, k: int, where: str = "Node") -> list[QGCenter]:
-        """Sample centers using k-means++ initialization.
-
-        Args:
-            k: Number of centers to sample.
-            where: Sampling mode (currently only "Node" is fully supported).
-
-        Returns:
-            List of k centers sampled using k-means++.
-
-        Raises:
-            ValueError: If pairwise distances not precomputed.
-        """
-        if self._pairwise_nodes_distance is None:
-            raise ValueError("Must call precomputing() before sample_kpp_centers")
-
-        n = self.number_of_nodes()
-        node_list = list(self.nodes())
-
-        # Build distance matrix
-        matrix_distances = np.zeros((n, n))
-        for i, node_i in enumerate(node_list):
-            for j, node_j in enumerate(node_list):
-                matrix_distances[i, j] = self._pairwise_nodes_distance[node_i][node_j]
-
-        # k-means++ initialization
-        rng = np.random.default_rng()
-        node_index = rd.sample(range(n), 1)
-        centers_index = list(node_index)
-        quantum_centers = [self.node_as_center(node_list[node_index[0]])]
-
-        for _ in range(k - 1):
-            dist_centers = matrix_distances[centers_index] ** 2
-            if len(dist_centers.shape) == 1:
-                min_dist = dist_centers
-            else:
-                min_dist = dist_centers.min(axis=0)
-
-            prob = min_dist / sum(min_dist)
-            new_center_index = rng.choice(n, size=1, replace=False, p=prob)
-            centers_index.append(int(new_center_index[0]))
-            new_center = node_list[new_center_index[0]]
-            quantum_centers.append(self.node_as_center(new_center))
-
-        return quantum_centers
 
     def compute_clusters(self, centers: list[QGCenter]) -> None:
         """Assign each node to its nearest center.
