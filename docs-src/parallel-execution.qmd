@@ -26,6 +26,9 @@ The simplest way to run multiple executions in parallel:
 
 ```{python}
 from kmeanssa_ng import run_parallel, generate_sbm
+from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
+from kmeanssa_ng.core.strategies.initialization import KMeansPlusPlus
+from kmeanssa_ng.core.strategies.robustification import MinimizeEnergy
 
 # Generate a graph with two communities
 graph = generate_sbm(sizes=[50, 50], p=[[0.7, 0.1], [0.1, 0.7]])
@@ -33,7 +36,16 @@ graph = generate_sbm(sizes=[50, 50], p=[[0.7, 0.1], [0.1, 0.7]])
 # Run 10 times in parallel (uses all available CPU cores)
 # Each run samples its own 100 points with a different seed
 # Note: mp_context='fork' is needed for Jupyter/Quarto compatibility
-best_centers = run_parallel(graph, n_points=100, k=2, n_runs=10, mp_context='fork')
+best_centers = run_parallel(
+    graph,
+    n_points=100,
+    k=2,
+    sampling_strategy=UniformNodeSampling(),
+    initialization_strategy=KMeansPlusPlus(),
+    robustification_strategy=MinimizeEnergy(),
+    n_runs=10,
+    mp_context='fork'
+)
 print(f"Best result has {len(best_centers)} centers")
 ```
 
@@ -57,8 +69,11 @@ To analyze the distribution of results across different seeds:
 best_centers, all_results = run_parallel(
     graph,
     n_points=100,
-    k=2, 
-    n_runs=20, 
+    k=2,
+    sampling_strategy=UniformNodeSampling(),
+    initialization_strategy=KMeansPlusPlus(),
+    robustification_strategy=MinimizeEnergy(),
+    n_runs=20,
     return_all=True,
     mp_context='fork'
 )
@@ -88,6 +103,9 @@ centers = run_parallel_with_callback(
     graph,
     n_points=100,
     k=2,
+    sampling_strategy=UniformNodeSampling(),
+    initialization_strategy=KMeansPlusPlus(),
+    robustification_strategy=MinimizeEnergy(),
     n_runs=20,
     callback=show_progress,
     mp_context='fork'
@@ -109,8 +127,8 @@ To ensure reproducibility, provide a fixed list of seeds:
 seeds = [42, 123, 456, 789, 101112]
 
 # These runs will produce consistent results
-result1 = run_parallel(graph, n_points=100, k=2, n_runs=5, seeds=seeds, mp_context='fork')
-result2 = run_parallel(graph, n_points=100, k=2, n_runs=5, seeds=seeds, mp_context='fork')
+result1 = run_parallel(graph, n_points=100, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=5, seeds=seeds, mp_context='fork')
+result2 = run_parallel(graph, n_points=100, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=5, seeds=seeds, mp_context='fork')
 
 # Results will be highly similar (same data, same initialization)
 ```
@@ -126,6 +144,9 @@ centers = run_parallel(
     graph,
     n_points=150,
     k=3,
+    sampling_strategy=UniformNodeSampling(),
+    initialization_strategy=KMeansPlusPlus(),
+    robustification_strategy=MinimizeEnergy(),
     n_runs=50,
     # SimulatedAnnealing parameters
     lambda0=2,             # Poisson intensity
@@ -173,8 +194,11 @@ graph = generate_sbm(sizes=[50, 50], p=[[0.8, 0.1], [0.1, 0.8]])
 best, all_results = run_parallel(
     graph,
     n_points=150,
-    k=2, 
-    n_runs=100, 
+    k=2,
+    sampling_strategy=UniformNodeSampling(),
+    initialization_strategy=KMeansPlusPlus(),
+    robustification_strategy=MinimizeEnergy(),
+    n_runs=100,
     return_all=True,
     mp_context='fork'
 )

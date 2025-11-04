@@ -119,8 +119,14 @@ my_space = MySpace(...)
 points = my_space.sample_points(100, strategy=MySamplingStrategy())
 
 # 2. Run simulated annealing - it works immediately!
+from kmeanssa_ng.core.strategies.initialization import KMeansPlusPlus
+from kmeanssa_ng.core.strategies.robustification import MinimizeEnergy
+
 sa = SimulatedAnnealing(observations=points, k=5)
-centers = sa.run_interleaved()
+centers = sa.run_interleaved(
+    initialization_strategy=KMeansPlusPlus(),
+    robustification_strategy=MinimizeEnergy()
+)
 
 print("Found cluster centers:", centers)
 ```
