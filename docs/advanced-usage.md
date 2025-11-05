@@ -57,17 +57,15 @@ object.
 ``` python
 # Example setup
 from kmeanssa_ng import generate_sbm
-from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 
 # Generate space and data
 my_space = generate_sbm(sizes=[50, 50], p=[[0.8, 0.1], [0.1, 0.8]])
 
-observations = my_space.sample_points(200, strategy=UniformNodeSampling())
+observations = my_space.sample_points(200)
 k = 4
 
 # Create the predefined centers for our strategy
-points_for_centers = my_space.sample_points(k, strategy=UniformNodeSampling())
-predefined_centers = [my_space.center_from_point(p) for p in points_for_centers]
+predefined_centers = my_space.sample_centers(k)
 
 # Instantiate your custom strategy
 my_strategy = MyFixedInit(predefined_centers)

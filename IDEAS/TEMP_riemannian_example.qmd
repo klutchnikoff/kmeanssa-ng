@@ -54,8 +54,7 @@ Vous pouvez initialiser les centres de plusieurs façons :
 ```python
 # Échantillonner k centres uniformément
 k = 3
-points_for_centers = sphere.sample_points(k, strategy=UniformManifoldSampling())
-centers = [sphere.center_from_point(p) for p in points_for_centers]
+centers = sphere.sample_centers(k)
 ```
 
 ### Option B : K-means++ (Recommandé)
@@ -65,12 +64,7 @@ L'initialisation k-means++ donne généralement de meilleurs résultats en chois
 ```python
 # Utiliser k-means++ pour initialiser les centres
 # Note : Nécessite d'avoir déjà échantillonné des points (observations)
-from kmeanssa_ng.core.strategies.initialization import KMeansPlusPlus
-from kmeanssa_ng import SimulatedAnnealing
-
-sa = SimulatedAnnealing(points, k=3)
-kpp_strategy = KMeansPlusPlus()
-centers = kpp_strategy.initialize_centers(sa)
+centers = sphere.sample_kpp_centers(k=3)
 ```
 
 ## 4. Exécuter l'Algorithme de Recuit Simulé
@@ -125,11 +119,7 @@ points = sphere.sample_points(200)
 
 # 3. Initialiser les centres avec k-means++
 k = 4
-from kmeanssa_ng.core.strategies.initialization import KMeansPlusPlus
-
-sa = SimulatedAnnealing(points, k=k)
-kpp_strategy = KMeansPlusPlus()
-centers = kpp_strategy.initialize_centers(sa)
+centers = sphere.sample_kpp_centers(k)
 
 # 4. Calculer l'énergie initiale
 initial_energy = sphere.calculate_energy(centers)
@@ -176,11 +166,7 @@ rotation_space = RiemannianManifold(rotations)
 
 # Utiliser comme n'importe quel autre espace
 points = space.sample_points(100)
-from kmeanssa_ng.core.strategies.initialization import KMeansPlusPlus
-
-sa = SimulatedAnnealing(points, k=3)
-kpp_strategy = KMeansPlusPlus()
-centers = kpp_strategy.initialize_centers(sa)
+centers = space.sample_kpp_centers(k=3)
 ```
 
 ## Notes Importantes

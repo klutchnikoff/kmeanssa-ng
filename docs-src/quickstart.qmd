@@ -40,10 +40,8 @@ The algorithm quantizes a probability distribution, not a fixed dataset. We need
 In this example, our goal is to find centers for the **uniform distribution over the nodes of the graph**. We thus generate points sampled uniformly from the nodes.
 
 ```{python}
-from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
-
 # Sample points to serve as a proxy for a uniform data distribution
-points = graph.sample_points(500, strategy=UniformNodeSampling())
+points = graph.sample_points(500)
 ```
 
 ## 3. Run K-means with Simulated Annealing

@@ -32,8 +32,7 @@ print(f"Simple graph: {simple_graph.number_of_nodes()} nodes, {simple_graph.numb
 print(f"Bridge length: {simple_graph.get_edge_data('A0', 'B0')['length']}")
 
 # Graph comes pre-computed and ready to use
-from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
-points = simple_graph.sample_points(50, strategy=UniformNodeSampling())
+points = simple_graph.sample_points(50)
 print(f"Sampled {len(points)} points for clustering")
 ```
 
@@ -67,7 +66,7 @@ sbm_graph = generate_sbm(
 print(f"SBM graph: {sbm_graph.number_of_nodes()} nodes, {sbm_graph.number_of_edges()} edges")
 ```
 
-    SBM graph: 100 nodes, 2124 edges
+    SBM graph: 100 nodes, 2103 edges
 
 The probability matrix `p[i][j]` controls the probability of edges
 between blocks `i` and `j`. High diagonal values (like 0.8 and 0.7
@@ -102,10 +101,10 @@ print(f"Short edges (~1.0): {sum(1 for l in edge_lengths if l < 2)}")
 print(f"Long edges (~4.0): {sum(1 for l in edge_lengths if l > 3)}")
 ```
 
-    Custom SBM: 100 nodes, 1925 edges
+    Custom SBM: 100 nodes, 1975 edges
     Edge lengths: min=1.0, max=4.0
-    Short edges (~1.0): 1680
-    Long edges (~4.0): 245
+    Short edges (~1.0): 1732
+    Long edges (~4.0): 243
 
 This is particularly useful when you want to model scenarios where
 inter-cluster distances are significantly larger than intra-cluster
@@ -134,8 +133,7 @@ print(f"Karate Club: {karate_qg.number_of_nodes()} nodes, {karate_qg.number_of_e
 print(f"All edges have length 1.5: {all(d['length'] == 1.5 for u,v,d in karate_qg.edges(data=True))}")
 
 # Ready for clustering
-from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
-karate_points = karate_qg.sample_points(60, strategy=UniformNodeSampling())
+karate_points = karate_qg.sample_points(60)
 print(f"Sampled {len(karate_points)} points from Karate Club graph")
 ```
 

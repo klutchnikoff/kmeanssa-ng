@@ -56,16 +56,14 @@ print(f"Graph diameter (longest shortest path): {graph.diameter:.2f}")
 
 ## Sampling Points
 
-To cluster data on a quantum graph, you need observations—`QGPoint` objects. The `sample_points(n, strategy)` method generates them using a specified sampling strategy:
+To cluster data on a quantum graph, you need observations—`QGPoint` objects. The `sample_points(n)` method generates them uniformly across the graph:
 
 ```{python}
-from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
-
-points = graph.sample_points(100, strategy=UniformNodeSampling())
+points = graph.sample_points(100)
 print(f"Sampled {len(points)} points across the graph")
 ```
 
-The `UniformNodeSampling` strategy samples points **proportional to edge lengths**: a 5 km road gets more points than a 1 km road, ensuring true uniformity across the graph's total length. 
+The sampling is **proportional to edge lengths**: a 5 km road gets more points than a 1 km road, ensuring true uniformity across the graph's total length. 
 
 ### Weighted Sampling with Node Weights
 
@@ -90,8 +88,7 @@ weighted_graph.nodes['C']['weight'] = 1.0
 weighted_graph.precomputing()  # Required after manual graph construction
 
 # Sample points - more will appear near node B
-from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
-weighted_points = weighted_graph.sample_points(1000, strategy=UniformNodeSampling())
+weighted_points = weighted_graph.sample_points(1000)
 
 # Count points by closest node to see the distribution
 node_counts = {'A': 0, 'B': 0, 'C': 0}

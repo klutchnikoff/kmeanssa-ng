@@ -8,7 +8,6 @@ from kmeanssa_ng.core.abstract import Space
 
 from .center import RiemannianCenter
 from .point import RiemannianPoint
-from ..riemannian_manifold.sampling import UniformManifoldSampling
 
 
 class RiemannianManifold(Space):
@@ -64,9 +63,119 @@ class RiemannianManifold(Space):
         # Handle both scalar and 0-d array results
         return float(np.asarray(dist).item())
 
-    def center_from_point(self, point: RiemannianPoint) -> RiemannianCenter:
-        """Create a RiemannianCenter object from a RiemannianPoint object."""
-        return RiemannianCenter(point)
+    def _sample_uniform(self, n: int) -> list[RiemannianPoint]:
+        """Sample n points uniformly from the manifold.
+
+        Uses geomstats' random_uniform or random_point method to sample
+        according to the natural volume measure on the manifold.
+
+        Args:
+            n: Number of points to sample
+
+        Returns:
+            List of n uniformly sampled points
+        """
+        # Sample coordinates from the manifold
+        # Use random_uniform if available, otherwise random_point
+        if hasattr(self.manifold, "random_uniform"):
+            coords = self.manifold.random_uniform(n_samples=n)
+        else:
+            coords = self.manifold.random_point(n_samples=n)
+
+        # Store observations for energy calculation
+        if n > 0:
+            self.observations = coords if coords.ndim > 1 else coords.reshape(1, -1)
+
+        # Create RiemannianPoint objects
+        points = []
+        for i in range(n):
+            point_coords = coords[i] if coords.ndim > 1 else coords
+            points.append(RiemannianPoint(self, point_coords))
+
+        return points
+
+    def sample_centers(self, k: int) -> list[RiemannianCenter]:
+        """Sample k centers uniformly from the manifold.
+
+        Args:
+            k: Number of centers to sample.
+
+        Returns:
+            List of k uniformly sampled RiemannianCenter objects.
+        """
+        # Use random_uniform if available, otherwise random_point
+        if hasattr(self.manifold, "random_uniform"):
+            coords = self.manifold.random_uniform(n_samples=k)
+        else:
+            coords = self.manifold.random_point(n_samples=k)
+
+        centers = []
+        for i in range(k):
+            point_coords = coords[i] if coords.ndim > 1 else coords
+            point = RiemannianPoint(self, point_coords)
+            centers.append(RiemannianCenter(point))
+
+        return centers
+
+    def sample_kpp_centers(self, k: int) -> list[RiemannianCenter]:
+        """Sample k centers using k-means++ initialization.
+
+        The k-means++ algorithm:
+        1. Choose first center uniformly at random
+        2. For each subsequent center, choose with probability proportional
+           to squared distance to nearest existing center
+        3. Repeat until k centers are chosen
+
+        Args:
+            k: Number of centers to sample.
+
+        Returns:
+            List of k centers sampled using k-means++.
+
+        Raises:
+            ValueError: If k <= 0 or if no observations have been sampled.
+        """
+        if k <= 0:
+            raise ValueError(f"k must be positive, got {k}")
+
+        if len(self.observations) == 0:
+            raise ValueError(
+                "No observations available. Call sample_points() first or provide observations."
+            )
+
+        centers = []
+
+        # Step 1: Choose first center uniformly at random from observations
+        first_idx = np.random.randint(len(self.observations))
+        first_point = RiemannianPoint(self, self.observations[first_idx])
+        centers.append(RiemannianCenter(first_point))
+
+        # Step 2-3: Choose remaining centers using k-means++
+        for _ in range(k - 1):
+            # Compute squared distances from each observation to nearest center
+            squared_distances = np.zeros(len(self.observations))
+
+            for i, obs_coords in enumerate(self.observations):
+                obs_point = RiemannianPoint(self, obs_coords)
+                min_dist_sq = min(
+                    self.distance(center, obs_point) ** 2 for center in centers
+                )
+                squared_distances[i] = min_dist_sq
+
+            # Choose next center with probability proportional to squared distance
+            # Normalize to get probabilities
+            total = squared_distances.sum()
+            if total > 0:
+                probabilities = squared_distances / total
+            else:
+                # All observations are at existing centers, choose uniformly
+                probabilities = np.ones(len(self.observations)) / len(self.observations)
+
+            next_idx = np.random.choice(len(self.observations), p=probabilities)
+            next_point = RiemannianPoint(self, self.observations[next_idx])
+            centers.append(RiemannianCenter(next_point))
+
+        return centers
 
     def compute_clusters(self, centers: list[RiemannianCenter]) -> None:
         """Assign observations to their nearest center.

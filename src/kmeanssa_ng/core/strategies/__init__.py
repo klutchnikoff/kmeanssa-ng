@@ -1,10 +1,4 @@
-"""Strategies for initialization, robustification, and sampling.
-
-Note:
-    Concrete sampling strategies are space-specific and located in:
-    - kmeanssa_ng.quantum_graph.sampling
-    - kmeanssa_ng.riemannian_manifold.sampling
-"""
+"""Strategies for initialization, robustification, and sampling."""
 
 from .initialization import (
     InitializationStrategy,
@@ -12,7 +6,7 @@ from .initialization import (
     RandomInit,
 )
 from .robustification import MinimizeEnergy, RobustificationStrategy
-from .sampling import SamplingStrategy
+from .sampling import SamplingStrategy, UniformSampling
 
 __all__ = [
     "InitializationStrategy",
@@ -21,4 +15,5 @@ __all__ = [
     "RobustificationStrategy",
     "MinimizeEnergy",
     "SamplingStrategy",
+    "UniformSampling",
 ]
