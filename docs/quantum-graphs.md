@@ -95,24 +95,26 @@ graph = generate_sbm(sizes=[30, 30], p=[[0.8, 0.1], [0.1, 0.8]])
 print(f"Graph diameter (longest shortest path): {graph.diameter:.2f}")
 ```
 
-    Graph diameter (longest shortest path): 2.00
+    Graph diameter (longest shortest path): 3.00
 
 ## Sampling Points
 
 To cluster data on a quantum graph, you need observations—`QGPoint`
-objects. The `sample_points(n)` method generates them uniformly across
-the graph:
+objects. The `sample_points(n, strategy)` method generates them using a
+specified sampling strategy:
 
 ``` python
-points = graph.sample_points(100)
+from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
+
+points = graph.sample_points(100, strategy=UniformNodeSampling())
 print(f"Sampled {len(points)} points across the graph")
 ```
 
     Sampled 100 points across the graph
 
-The sampling is **proportional to edge lengths**: a 5 km road gets more
-points than a 1 km road, ensuring true uniformity across the graph’s
-total length.
+The `UniformNodeSampling` strategy samples points **proportional to edge
+lengths**: a 5 km road gets more points than a 1 km road, ensuring true
+uniformity across the graph’s total length.
 
 ### Weighted Sampling with Node Weights
 
@@ -141,7 +143,8 @@ weighted_graph.nodes['C']['weight'] = 1.0
 weighted_graph.precomputing()  # Required after manual graph construction
 
 # Sample points - more will appear near node B
-weighted_points = weighted_graph.sample_points(1000)
+from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
+weighted_points = weighted_graph.sample_points(1000, strategy=UniformNodeSampling())
 
 # Count points by closest node to see the distribution
 node_counts = {'A': 0, 'B': 0, 'C': 0}
@@ -158,9 +161,9 @@ for node in ['A', 'B', 'C']:
 ```
 
     Observations per node (approximate):
-      Node A (weight=1.0): 139 observations
-      Node B (weight=5.0): 710 observations
-      Node C (weight=1.0): 151 observations
+      Node A (weight=1.0): 349 observations
+      Node B (weight=5.0): 352 observations
+      Node C (weight=1.0): 299 observations
 
 You should see approximately a 1:5:1 ratio matching the node weights
 (A=1.0, B=5.0, C=1.0). Points are sampled proportionally to the combined

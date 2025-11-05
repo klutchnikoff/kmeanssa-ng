@@ -5,7 +5,7 @@ import pytest
 from geomstats.geometry.hypersphere import Hypersphere
 from geomstats.geometry.hyperboloid import Hyperboloid
 
-from kmeanssa_ng.core.strategies import UniformSampling
+from kmeanssa_ng.riemannian_manifold.sampling import UniformManifoldSampling
 from kmeanssa_ng.riemannian_manifold import (
     RiemannianCenter,
     RiemannianManifold,
@@ -13,6 +13,8 @@ from kmeanssa_ng.riemannian_manifold import (
     create_hyperbolic_space,
     create_sphere,
 )
+from kmeanssa_ng import SimulatedAnnealing
+from kmeanssa_ng.core.strategies.initialization import KMeansPlusPlus, RandomInit
 
 
 class TestRiemannianManifold:
@@ -51,7 +53,7 @@ class TestRiemannianManifold:
         space = RiemannianManifold(sphere)
 
         n = 10
-        points = space.sample_points(n, strategy=UniformSampling())
+        points = space.sample_points(n, strategy=UniformManifoldSampling())
 
         assert len(points) == n
         assert all(isinstance(p, RiemannianPoint) for p in points)
@@ -69,7 +71,10 @@ class TestRiemannianManifold:
         space = RiemannianManifold(sphere)
 
         k = 3
-        centers = space.sample_centers(k)
+
+        points = space.sample_points(k, strategy=UniformManifoldSampling())
+        sa = SimulatedAnnealing(points, k=k)
+        centers = RandomInit().initialize_centers(sa)
 
         assert len(centers) == k
         assert all(isinstance(c, RiemannianCenter) for c in centers)
@@ -79,57 +84,17 @@ class TestRiemannianManifold:
             norm = np.linalg.norm(center.coordinates)
             np.testing.assert_allclose(norm, 1.0, rtol=1e-5)
 
-    def test_sample_kpp_centers(self):
-        """Test k-means++ initialization."""
-        sphere = Hypersphere(dim=2)
-        space = RiemannianManifold(sphere)
-
-        # First sample observations
-        space.sample_points(50, strategy=UniformSampling())
-
-        k = 3
-        centers = space.sample_kpp_centers(k)
-
-        assert len(centers) == k
-        assert all(isinstance(c, RiemannianCenter) for c in centers)
-
-        # Centers should be spread out (not all identical)
-        coords = np.array([c.coordinates for c in centers])
-        for i in range(k):
-            for j in range(i + 1, k):
-                dist = np.linalg.norm(coords[i] - coords[j])
-                assert dist > 0.1  # Centers should be reasonably separated
-
-    def test_sample_kpp_centers_no_observations(self):
-        """Test k-means++ fails without observations."""
-        sphere = Hypersphere(dim=2)
-        space = RiemannianManifold(sphere)
-
-        with pytest.raises(ValueError, match="No observations available"):
-            space.sample_kpp_centers(3)
-
-    def test_sample_kpp_centers_invalid_k(self):
-        """Test k-means++ with invalid k."""
-        sphere = Hypersphere(dim=2)
-        space = RiemannianManifold(sphere)
-        space.sample_points(10, strategy=UniformSampling())
-
-        with pytest.raises(ValueError, match="k must be positive"):
-            space.sample_kpp_centers(0)
-
-        with pytest.raises(ValueError, match="k must be positive"):
-            space.sample_kpp_centers(-1)
-
     def test_calculate_energy(self):
         """Test energy calculation."""
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
 
         # Sample observations
-        space.sample_points(20, strategy=UniformSampling())
+        points = space.sample_points(20, strategy=UniformManifoldSampling())
 
         # Sample centers
-        centers = space.sample_centers(3)
+        sa = SimulatedAnnealing(points, k=3)
+        centers = RandomInit().initialize_centers(sa)
 
         # Calculate energy
         energy = space.calculate_energy(centers)
@@ -142,7 +107,13 @@ class TestRiemannianManifold:
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
 
-        centers = space.sample_centers(3)
+        # Create dummy observations to initialize centers
+        dummy_points = space.sample_points(10, strategy=UniformManifoldSampling())
+        sa = SimulatedAnnealing(dummy_points, k=3)
+        centers = RandomInit().initialize_centers(sa)
+
+        # Now, for the actual test, ensure the space has no observations
+        space.observations = []
 
         with pytest.raises(ValueError, match="No observations available"):
             space.calculate_energy(centers)
@@ -151,7 +122,7 @@ class TestRiemannianManifold:
         """Test energy calculation fails without centers."""
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
-        space.sample_points(10, strategy=UniformSampling())
+        space.sample_points(10, strategy=UniformManifoldSampling())
 
         with pytest.raises(ValueError, match="Centers list cannot be empty"):
             space.calculate_energy([])
@@ -160,9 +131,10 @@ class TestRiemannianManifold:
         """Test energy calculation accepts 'how' parameter for API compatibility."""
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
-        space.sample_points(20, strategy=UniformSampling())
-        centers = space.sample_centers(3)
+        points = space.sample_points(20, strategy=UniformManifoldSampling())
 
+        sa = SimulatedAnnealing(points, k=3)
+        centers = RandomInit().initialize_centers(sa)
         # Both calls should give the same result since 'how' is ignored
         energy_default = space.calculate_energy(centers)
         energy_obs = space.calculate_energy(centers, how="obs")
@@ -177,7 +149,10 @@ class TestRiemannianManifold:
         """Test compute_clusters (stub implementation)."""
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
-        centers = space.sample_centers(3)
+        points = space.sample_points(20, strategy=UniformManifoldSampling())
+
+        sa = SimulatedAnnealing(points, k=3)
+        centers = RandomInit().initialize_centers(sa)
 
         # Should not raise an error
         space.compute_clusters(centers)
@@ -188,8 +163,12 @@ class TestRiemannianManifold:
         space = RiemannianManifold(sphere)
 
         # Sample centers and a target point
-        centers = space.sample_centers(5)
-        target = space.sample_points(1, strategy=UniformSampling())[0]
+
+        # Sample centers and a target point
+        points = space.sample_points(20, strategy=UniformManifoldSampling())
+        sa = SimulatedAnnealing(points, k=5)
+        centers = RandomInit().initialize_centers(sa)
+        target = space.sample_points(1, strategy=UniformManifoldSampling())[0]
 
         # Compute distances
         distances = space.distances_from_centers(centers, target)
@@ -524,12 +503,14 @@ class TestIntegration:
         sphere = create_sphere(dim=2)
 
         # Sample observations
-        points = sphere.sample_points(50, strategy=UniformSampling())
+        points = sphere.sample_points(50, strategy=UniformManifoldSampling())
         assert len(points) == 50
 
         # Initialize centers with k-means++
         k = 3
-        centers = sphere.sample_kpp_centers(k)
+
+        sa = SimulatedAnnealing(points, k=k)
+        centers = KMeansPlusPlus().initialize_centers(sa)
         assert len(centers) == k
 
         # Calculate initial energy
@@ -559,8 +540,10 @@ class TestIntegration:
 
         for space in manifolds:
             # Sample and compute
-            points = space.sample_points(20, strategy=UniformSampling())
-            centers = space.sample_kpp_centers(3)
+            points = space.sample_points(20, strategy=UniformManifoldSampling())
+
+            sa = SimulatedAnnealing(points, k=3)
+            centers = KMeansPlusPlus().initialize_centers(sa)
             energy = space.calculate_energy(centers)
 
             assert len(points) == 20

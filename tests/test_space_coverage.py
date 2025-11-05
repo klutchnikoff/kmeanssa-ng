@@ -141,48 +141,6 @@ class TestNodePosition:
 class TestSamplingEdgeCases:
     """Tests for sampling edge cases and error conditions."""
 
-    def test_sample_point_invalid_where(self):
-        """Test that invalid 'where' parameter raises ValueError."""
-        graph = QuantumGraph()
-        graph.add_edge(0, 1, length=1.0)
-
-        with pytest.raises(
-            ValueError, match='The parameter "where" must be either "Node" or "Edge"'
-        ):
-            graph._sample_point(where="Invalid")
-
-    def test_sample_point_node_no_weights(self):
-        """Test node sampling without weight attributes."""
-        graph = QuantumGraph()
-        graph.add_edge(0, 1, length=1.0)
-
-        with pytest.raises(
-            NotImplementedError, match="Node sampling requires 'weight' attribute"
-        ):
-            graph._sample_point(where="Node")
-
-    def test_sample_point_edge_no_attributes(self):
-        """Test edge sampling without required attributes."""
-        graph = QuantumGraph()
-        graph.add_edge(0, 1, length=1.0)
-
-        with pytest.raises(
-            NotImplementedError,
-            match="Edge sampling requires 'weight' and 'distribution'",
-        ):
-            graph._sample_point(where="Edge")
-
-    def test_sample_point_edge_missing_distribution(self):
-        """Test edge sampling with weight but no distribution."""
-        graph = QuantumGraph()
-        graph.add_edge(0, 1, length=1.0, weight=1.0)
-
-        with pytest.raises(
-            NotImplementedError,
-            match="Edge sampling requires 'weight' and 'distribution'",
-        ):
-            graph._sample_point(where="Edge")
-
     def test_nodes_as_points(self):
         """Test converting nodes to points."""
         graph = QuantumGraph()
@@ -204,41 +162,6 @@ class TestSamplingEdgeCases:
         assert isinstance(center, QGCenter)
         assert center.position == 0.0
         assert center.edge[0] == 1 or center.edge[1] == 1  # One end is node 1
-
-    def test_sample_kpp_centers_no_precomputing(self):
-        """Test that k-means++ requires precomputing."""
-        graph = QuantumGraph()
-        graph.add_edge(0, 1, length=1.0)
-
-        with pytest.raises(
-            ValueError, match="Must call precomputing\\(\\) before sample_kpp_centers"
-        ):
-            graph.sample_kpp_centers(2)
-
-    def test_sample_kpp_centers_single_center(self):
-        """Test k-means++ with k=1."""
-        graph = QuantumGraph()
-        graph.add_edge(0, 1, length=1.0)
-        graph.add_edge(1, 2, length=1.0)
-        graph.precomputing()
-
-        centers = graph.sample_kpp_centers(1)
-        assert len(centers) == 1
-        assert isinstance(centers[0], QGCenter)
-
-    def test_sample_kpp_centers_covers_line_404(self):
-        """Test k-means++ with k=2 to cover line 404 (dist_centers.shape == 1)."""
-        # Create a very small graph to ensure after first center, dist_centers has shape (n,)
-        graph = QuantumGraph()
-        graph.add_edge(0, 1, length=1.0)
-        graph.add_edge(1, 2, length=2.0)
-        graph.precomputing()
-
-        # With 3 nodes, after picking first center, dist_centers will be 1D array
-        centers = graph.sample_kpp_centers(2)
-
-        assert len(centers) == 2
-        assert all(isinstance(c, QGCenter) for c in centers)
 
     def test_compute_clusters(self):
         """Test cluster assignment."""

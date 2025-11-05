@@ -3,7 +3,9 @@
 import numpy as np
 import pytest
 
-from kmeanssa_ng.core.strategies import UniformSampling
+from kmeanssa_ng import SimulatedAnnealing
+from kmeanssa_ng.core.strategies.initialization import RandomInit
+from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 from kmeanssa_ng.core.metrics import (
     adjusted_rand_index,
     calinski_harabasz,
@@ -83,8 +85,10 @@ class TestComputeLabels:
     """Test compute_labels function."""
 
     def test_basic_assignment(self, simple_graph, points_at_nodes):
-        """Test basic cluster assignment."""
-        centers = simple_graph.sample_centers(k=2)
+        points_for_centers = simple_graph.sample_points(
+            2, strategy=UniformNodeSampling()
+        )
+        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
         labels = compute_labels(simple_graph, points_at_nodes, centers)
 
         assert len(labels) == len(points_at_nodes)
@@ -92,8 +96,10 @@ class TestComputeLabels:
         assert all(0 <= label < 2 for label in labels)
 
     def test_single_cluster(self, simple_graph, points_at_nodes):
-        """Test with single cluster."""
-        centers = simple_graph.sample_centers(k=1)
+        points_for_centers = simple_graph.sample_points(
+            1, strategy=UniformNodeSampling()
+        )
+        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
         labels = compute_labels(simple_graph, points_at_nodes, centers)
 
         assert all(label == 0 for label in labels)
@@ -102,8 +108,14 @@ class TestComputeLabels:
         """Test that points are assigned to nearest center."""
         # Create points and centers at known positions
         point = QGPoint(quantum_graph=simple_graph, edge=(0, 1), position=0.0)
-        center1 = simple_graph.sample_centers(k=1)[0]
-        center2 = simple_graph.sample_centers(k=1)[0]
+        points_for_center1 = simple_graph.sample_points(
+            1, strategy=UniformNodeSampling()
+        )
+        center1 = simple_graph.center_from_point(points_for_center1[0])
+        points_for_center2 = simple_graph.sample_points(
+            1, strategy=UniformNodeSampling()
+        )
+        center2 = simple_graph.center_from_point(points_for_center2[0])
 
         labels = compute_labels(simple_graph, [point], [center1, center2])
 
@@ -188,8 +200,11 @@ class TestSilhouette:
 
     def test_basic_silhouette(self, simple_graph, points_at_nodes):
         """Test basic silhouette computation."""
-        points = simple_graph.sample_points(10, strategy=UniformSampling())
-        centers = simple_graph.sample_centers(k=2)
+        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
+        points_for_centers = simple_graph.sample_points(
+            2, strategy=UniformNodeSampling()
+        )
+        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
         labels = compute_labels(simple_graph, points, centers)
 
         # Only test if we have at least 2 clusters
@@ -202,8 +217,11 @@ class TestSilhouette:
     def test_with_precomputed_labels(self, simple_graph, points_at_nodes):
         """Test silhouette with pre-computed labels."""
         # Use sample_points to get more diverse points for better clustering
-        points = simple_graph.sample_points(10, strategy=UniformSampling())
-        centers = simple_graph.sample_centers(k=2)
+        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
+        points_for_centers = simple_graph.sample_points(
+            2, strategy=UniformNodeSampling()
+        )
+        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
         labels = compute_labels(simple_graph, points, centers)
 
         # Only run if we have at least 2 clusters
@@ -216,7 +234,8 @@ class TestSilhouette:
 
     def test_single_cluster_fails(self, simple_graph, points_at_nodes):
         """Test that single cluster raises ValueError."""
-        centers = simple_graph.sample_centers(k=1)
+        sa = SimulatedAnnealing(points_at_nodes, k=1)
+        centers = RandomInit().initialize_centers(sa)
 
         with pytest.raises(ValueError):
             silhouette(simple_graph, points_at_nodes, centers)
@@ -231,7 +250,10 @@ class TestSilhouette:
             QGPoint(quantum_graph=simple_graph, edge=(3, 4), position=9.0),
         ]
 
-        centers = simple_graph.sample_centers(k=2)
+        points_for_centers = simple_graph.sample_points(
+            2, strategy=UniformNodeSampling()
+        )
+        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
         labels = compute_labels(simple_graph, points, centers)
 
         # Only test if we have at least 2 clusters
@@ -283,8 +305,11 @@ class TestCalinskiHarabasz:
 
     def test_basic_score(self, simple_graph, points_at_nodes):
         """Test basic CH score computation."""
-        points = simple_graph.sample_points(10, strategy=UniformSampling())
-        centers = simple_graph.sample_centers(k=2)
+        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
+        points_for_centers = simple_graph.sample_points(
+            2, strategy=UniformNodeSampling()
+        )
+        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
         labels = compute_labels(simple_graph, points, centers)
 
         # Only test if we have at least 2 clusters
@@ -296,8 +321,11 @@ class TestCalinskiHarabasz:
 
     def test_with_precomputed_labels(self, simple_graph, points_at_nodes):
         """Test CH with pre-computed labels."""
-        points = simple_graph.sample_points(10, strategy=UniformSampling())
-        centers = simple_graph.sample_centers(k=2)
+        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
+        points_for_centers = simple_graph.sample_points(
+            2, strategy=UniformNodeSampling()
+        )
+        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
         labels = compute_labels(simple_graph, points, centers)
 
         # Only test if we have at least 2 clusters
@@ -311,14 +339,11 @@ class TestCalinskiHarabasz:
     def test_higher_for_better_clustering(self, simple_graph):
         """Test CH score increases with better separation."""
         # Create well-separated points
-        points = [
-            QGPoint(quantum_graph=simple_graph, edge=(0, 1), position=0.0),
-            QGPoint(quantum_graph=simple_graph, edge=(0, 1), position=1.0),
-            QGPoint(quantum_graph=simple_graph, edge=(3, 4), position=0.0),
-            QGPoint(quantum_graph=simple_graph, edge=(3, 4), position=1.0),
-        ]
-
-        centers = simple_graph.sample_centers(k=2)
+        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
+        points_for_centers = simple_graph.sample_points(
+            2, strategy=UniformNodeSampling()
+        )
+        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
         labels = compute_labels(simple_graph, points, centers)
 
         # Only test if we have at least 2 clusters
@@ -334,8 +359,11 @@ class TestDaviesBouldin:
 
     def test_basic_score(self, simple_graph, points_at_nodes):
         """Test basic DB score computation."""
-        points = simple_graph.sample_points(10, strategy=UniformSampling())
-        centers = simple_graph.sample_centers(k=2)
+        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
+        points_for_centers = simple_graph.sample_points(
+            2, strategy=UniformNodeSampling()
+        )
+        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
         labels = compute_labels(simple_graph, points, centers)
 
         # Only test if we have at least 2 clusters
@@ -347,8 +375,11 @@ class TestDaviesBouldin:
 
     def test_with_precomputed_labels(self, simple_graph, points_at_nodes):
         """Test DB with pre-computed labels."""
-        points = simple_graph.sample_points(10, strategy=UniformSampling())
-        centers = simple_graph.sample_centers(k=2)
+        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
+        points_for_centers = simple_graph.sample_points(
+            2, strategy=UniformNodeSampling()
+        )
+        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
         labels = compute_labels(simple_graph, points, centers)
 
         # Only test if we have at least 2 clusters
@@ -368,7 +399,10 @@ class TestDaviesBouldin:
             QGPoint(quantum_graph=simple_graph, edge=(3, 4), position=9.0),
         ]
 
-        centers = simple_graph.sample_centers(k=2)
+        points_for_centers = simple_graph.sample_points(
+            2, strategy=UniformNodeSampling()
+        )
+        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
         labels = compute_labels(simple_graph, points, centers)
 
         # Only test if we have at least 2 clusters

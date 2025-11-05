@@ -14,12 +14,11 @@ from typing import TYPE_CHECKING, Callable, Literal
 
 import numpy as np
 
-from .strategies import UniformSampling
-
 if TYPE_CHECKING:
     from .abstract import Center, Space
     from .strategies.initialization import InitializationStrategy
     from .strategies.robustification import RobustificationStrategy
+    from .strategies.sampling import SamplingStrategy
 
 
 def _run_with_seed(
@@ -33,8 +32,9 @@ def _run_with_seed(
     step_size: float,
     energy_mode: str,
     robust_prop: float,
-    initialization_strategy: "InitializationStrategy | None",
-    robustification_strategy: "RobustificationStrategy | None",
+    sampling_strategy: "SamplingStrategy",
+    initialization_strategy: "InitializationStrategy",
+    robustification_strategy: "RobustificationStrategy",
 ) -> tuple[list[Center], float, int]:
     """Run simulated annealing with a specific seed.
 
@@ -46,10 +46,12 @@ def _run_with_seed(
         k: Number of clusters.
         seed: Random seed for reproducibility.
         algorithm: Which algorithm to use ("interleaved" or "sequential").
-        lambda_param: Poisson process intensity parameter.
-        beta: Inverse temperature parameter.
+        lambda0: Poisson process intensity parameter.
+        beta0: Inverse temperature parameter.
         step_size: Time step size.
+        energy_mode: Energy calculation mode ('uniform' or 'obs').
         robust_prop: Proportion of observations for robustification.
+        sampling_strategy: Strategy for sampling points from the space.
         initialization_strategy: Strategy instance for initializing centers.
         robustification_strategy: Strategy instance for robustifying results.
 
@@ -64,7 +66,7 @@ def _run_with_seed(
     np.random.seed(seed)
 
     # Sample observations with this seed
-    observations = space.sample_points(n_points, strategy=UniformSampling())
+    observations = space.sample_points(n_points, strategy=sampling_strategy)
 
     # Create algorithm instance
     sa = SimulatedAnnealing(
@@ -79,15 +81,15 @@ def _run_with_seed(
     # Run the algorithm
     if algorithm == "interleaved":
         centers = sa.run_interleaved(
-            robust_prop=robust_prop,
             initialization_strategy=initialization_strategy,
             robustification_strategy=robustification_strategy,
+            robust_prop=robust_prop,
         )
     else:  # sequential
         centers = sa.run_sequential(
-            robust_prop=robust_prop,
             initialization_strategy=initialization_strategy,
             robustification_strategy=robustification_strategy,
+            robust_prop=robust_prop,
         )
 
     # Calculate final energy
@@ -100,6 +102,9 @@ def run_parallel(
     space: "Space",
     n_points: int,
     k: int,
+    sampling_strategy: SamplingStrategy,
+    initialization_strategy: InitializationStrategy,
+    robustification_strategy: RobustificationStrategy,
     n_runs: int = 10,
     algorithm: Literal["interleaved", "sequential"] = "interleaved",
     lambda0: float = 1,
@@ -107,8 +112,6 @@ def run_parallel(
     step_size: float = 0.1,
     energy_mode: str = "uniform",
     robust_prop: float = 0.0,
-    initialization_strategy: InitializationStrategy | None = None,
-    robustification_strategy: RobustificationStrategy | None = None,
     n_jobs: int = -1,
     seeds: list[int] | None = None,
     return_all: bool = False,
@@ -130,9 +133,10 @@ def run_parallel(
         lambda_param: Poisson process intensity parameter (must be > 0).
         beta: Inverse temperature parameter (must be > 0).
         step_size: Time step for updating centers (must be > 0).
+        sampling_strategy: Strategy for sampling points from the space (required).
+        initialization_strategy: Strategy for initializing centers (required).
+        robustification_strategy: Strategy for robustifying results (required).
         robust_prop: Proportion of final observations to use for robustification (0-1).
-        initialization_strategy: Strategy for initializing centers (None = k-means++).
-        robustification_strategy: Strategy for robustifying results (None = minimize energy).
         n_jobs: Number of parallel jobs. -1 uses all available cores.
         seeds: Optional list of specific seeds to use. If None, generates random seeds.
         return_all: If True, return all results; if False, return only the best.
@@ -219,6 +223,7 @@ def run_parallel(
                 step_size,
                 energy_mode,
                 robust_prop,
+                sampling_strategy,
                 initialization_strategy,
                 robustification_strategy,
             )
@@ -244,6 +249,9 @@ def run_parallel_with_callback(
     space: "Space",
     n_points: int,
     k: int,
+    sampling_strategy: SamplingStrategy,
+    initialization_strategy: InitializationStrategy,
+    robustification_strategy: RobustificationStrategy,
     n_runs: int = 10,
     algorithm: Literal["interleaved", "sequential"] = "interleaved",
     lambda0: float = 1.0,
@@ -349,8 +357,9 @@ def run_parallel_with_callback(
                 step_size,
                 energy_mode,
                 robust_prop,
-                None,
-                None,
+                sampling_strategy,
+                initialization_strategy,
+                robustification_strategy,
             ): (idx, seed)
             for idx, seed in enumerate(seeds)
         }
