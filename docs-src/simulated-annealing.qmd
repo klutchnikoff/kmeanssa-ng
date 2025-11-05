@@ -88,6 +88,130 @@ This approach separates the two mechanisms temporally.
 
 **Choice**: V1 (interleaved) is generally recommended as the default, but V2 can be useful for specific problem structures.
 
+## Algorithm Parameters
+
+The behavior of the simulated annealing algorithm is controlled by three main parameters. Understanding these parameters is crucial for achieving good clustering results.
+
+### `lambda0`: Brownian Motion Intensity
+
+Controls the **initial strength of random exploration** in the metric space.
+
+**Mathematical role**: Scales the diffusion coefficient in the Brownian motion component. The standard deviation of each random step is proportional to $\lambda_0 \sqrt{\Delta t}$.
+
+**Practical effects**:
+
+- **Higher values** ($\lambda_0 \in [1.5, 3.0]$):
+  - More exploration of the solution space
+  - Better escape from local minima
+  - Slower convergence
+  - Recommended for complex landscapes with many local optima
+
+- **Lower values** ($\lambda_0 \in [0.3, 0.8]$):
+  - Less exploration, more focused search
+  - Faster convergence
+  - Higher risk of getting trapped in local minima
+  - Suitable for simpler problems or when speed is critical
+
+- **Default**: $\lambda_0 = 1.0$ provides a good balance for most use cases
+
+<!-- TODO: Add specific guidance based on problem characteristics (graph size, number of clusters, etc.) -->
+
+### `beta0`: Drift Intensity
+
+Controls **how strongly centers are pulled toward observations**.
+
+**Mathematical role**: The drift proportion at time $t$ is computed as:
+$$\alpha(t) = \min(h \cdot \beta_0 \cdot \log(1 + t), 1)$$
+where $h$ is the time interval. This controls the strength of attraction toward the nearest observation.
+
+**Practical effects**:
+
+- **Higher values** ($\beta_0 \in [2.0, 5.0]$):
+  - Stronger drift toward observations
+  - Faster convergence
+  - More exploitation of currently good positions
+  - Risk of premature convergence
+
+- **Lower values** ($\beta_0 \in [0.3, 0.8]$):
+  - Weaker drift
+  - More time for exploration
+  - Slower convergence
+  - Better for difficult optimization landscapes
+
+- **Default**: $\beta_0 \in [1.0, 2.0]$ works well for most problems
+
+<!-- TODO: Discuss the interaction between lambda0 and beta0 -->
+
+### `step_size`: Time Discretization
+
+Controls the **temporal resolution** of the stochastic process simulation.
+
+**Mathematical role**: Euler discretization step $\Delta t$ for solving the stochastic differential equation (SDE). Smaller values provide more accurate simulation of the continuous process.
+
+**Practical effects**:
+
+- **Smaller values** ($\Delta t \in [0.001, 0.01]$):
+  - More accurate simulation of the theoretical process
+  - Slower computation (more steps needed)
+  - Better numerical stability
+
+- **Larger values** ($\Delta t \in [0.05, 0.1]$):
+  - Faster computation
+  - Less accurate approximation
+  - Risk of numerical instability
+
+- **Default**: $\Delta t = 0.01$ provides a good accuracy/speed tradeoff
+
+**Rule of thumb**: Choose `step_size` much smaller than the characteristic time scale of your Poisson process (approximately $1/\lambda_0$).
+
+<!-- TODO: Add guidance on how to check if step_size is appropriate -->
+
+### Choosing Parameter Combinations
+
+Different parameter combinations suit different optimization scenarios:
+
+#### Quick Convergence (when you trust your initialization)
+```python
+sa = SimulatedAnnealing(
+    points, k=5,
+    lambda0=0.5,    # Reduced exploration
+    beta0=3.0,      # Strong drift
+    step_size=0.01
+)
+```
+
+#### Thorough Search (complex problems, many local minima)
+```python
+sa = SimulatedAnnealing(
+    points, k=5,
+    lambda0=2.0,    # More exploration
+    beta0=1.0,      # Gentler drift
+    step_size=0.01
+)
+```
+
+#### Balanced (default, works well in most cases)
+```python
+sa = SimulatedAnnealing(
+    points, k=5,
+    lambda0=1.0,    # Moderate exploration
+    beta0=2.0,      # Moderate drift
+    step_size=0.01
+)
+```
+
+<!-- TODO: Add empirical results showing performance with different parameter settings -->
+<!-- TODO: Add section on parameter tuning strategies -->
+<!-- TODO: Discuss computational cost vs. quality tradeoffs -->
+
+### Theoretical Foundation
+
+For detailed mathematical derivations and theoretical justification of these parameters, see:
+
+<!-- TODO: Add your HAL/ArXiv reference here -->
+<!-- [1] Your Name. "Title of your paper". HAL/ArXiv, 2025. -->
+<!--     URL: https://... -->
+
 ## Robustification
 
 To improve stability, `kmeanssa-ng` uses **robustification**: instead of returning the final centers, it averages results from the last $p\%$ of iterations (default: 10%). This reduces sensitivity to late-iteration fluctuations.

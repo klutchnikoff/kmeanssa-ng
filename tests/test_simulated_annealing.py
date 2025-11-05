@@ -266,15 +266,17 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=1)
 
-        center = sa.run_interleaved(
+        centers = sa.run_interleaved(
             initialization_strategy=KMeansPlusPlus(),
             robustification_strategy=MostFrequentNode(),
             robust_prop=0.1,
         )
 
-        # Should return a single QGCenter object
-        assert isinstance(center, QGCenter)
-        assert center.space == graph
+        # Should return a list with a single QGCenter object (consistent with k>1)
+        assert isinstance(centers, list)
+        assert len(centers) == 1
+        assert isinstance(centers[0], QGCenter)
+        assert centers[0].space == graph
 
     def test_run_for_mean_with_multiple_k(self):
         """Test that run with k != 1 returns a list of centers."""

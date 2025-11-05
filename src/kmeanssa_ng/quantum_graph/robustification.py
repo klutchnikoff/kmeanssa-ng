@@ -19,7 +19,18 @@ class MostFrequentNode(RobustificationStrategy[list[Any]]):
     """
 
     def initialize(self, sa: SimulatedAnnealing) -> None:
-        """Initialize an empty list to store node collections."""
+        """Initialize an empty list to store node collections.
+
+        Raises:
+            TypeError: If the space is not a QuantumGraph.
+        """
+        from .space import QuantumGraph
+
+        if not isinstance(sa.space, QuantumGraph):
+            raise TypeError(
+                "MostFrequentNode strategy can only be used with QuantumGraph spaces."
+            )
+
         self._central_nodes_collections: list[list] = []
         self.sa = sa
 
@@ -28,13 +39,13 @@ class MostFrequentNode(RobustificationStrategy[list[Any]]):
         current_nodes = [center._closest_node() for center in sa.centers]
         self._central_nodes_collections.append(current_nodes)
 
-    def get_result(self) -> list[Any] | Any:
+    def get_result(self) -> list[Any]:
         """Return QGCenter objects at the most frequent nodes.
 
-        If k=1, returns a single QGCenter. Otherwise, returns a list of QGCenter objects.
+        Always returns a list of QGCenter objects, even for k=1.
         """
         if not self._central_nodes_collections:
-            return [] if self.sa._k > 1 else None
+            return []
 
         num_centers = len(self._central_nodes_collections[0])
         transposed_nodes = [
@@ -58,7 +69,5 @@ class MostFrequentNode(RobustificationStrategy[list[Any]]):
             # Fallback for non-QuantumGraph spaces (shouldn't happen with this strategy)
             robust_centers = robust_nodes
 
-        # For k=1 (mean computation), return the single element, not a list
-        if len(robust_centers) == 1:
-            return robust_centers[0]
+        # Always return a list for consistency
         return robust_centers
