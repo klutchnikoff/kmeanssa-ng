@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-import random as rd
+import random
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -53,6 +53,7 @@ class SimulatedAnnealing:
         beta0: float = 1.0,
         step_size: float = 0.1,
         energy_mode: str = "uniform",
+        random_state: int | np.random.Generator | None = None,
     ) -> None:
         """Initialize the simulated annealing algorithm.
 
@@ -108,6 +109,35 @@ class SimulatedAnnealing:
 
             energy_mode: Energy calculation mode, either "uniform" or "obs".
                 TODO: Document the difference between these modes.
+
+            random_state: Controls randomness for reproducibility.
+                Determines random number generation for all random operations:
+                - Shuffling observations
+                - Poisson process time generation
+                - Brownian motion (via centers)
+                - Initialization strategies (KMeansPlusPlus, RandomInit)
+                - Space-specific random operations
+
+                Pass an int for reproducible results across multiple function calls.
+                When an int is provided, both random.seed() and np.random.seed()
+                are set globally to ensure full reproducibility across all components.
+
+                Pass a Generator instance for fine-grained control without affecting
+                global state (advanced usage).
+
+                Pass None for non-deterministic behavior (default).
+
+                Example:
+                    >>> # Reproducible with seed (recommended)
+                    >>> sa1 = SimulatedAnnealing(points, k=3, random_state=42)
+                    >>> sa2 = SimulatedAnnealing(points, k=3, random_state=42)
+                    >>> # sa1 and sa2 will produce identical results
+                    >>>
+                    >>> # Advanced: use Generator without global state
+                    >>> rng = np.random.default_rng(42)
+                    >>> sa = SimulatedAnnealing(points, k=3, random_state=rng)
+                    >>> # Note: This only controls operations using self._rng
+                    >>> # Other components may still use global random state
 
         Raises:
             ValueError: If observations is empty, k <= 0, points are in different spaces,
@@ -172,6 +202,17 @@ class SimulatedAnnealing:
         if step_size_float <= 0:
             raise ValueError(f"step_size must be positive, got {step_size_float}")
 
+        # Normalize random_state to numpy Generator (scikit-learn pattern)
+        if isinstance(random_state, np.random.Generator):
+            self._rng = random_state
+        else:
+            self._rng = np.random.default_rng(random_state)
+            # Also set global random state for full reproducibility
+            # This affects: initialization strategies, centers' brownian motion, space operations
+            if isinstance(random_state, int):
+                random.seed(random_state)
+                np.random.seed(random_state)
+
         self._space = observations[0].space
         self._observations = observations.copy()
         self._k = k
@@ -180,7 +221,9 @@ class SimulatedAnnealing:
         self._step_size = step_size_float
         self._energy_mode = energy_mode
 
-        rd.shuffle(self._observations)
+        # Use random.shuffle (global state) for consistency with rest of codebase
+        # If we used self._rng.shuffle, it would desynchronize from global state
+        random.shuffle(self._observations)
         self._centers: list[Center] = []
 
     @property
@@ -240,7 +283,8 @@ class SimulatedAnnealing:
         T = np.zeros(n + 1)
         poiss_sum = 0.0
         for i in range(n):
-            poiss_sum += -1 / self._lambda * np.log(rd.random())
+            # Use random.random() for consistency with global state
+            poiss_sum += -1 / self._lambda * np.log(random.random())
             T[i + 1] = np.sqrt(poiss_sum + 1) - 1
         return T
 
