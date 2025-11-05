@@ -8,6 +8,7 @@ from kmeanssa_ng.core.abstract import Space
 
 from .center import RiemannianCenter
 from .point import RiemannianPoint
+from ..riemannian_manifold.sampling import UniformManifoldSampling
 
 
 class RiemannianManifold(Space):

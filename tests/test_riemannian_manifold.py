@@ -107,6 +107,7 @@ class TestRiemannianManifold:
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
 
+
         # Create dummy observations to initialize centers
         dummy_points = space.sample_points(10, strategy=UniformManifoldSampling())
         sa = SimulatedAnnealing(dummy_points, k=3)

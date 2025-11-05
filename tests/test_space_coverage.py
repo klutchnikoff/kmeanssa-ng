@@ -163,6 +163,7 @@ class TestSamplingEdgeCases:
         assert center.position == 0.0
         assert center.edge[0] == 1 or center.edge[1] == 1  # One end is node 1
 
+
     def test_compute_clusters(self):
         """Test cluster assignment."""
         graph = QuantumGraph()
