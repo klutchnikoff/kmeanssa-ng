@@ -375,7 +375,8 @@ class TestSimulatedAnnealing:
 
     def test_most_frequent_node_raises_on_non_graph_space(self):
         """Test that MostFrequentNode raises TypeError on a non-graph space."""
-        from kmeanssa_ng.core.strategies.robustification import MostFrequentNode
+        # MostFrequentNode is now in quantum_graph package
+        from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
         from kmeanssa_ng.core.abstract import Space
 
         # 1. Create a dummy space that is not a QuantumGraph

@@ -65,35 +65,3 @@ class MinimizeEnergy(RobustificationStrategy[list["Center"]]):
     def get_result(self) -> list["Center"]:
         """Return the list of centers with the minimum energy found."""
         return self._best_centers
-
-
-class MostFrequentNode(RobustificationStrategy[list["Center"]]):
-    """Select the most frequently visited node as the final center.
-
-    This strategy is only compatible with QuantumGraph spaces.
-    """
-
-    def initialize(self, sa: "SimulatedAnnealing") -> None:
-        """Check space compatibility and initialize history."""
-        from kmeanssa_ng.quantum_graph import QuantumGraph
-
-        if not isinstance(sa.space, QuantumGraph):
-            raise TypeError(
-                "MostFrequentNode strategy can only be used with QuantumGraph spaces."
-            )
-        self._centers_history: list[list[Center]] = []
-
-    def collect(self, sa: "SimulatedAnnealing") -> None:
-        """Collect the current centers."""
-        self._centers_history.append(sa._clone_centers(sa.centers))
-
-    def get_result(self) -> list["Center"]:
-        """Return the most frequent centers from the collected history."""
-        if not self._centers_history:
-            return []
-
-        # This logic is simplified; a real implementation might be more complex
-        # For now, we just return the last collected centers as a placeholder
-        # to demonstrate the structure.
-        # A proper implementation would involve counting frequencies.
-        return self._centers_history[-1]
