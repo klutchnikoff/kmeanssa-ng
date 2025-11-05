@@ -394,7 +394,9 @@ class SimulatedAnnealing:
 
             if i >= i0:
                 strategy.collect(self)
-                logger.debug("Collected centers for robustification at observation %d", i)
+                logger.debug(
+                    "Collected centers for robustification at observation %d", i
+                )
 
         result = strategy.get_result()
         logger.info("Interleaved SA completed successfully")
@@ -462,7 +464,9 @@ class SimulatedAnnealing:
 
             if i >= i0:
                 strategy.collect(self)
-                logger.debug("Collected centers for robustification at observation %d", i)
+                logger.debug(
+                    "Collected centers for robustification at observation %d", i
+                )
 
         result = strategy.get_result()
         logger.info("Sequential SA completed successfully")
