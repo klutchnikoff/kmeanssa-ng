@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import random as rd
 from typing import TYPE_CHECKING
 
@@ -14,6 +15,8 @@ from .strategies.initialization import (
 
 if TYPE_CHECKING:
     from .strategies.robustification import RobustificationStrategy
+
+logger = logging.getLogger(__name__)
 
 
 class SimulatedAnnealing:
@@ -56,13 +59,81 @@ class SimulatedAnnealing:
         Args:
             observations: List of points to cluster, all in the same metric space.
             k: Number of clusters.
-            lambda0: Initial intensity parameter for Poisson process (must be > 0).
-            beta0: Initial inverse temperature parameter (must be > 0, higher = faster convergence).
-            step_size: Time step for updating centers (must be > 0).
+            lambda0: Initial Brownian motion intensity parameter (must be > 0).
+                Controls the magnitude of random exploration.
+
+                Mathematical role: Scales the diffusion coefficient in the
+                Brownian motion component. The standard deviation of each
+                Brownian step is proportional to lambda0 * sqrt(step_size).
+
+                Practical effect:
+                - Higher values (1.5-3.0): More exploration, slower convergence,
+                  better escape from local minima
+                - Lower values (0.3-0.8): Less exploration, faster convergence,
+                  higher risk of local minima
+                - Recommended default: 1.0 for balanced exploration/exploitation
+
+                TODO: Add reference to article on HAL/ArXiv when available.
+
+            beta0: Initial drift intensity parameter (must be > 0).
+                Controls how strongly centers are pulled toward observations.
+
+                Mathematical role: The drift proportion at time t is computed as
+                alpha(t) = min(h * beta0 * log(1 + t), 1) where h is the time
+                interval. This controls the strength of attraction toward the
+                nearest observation.
+
+                Practical effect:
+                - Higher values (2.0-5.0): Stronger drift, faster convergence,
+                  more exploitation of current best positions
+                - Lower values (0.3-0.8): Weaker drift, more exploration,
+                  slower convergence
+                - Recommended default: 1.0-2.0 for most cases
+
+                TODO: Add reference to article on HAL/ArXiv when available.
+
+            step_size: Time discretization step for the SDE solver (must be > 0).
+                Controls the temporal resolution of the stochastic process.
+
+                Mathematical role: Euler discretization step Δt for solving the
+                stochastic differential equation. Smaller values give more
+                accurate simulation at the cost of more computation.
+
+                Practical effect:
+                - Smaller values (0.001-0.01): More accurate simulation, slower
+                - Larger values (0.05-0.1): Faster but less accurate
+                - Recommended default: 0.01 for good accuracy/speed tradeoff
+                - Rule of thumb: Use step_size much smaller than the typical
+                  time scale of the Poisson process (~ 1/lambda0)
+
+            energy_mode: Energy calculation mode, either "uniform" or "obs".
+                TODO: Document the difference between these modes.
 
         Raises:
             ValueError: If observations is empty, k <= 0, points are in different spaces,
                 or hyperparameters are invalid.
+
+        References:
+            TODO: Add reference to your article:
+            [1] Your Name. "Title of your paper". HAL/ArXiv, 2025.
+                URL: https://...
+
+        Example:
+            >>> # Quick convergence setup
+            >>> sa = SimulatedAnnealing(
+            ...     points, k=5,
+            ...     lambda0=0.5,  # Less exploration
+            ...     beta0=3.0,     # Stronger drift
+            ...     step_size=0.01
+            ... )
+            >>>
+            >>> # Thorough search setup (avoid local minima)
+            >>> sa = SimulatedAnnealing(
+            ...     points, k=5,
+            ...     lambda0=2.0,   # More exploration
+            ...     beta0=1.0,     # Gentler drift
+            ...     step_size=0.01
+            ... )
         """
         if not observations:
             raise ValueError("Observations must be a non-empty list of points.")
@@ -224,18 +295,48 @@ class SimulatedAnnealing:
         robust_prop: float = 0.0,
     ):
         """Run SA with interleaved drift and brownian motion."""
+        logger.info(
+            "Starting interleaved SA: k=%d, n_obs=%d, lambda0=%.3f, beta0=%.3f, "
+            "step_size=%.4f, robust_prop=%.2f",
+            self._k,
+            self.n,
+            self._lambda,
+            self._beta,
+            self._step_size,
+            robust_prop,
+        )
+
         i0, strategy = self._prepare_run(
             robust_prop, initialization_strategy, robustification_strategy
         )
         times = self._initialize_times(self.n)
         time = 0.0
 
+        # Calculate progress logging interval (every 10%)
+        progress_interval = max(1, self.n // 10)
+
         for i, point in enumerate(self._observations):
             T = times[i]
+
+            # Log progress every 10%
+            if i % progress_interval == 0 and i > 0:
+                progress = 100 * i / self.n
+                logger.info(
+                    "Progress: %.1f%% (%d/%d observations processed)",
+                    progress,
+                    i,
+                    self.n,
+                )
+
+            logger.debug("Processing observation %d, target time T=%.4f", i, T)
 
             while time <= T - self._step_size:
                 h = min(time + self._step_size, T) - time
                 prop = min(h * self._beta * np.log(1 + time), 1)
+
+                logger.debug(
+                    "Time step: time=%.4f, h=%.4f, drift_prop=%.4f", time, h, prop
+                )
 
                 for center in self._centers:
                     center.brownian_motion(h)
@@ -249,8 +350,12 @@ class SimulatedAnnealing:
 
             if i >= i0:
                 strategy.collect(self)
+                logger.debug("Collected centers for robustification at observation %d", i)
 
-        return strategy.get_result()
+        result = strategy.get_result()
+        logger.info("Interleaved SA completed successfully")
+
+        return result
 
     def run_sequential(
         self,
@@ -259,17 +364,44 @@ class SimulatedAnnealing:
         robust_prop: float = 0.0,
     ):
         """Run SA with sequential brownian motion then drift."""
+        logger.info(
+            "Starting sequential SA: k=%d, n_obs=%d, lambda0=%.3f, beta0=%.3f, "
+            "step_size=%.4f, robust_prop=%.2f",
+            self._k,
+            self.n,
+            self._lambda,
+            self._beta,
+            self._step_size,
+            robust_prop,
+        )
+
         i0, strategy = self._prepare_run(
             robust_prop, initialization_strategy, robustification_strategy
         )
         times = self._initialize_times(self.n)
         time = 0.0
 
+        # Calculate progress logging interval (every 10%)
+        progress_interval = max(1, self.n // 10)
+
         for i, point in enumerate(self._observations, start=1):
             T = times[i]
 
+            # Log progress every 10%
+            if i % progress_interval == 0 and i > 0:
+                progress = 100 * i / self.n
+                logger.info(
+                    "Progress: %.1f%% (%d/%d observations processed)",
+                    progress,
+                    i,
+                    self.n,
+                )
+
+            logger.debug("Processing observation %d, target time T=%.4f", i, T)
+
             while time <= T - self._step_size:
                 h = min(time + self._step_size, T) - time
+                logger.debug("Brownian motion: time=%.4f, h=%.4f", time, h)
                 for center in self._centers:
                     center.brownian_motion(h)
                 time += h
@@ -279,11 +411,16 @@ class SimulatedAnnealing:
             closest_center = self._centers[closest_idx]
 
             prop = min((times[i] - times[i - 1]) * self._beta * np.log(1 + time), 1)
+            logger.debug("Drift: closest_center=%d, drift_prop=%.4f", closest_idx, prop)
             closest_center.drift(point, prop)
 
             time = T
 
             if i >= i0:
                 strategy.collect(self)
+                logger.debug("Collected centers for robustification at observation %d", i)
 
-        return strategy.get_result()
+        result = strategy.get_result()
+        logger.info("Sequential SA completed successfully")
+
+        return result
