@@ -34,6 +34,9 @@ The simplest way to run multiple executions in parallel:
 
 ``` python
 from kmeanssa_ng import run_parallel, generate_sbm
+from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
+from kmeanssa_ng.core.strategies.initialization import KMeansPlusPlus
+from kmeanssa_ng.core.strategies.robustification import MinimizeEnergy
 
 # Generate a graph with two communities
 graph = generate_sbm(sizes=[50, 50], p=[[0.7, 0.1], [0.1, 0.7]])
@@ -41,7 +44,16 @@ graph = generate_sbm(sizes=[50, 50], p=[[0.7, 0.1], [0.1, 0.7]])
 # Run 10 times in parallel (uses all available CPU cores)
 # Each run samples its own 100 points with a different seed
 # Note: mp_context='fork' is needed for Jupyter/Quarto compatibility
-best_centers = run_parallel(graph, n_points=100, k=2, n_runs=10, mp_context='fork')
+best_centers = run_parallel(
+    graph,
+    n_points=100,
+    k=2,
+    sampling_strategy=UniformNodeSampling(),
+    initialization_strategy=KMeansPlusPlus(),
+    robustification_strategy=MinimizeEnergy(),
+    n_runs=10,
+    mp_context='fork'
+)
 print(f"Best result has {len(best_centers)} centers")
 ```
 
@@ -69,8 +81,11 @@ To analyze the distribution of results across different seeds:
 best_centers, all_results = run_parallel(
     graph,
     n_points=100,
-    k=2, 
-    n_runs=20, 
+    k=2,
+    sampling_strategy=UniformNodeSampling(),
+    initialization_strategy=KMeansPlusPlus(),
+    robustification_strategy=MinimizeEnergy(),
+    n_runs=20,
     return_all=True,
     mp_context='fork'
 )
@@ -86,10 +101,10 @@ print(f"Mean energy: {np.mean(energies):.4f}")
 print(f"Std energy: {np.std(energies):.4f}")
 ```
 
-    Best energy: 1.2833
-    Worst energy: 2.3900
-    Mean energy: 1.9009
-    Std energy: 0.2992
+    Best energy: 0.9953
+    Worst energy: 2.3519
+    Mean energy: 1.7327
+    Std energy: 0.3083
 
 ## Progress Monitoring
 
@@ -106,32 +121,35 @@ centers = run_parallel_with_callback(
     graph,
     n_points=100,
     k=2,
+    sampling_strategy=UniformNodeSampling(),
+    initialization_strategy=KMeansPlusPlus(),
+    robustification_strategy=MinimizeEnergy(),
     n_runs=20,
     callback=show_progress,
     mp_context='fork'
 )
 ```
 
-    ✓ Run 1/20 completed - Energy: 1.7000 (seed=1240678749)
-    ✓ Run 3/20 completed - Energy: 2.0700 (seed=1565416569)
-    ✓ Run 2/20 completed - Energy: 1.8200 (seed=1955912884)
-    ✓ Run 6/20 completed - Energy: 1.5400 (seed=1817219079)
-    ✓ Run 8/20 completed - Energy: 1.8700 (seed=1492852829)
-    ✓ Run 11/20 completed - Energy: 1.7054 (seed=362737107)
-    ✓ Run 5/20 completed - Energy: 1.7300 (seed=662231304)
-    ✓ Run 9/20 completed - Energy: 2.4900 (seed=67222383)
-    ✓ Run 12/20 completed - Energy: 2.7800 (seed=626125205)
-    ✓ Run 4/20 completed - Energy: 0.7750 (seed=2079473044)
-    ✓ Run 13/20 completed - Energy: 1.7100 (seed=1053309165)
-    ✓ Run 10/20 completed - Energy: 2.1798 (seed=642192747)
-    ✓ Run 14/20 completed - Energy: 1.7654 (seed=633572147)
-    ✓ Run 7/20 completed - Energy: 1.5845 (seed=1618989349)
-    ✓ Run 15/20 completed - Energy: 1.8100 (seed=1609215882)
-    ✓ Run 16/20 completed - Energy: 1.9124 (seed=702220675)
-    ✓ Run 17/20 completed - Energy: 1.8200 (seed=1963011372)
-    ✓ Run 18/20 completed - Energy: 1.6700 (seed=26834392)
-    ✓ Run 19/20 completed - Energy: 2.1875 (seed=1115085706)
-    ✓ Run 20/20 completed - Energy: 1.8889 (seed=992928303)
+    ✓ Run 1/20 completed - Energy: 2.1318 (seed=1254015729)
+    ✓ Run 3/20 completed - Energy: 1.6800 (seed=72255520)
+    ✓ Run 8/20 completed - Energy: 2.1800 (seed=1598036577)
+    ✓ Run 2/20 completed - Energy: 1.8600 (seed=136511159)
+    ✓ Run 11/20 completed - Energy: 1.8900 (seed=1276180632)
+    ✓ Run 12/20 completed - Energy: 1.7300 (seed=549712174)
+    ✓ Run 7/20 completed - Energy: 1.9604 (seed=104885592)
+    ✓ Run 13/20 completed - Energy: 0.9723 (seed=880479386)
+    ✓ Run 10/20 completed - Energy: 1.9779 (seed=716260182)
+    ✓ Run 14/20 completed - Energy: 2.4033 (seed=1712815882)
+    ✓ Run 4/20 completed - Energy: 1.7400 (seed=1147572173)
+    ✓ Run 15/20 completed - Energy: 1.7900 (seed=973758642)
+    ✓ Run 6/20 completed - Energy: 1.5500 (seed=1392537398)
+    ✓ Run 16/20 completed - Energy: 1.7700 (seed=1709002607)
+    ✓ Run 17/20 completed - Energy: 2.0923 (seed=684444004)
+    ✓ Run 18/20 completed - Energy: 1.8186 (seed=510707922)
+    ✓ Run 19/20 completed - Energy: 1.2153 (seed=1665302718)
+    ✓ Run 20/20 completed - Energy: 1.9956 (seed=1850121183)
+    ✓ Run 5/20 completed - Energy: 2.2300 (seed=414769320)
+    ✓ Run 9/20 completed - Energy: 1.6500 (seed=2060771684)
 
 The callback function receives three arguments:
 
@@ -148,8 +166,8 @@ To ensure reproducibility, provide a fixed list of seeds:
 seeds = [42, 123, 456, 789, 101112]
 
 # These runs will produce consistent results
-result1 = run_parallel(graph, n_points=100, k=2, n_runs=5, seeds=seeds, mp_context='fork')
-result2 = run_parallel(graph, n_points=100, k=2, n_runs=5, seeds=seeds, mp_context='fork')
+result1 = run_parallel(graph, n_points=100, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=5, seeds=seeds, mp_context='fork')
+result2 = run_parallel(graph, n_points=100, k=2, sampling_strategy=UniformNodeSampling(), initialization_strategy=KMeansPlusPlus(), robustification_strategy=MinimizeEnergy(), n_runs=5, seeds=seeds, mp_context='fork')
 
 # Results will be highly similar (same data, same initialization)
 ```
@@ -168,6 +186,9 @@ centers = run_parallel(
     graph,
     n_points=150,
     k=3,
+    sampling_strategy=UniformNodeSampling(),
+    initialization_strategy=KMeansPlusPlus(),
+    robustification_strategy=MinimizeEnergy(),
     n_runs=50,
     # SimulatedAnnealing parameters
     lambda0=2,             # Poisson intensity
@@ -224,8 +245,11 @@ graph = generate_sbm(sizes=[50, 50], p=[[0.8, 0.1], [0.1, 0.8]])
 best, all_results = run_parallel(
     graph,
     n_points=150,
-    k=2, 
-    n_runs=100, 
+    k=2,
+    sampling_strategy=UniformNodeSampling(),
+    initialization_strategy=KMeansPlusPlus(),
+    robustification_strategy=MinimizeEnergy(),
+    n_runs=100,
     return_all=True,
     mp_context='fork'
 )
@@ -245,10 +269,10 @@ print(f"\nFound optimal solution in {n_optimal}/100 runs ({n_optimal}%)")
 ```
 
     Energy statistics:
-      Min:    0.8230
-      Median: 1.4953
-      Max:    2.3400
-      Std:    0.2653
+      Min:    0.6311
+      Median: 1.5400
+      Max:    2.4133
+      Std:    0.2908
 
     Found optimal solution in 1/100 runs (1%)
 

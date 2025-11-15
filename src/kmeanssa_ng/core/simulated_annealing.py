@@ -165,7 +165,9 @@ class SimulatedAnnealing:
             ...     step_size=0.01
             ... )
         """
-        self._validate_constructor_parameters(observations, k, lambda0, beta0, step_size)
+        self._validate_constructor_parameters(
+            observations, k, lambda0, beta0, step_size
+        )
         self._initialize_random_generator(random_state)
 
         self._space = observations[0].space
@@ -206,7 +208,9 @@ class SimulatedAnnealing:
         try:
             float_value = float(value)
         except (TypeError, ValueError) as e:
-            raise ValueError(f"{name} must be a number, got {type(value).__name__}") from e
+            raise ValueError(
+                f"{name} must be a number, got {type(value).__name__}"
+            ) from e
         if float_value <= 0:
             raise ValueError(f"{name} must be positive, got {float_value}")
 
@@ -421,9 +425,7 @@ class SimulatedAnnealing:
                     time += h
                 distances = self.space.distances_from_centers(self._centers, point)
                 closest_idx = np.argmin(distances)
-                prop = min(
-                    (times[i + 1] - times[i]) * self._beta * np.log(1 + time), 1
-                )
+                prop = min((times[i + 1] - times[i]) * self._beta * np.log(1 + time), 1)
                 logger.debug(
                     "Drift: closest_center=%d, drift_prop=%.4f", closest_idx, prop
                 )
