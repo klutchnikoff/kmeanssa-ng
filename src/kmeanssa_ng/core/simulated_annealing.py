@@ -165,6 +165,31 @@ class SimulatedAnnealing:
             ...     step_size=0.01
             ... )
         """
+        self._validate_constructor_parameters(observations, k, lambda0, beta0, step_size)
+        self._initialize_random_generator(random_state)
+
+        self._space = observations[0].space
+        self._observations = observations.copy()
+        self._k = k
+        self._lambda = float(lambda0)
+        self._beta = float(beta0)
+        self._step_size = float(step_size)
+        self._energy_mode = energy_mode
+
+        # Use random.shuffle (global state) for consistency with rest of codebase
+        # If we used self._rng.shuffle, it would desynchronize from global state
+        random.shuffle(self._observations)
+        self._centers: list[Center] = []
+
+    def _validate_constructor_parameters(
+        self,
+        observations: list[Point],
+        k: int,
+        lambda0: float,
+        beta0: float,
+        step_size: float,
+    ) -> None:
+        """Validate parameters for the constructor."""
         if not observations:
             raise ValueError("Observations must be a non-empty list of points.")
         if k <= 0:
@@ -172,37 +197,23 @@ class SimulatedAnnealing:
         if any(obs.space != observations[0].space for obs in observations):
             raise ValueError("All observations must belong to the same metric space.")
 
-        # Validate lambda_param
-        try:
-            lambda_float = float(lambda0)
-        except (TypeError, ValueError) as e:
-            raise ValueError(
-                f"lambda_param must be a number, got {type(lambda0).__name__}"
-            ) from e
-        if lambda_float <= 0:
-            raise ValueError(f"lambda_param must be positive, got {lambda_float}")
+        self._validate_positive_float(lambda0, "lambda0")
+        self._validate_positive_float(beta0, "beta0")
+        self._validate_positive_float(step_size, "step_size")
 
-        # Validate beta
+    def _validate_positive_float(self, value: float, name: str) -> None:
+        """Validate that a value is a positive float."""
         try:
-            beta_float = float(beta0)
+            float_value = float(value)
         except (TypeError, ValueError) as e:
-            raise ValueError(
-                f"beta must be a number, got {type(beta0).__name__}"
-            ) from e
-        if beta_float <= 0:
-            raise ValueError(f"beta must be positive, got {beta_float}")
+            raise ValueError(f"{name} must be a number, got {type(value).__name__}") from e
+        if float_value <= 0:
+            raise ValueError(f"{name} must be positive, got {float_value}")
 
-        # Validate step_size
-        try:
-            step_size_float = float(step_size)
-        except (TypeError, ValueError) as e:
-            raise ValueError(
-                f"step_size must be a number, got {type(step_size).__name__}"
-            ) from e
-        if step_size_float <= 0:
-            raise ValueError(f"step_size must be positive, got {step_size_float}")
-
-        # Normalize random_state to numpy Generator (scikit-learn pattern)
+    def _initialize_random_generator(
+        self, random_state: int | np.random.Generator | None
+    ) -> None:
+        """Initialize the random number generator."""
         if isinstance(random_state, np.random.Generator):
             self._rng = random_state
         else:
@@ -212,19 +223,6 @@ class SimulatedAnnealing:
             if isinstance(random_state, int):
                 random.seed(random_state)
                 np.random.seed(random_state)
-
-        self._space = observations[0].space
-        self._observations = observations.copy()
-        self._k = k
-        self._lambda = lambda_float
-        self._beta = beta_float
-        self._step_size = step_size_float
-        self._energy_mode = energy_mode
-
-        # Use random.shuffle (global state) for consistency with rest of codebase
-        # If we used self._rng.shuffle, it would desynchronize from global state
-        random.shuffle(self._observations)
-        self._centers: list[Center] = []
 
     @property
     def n(self) -> int:
@@ -339,69 +337,12 @@ class SimulatedAnnealing:
         robust_prop: float = 0.0,
     ):
         """Run SA with interleaved drift and brownian motion."""
-        logger.info(
-            "Starting interleaved SA: k=%d, n_obs=%d, lambda0=%.3f, beta0=%.3f, "
-            "step_size=%.4f, robust_prop=%.2f",
-            self._k,
-            self.n,
-            self._lambda,
-            self._beta,
-            self._step_size,
+        return self._run_algorithm(
+            "interleaved",
+            initialization_strategy,
+            robustification_strategy,
             robust_prop,
         )
-
-        i0, strategy = self._prepare_run(
-            robust_prop, initialization_strategy, robustification_strategy
-        )
-        times = self._initialize_times(self.n)
-        time = 0.0
-
-        # Calculate progress logging interval (every 10%)
-        progress_interval = max(1, self.n // 10)
-
-        for i, point in enumerate(self._observations):
-            T = times[i]
-
-            # Log progress every 10%
-            if i % progress_interval == 0 and i > 0:
-                progress = 100 * i / self.n
-                logger.info(
-                    "Progress: %.1f%% (%d/%d observations processed)",
-                    progress,
-                    i,
-                    self.n,
-                )
-
-            logger.debug("Processing observation %d, target time T=%.4f", i, T)
-
-            while time <= T - self._step_size:
-                h = min(time + self._step_size, T) - time
-                prop = min(h * self._beta * np.log(1 + time), 1)
-
-                logger.debug(
-                    "Time step: time=%.4f, h=%.4f, drift_prop=%.4f", time, h, prop
-                )
-
-                for center in self._centers:
-                    center.brownian_motion(h)
-
-                distances = self.space.distances_from_centers(self._centers, point)
-                closest_idx = np.argmin(distances)
-                closest_center = self._centers[closest_idx]
-
-                closest_center.drift(point, prop)
-                time += h
-
-            if i >= i0:
-                strategy.collect(self)
-                logger.debug(
-                    "Collected centers for robustification at observation %d", i
-                )
-
-        result = strategy.get_result()
-        logger.info("Interleaved SA completed successfully")
-
-        return result
 
     def run_sequential(
         self,
@@ -410,9 +351,25 @@ class SimulatedAnnealing:
         robust_prop: float = 0.0,
     ):
         """Run SA with sequential brownian motion then drift."""
+        return self._run_algorithm(
+            "sequential",
+            initialization_strategy,
+            robustification_strategy,
+            robust_prop,
+        )
+
+    def _run_algorithm(
+        self,
+        mode: str,
+        initialization_strategy: InitializationStrategy,
+        robustification_strategy: RobustificationStrategy,
+        robust_prop: float = 0.0,
+    ):
+        """Core SA algorithm, supporting interleaved and sequential modes."""
         logger.info(
-            "Starting sequential SA: k=%d, n_obs=%d, lambda0=%.3f, beta0=%.3f, "
+            "Starting %s SA: k=%d, n_obs=%d, lambda0=%.3f, beta0=%.3f, "
             "step_size=%.4f, robust_prop=%.2f",
+            mode,
             self._k,
             self.n,
             self._lambda,
@@ -426,14 +383,11 @@ class SimulatedAnnealing:
         )
         times = self._initialize_times(self.n)
         time = 0.0
-
-        # Calculate progress logging interval (every 10%)
         progress_interval = max(1, self.n // 10)
 
-        for i, point in enumerate(self._observations, start=1):
-            T = times[i]
+        for i, point in enumerate(self._observations):
+            T = times[i] if mode == "interleaved" else times[i + 1]
 
-            # Log progress every 10%
             if i % progress_interval == 0 and i > 0:
                 progress = 100 * i / self.n
                 logger.info(
@@ -445,22 +399,36 @@ class SimulatedAnnealing:
 
             logger.debug("Processing observation %d, target time T=%.4f", i, T)
 
-            while time <= T - self._step_size:
-                h = min(time + self._step_size, T) - time
-                logger.debug("Brownian motion: time=%.4f, h=%.4f", time, h)
-                for center in self._centers:
-                    center.brownian_motion(h)
-                time += h
-
-            distances = self.space.distances_from_centers(self._centers, point)
-            closest_idx = np.argmin(distances)
-            closest_center = self._centers[closest_idx]
-
-            prop = min((times[i] - times[i - 1]) * self._beta * np.log(1 + time), 1)
-            logger.debug("Drift: closest_center=%d, drift_prop=%.4f", closest_idx, prop)
-            closest_center.drift(point, prop)
-
-            time = T
+            if mode == "interleaved":
+                while time <= T - self._step_size:
+                    h = min(time + self._step_size, T) - time
+                    prop = min(h * self._beta * np.log(1 + time), 1)
+                    logger.debug(
+                        "Time step: time=%.4f, h=%.4f, drift_prop=%.4f", time, h, prop
+                    )
+                    for center in self._centers:
+                        center.brownian_motion(h)
+                    distances = self.space.distances_from_centers(self._centers, point)
+                    closest_idx = np.argmin(distances)
+                    self._centers[closest_idx].drift(point, prop)
+                    time += h
+            else:  # sequential
+                while time <= T - self._step_size:
+                    h = min(time + self._step_size, T) - time
+                    logger.debug("Brownian motion: time=%.4f, h=%.4f", time, h)
+                    for center in self._centers:
+                        center.brownian_motion(h)
+                    time += h
+                distances = self.space.distances_from_centers(self._centers, point)
+                closest_idx = np.argmin(distances)
+                prop = min(
+                    (times[i + 1] - times[i]) * self._beta * np.log(1 + time), 1
+                )
+                logger.debug(
+                    "Drift: closest_center=%d, drift_prop=%.4f", closest_idx, prop
+                )
+                self._centers[closest_idx].drift(point, prop)
+                time = T
 
             if i >= i0:
                 strategy.collect(self)
@@ -469,6 +437,5 @@ class SimulatedAnnealing:
                 )
 
         result = strategy.get_result()
-        logger.info("Sequential SA completed successfully")
-
+        logger.info("%s SA completed successfully", mode.capitalize())
         return result

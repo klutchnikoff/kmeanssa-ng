@@ -61,7 +61,7 @@ class TestSimulatedAnnealing:
         graph = generate_simple_graph()
         points = graph.sample_points(10, strategy=UniformNodeSampling())
 
-        with pytest.raises(ValueError, match="lambda_param must be positive"):
+        with pytest.raises(ValueError, match="lambda0 must be positive"):
             SimulatedAnnealing(points, k=2, lambda0=-1)
 
     def test_zero_lambda_param_raises(self):
@@ -69,7 +69,7 @@ class TestSimulatedAnnealing:
         graph = generate_simple_graph()
         points = graph.sample_points(10, strategy=UniformNodeSampling())
 
-        with pytest.raises(ValueError, match="lambda_param must be positive"):
+        with pytest.raises(ValueError, match="lambda0 must be positive"):
             SimulatedAnnealing(points, k=2, lambda0=0)
 
     def test_non_numeric_lambda_param_raises(self):
@@ -77,7 +77,7 @@ class TestSimulatedAnnealing:
         graph = generate_simple_graph()
         points = graph.sample_points(10, strategy=UniformNodeSampling())
 
-        with pytest.raises(ValueError, match="lambda_param must be a number"):
+        with pytest.raises(ValueError, match="lambda0 must be a number"):
             SimulatedAnnealing(points, k=2, lambda0="invalid")
 
     def test_negative_beta_raises(self):
@@ -85,7 +85,7 @@ class TestSimulatedAnnealing:
         graph = generate_simple_graph()
         points = graph.sample_points(10, strategy=UniformNodeSampling())
 
-        with pytest.raises(ValueError, match="beta must be positive"):
+        with pytest.raises(ValueError, match="beta0 must be positive"):
             SimulatedAnnealing(points, k=2, beta0=-1.0)
 
     def test_zero_beta_raises(self):
@@ -93,7 +93,7 @@ class TestSimulatedAnnealing:
         graph = generate_simple_graph()
         points = graph.sample_points(10, strategy=UniformNodeSampling())
 
-        with pytest.raises(ValueError, match="beta must be positive"):
+        with pytest.raises(ValueError, match="beta0 must be positive"):
             SimulatedAnnealing(points, k=2, beta0=0.0)
 
     def test_non_numeric_beta_raises(self):
@@ -101,7 +101,7 @@ class TestSimulatedAnnealing:
         graph = generate_simple_graph()
         points = graph.sample_points(10, strategy=UniformNodeSampling())
 
-        with pytest.raises(ValueError, match="beta must be a number"):
+        with pytest.raises(ValueError, match="beta0 must be a number"):
             SimulatedAnnealing(points, k=2, beta0="invalid")
 
     def test_negative_step_size_raises(self):

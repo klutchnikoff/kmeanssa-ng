@@ -17,7 +17,7 @@ Le module fournit des générateurs pour créer facilement des variétés couran
 
 ### Exemple : Sphère 2D (plongée dans R³)
 
-```python
+```{python}
 from kmeanssa_ng.riemannian_manifold import create_sphere
 
 # Créer une sphère de dimension 2 (surface de la sphère dans R³)
@@ -26,7 +26,7 @@ sphere = create_sphere(dim=2)
 
 ### Exemple : Espace Hyperbolique 2D
 
-```python
+```{python}
 from kmeanssa_ng.riemannian_manifold import create_hyperbolic_space
 
 # Créer un espace hyperbolique de dimension 2
@@ -37,7 +37,7 @@ hyperbolic = create_hyperbolic_space(dim=2)
 
 Les points sont échantillonnés uniformément sur la variété selon la mesure naturelle (mesure de volume riemannienne).
 
-```python
+```{python}
 # Échantillonner 100 points uniformément sur la sphère
 points = sphere.sample_points(100)
 
@@ -51,7 +51,7 @@ Vous pouvez initialiser les centres de plusieurs façons :
 
 ### Option A : Échantillonnage Uniforme
 
-```python
+```{python}
 # Échantillonner k centres uniformément
 k = 3
 points_for_centers = sphere.sample_points(k, strategy=UniformManifoldSampling())
@@ -62,7 +62,7 @@ centers = [sphere.center_from_point(p) for p in points_for_centers]
 
 L'initialisation k-means++ donne généralement de meilleurs résultats en choisissant des centres bien espacés.
 
-```python
+```{python}
 # Utiliser k-means++ pour initialiser les centres
 # Note : Nécessite d'avoir déjà échantillonné des points (observations)
 from kmeanssa_ng.core.strategies.initialization import KMeansPlusPlus
@@ -75,7 +75,7 @@ centers = kpp_strategy.initialize_centers(sa)
 
 ## 4. Exécuter l'Algorithme de Recuit Simulé
 
-```python
+```{python}
 from kmeanssa_ng import SimulatedAnnealing
 
 # Configurer et exécuter l'algorithme
@@ -100,7 +100,7 @@ for i, center in enumerate(centers):
 
 ## 5. Calculer l'Énergie et les Clusters
 
-```python
+```{python}
 # Calculer l'énergie finale (somme des distances² aux centres les plus proches)
 energy = sphere.calculate_energy(centers)
 print(f"Énergie finale : {energy:.6f}")
@@ -113,7 +113,7 @@ sphere.compute_clusters(centers)
 
 Voici un exemple complet qui met tout ensemble :
 
-```python
+```{python}
 from kmeanssa_ng.riemannian_manifold import create_sphere
 from kmeanssa_ng import SimulatedAnnealing
 
@@ -161,7 +161,7 @@ for i, center in enumerate(final_centers):
 
 Pour des cas d'usage plus avancés, vous pouvez créer n'importe quelle variété supportée par Geomstats :
 
-```python
+```{python}
 from geomstats.geometry.hypersphere import Hypersphere
 from geomstats.geometry.special_orthogonal import SpecialOrthogonal
 from kmeanssa_ng.riemannian_manifold import RiemannianManifold
