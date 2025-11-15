@@ -1,6 +1,7 @@
 stages:
   - lint
   - test
+  - deploy
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -46,3 +47,10 @@ test-coverage:
         path: coverage.xml
     expire_in: 1 week
   allow_failure: false
+
+deploy:
+  stage: deploy
+  script:
+    - pdm publish
+  only:
+    - tags
