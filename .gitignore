@@ -44,3 +44,4 @@ __pypackages__/
 .claude/
 nohup.out
 .benchmarks/
+.aider*
