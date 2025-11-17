@@ -58,6 +58,7 @@ object.
 # Example setup
 from kmeanssa_ng import generate_sbm
 from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
+from kmeanssa_ng.core.strategies.robustification import MinimizeEnergy # Added import
 
 # Generate space and data
 my_space = generate_sbm(sizes=[50, 50], p=[[0.8, 0.1], [0.1, 0.8]])
@@ -74,7 +75,10 @@ my_strategy = MyFixedInit(predefined_centers)
 
 # Run the algorithm with your strategy
 sa = SimulatedAnnealing(observations, k=k)
-final_centers = sa.run_interleaved(initialization_strategy=my_strategy)
+final_centers = sa.run(
+    initialization_strategy=my_strategy,
+    robustification_strategy=MinimizeEnergy() # Added robustification_strategy
+)
 
 print("\nClustering completed successfully using a custom strategy.")
 ```

@@ -59,13 +59,13 @@ To optimize performance, `MinimizeEnergy` and its core component,
 The following table compares the different robustification strategies.
 `MostFrequentNode` is used as the baseline reference (1.0x).
 
-| Strategy         | Implementation | Mode    | Mean Time   | Ratio vs. MostFrequentNode |
-|:-----------------|:---------------|:--------|:------------|:---------------------------|
-| MostFrequentNode | \-             | \-      | 75.53 µs    | 1.0x                       |
-| MinimizeEnergy   | Numba          | uniform | 887.46 µs   | **11.75x (slower)**        |
-| MinimizeEnergy   | Numba          | obs     | 991.32 µs   | **13.13x (slower)**        |
-| MinimizeEnergy   | Python         | uniform | 21690.35 µs | **287.19x (slower)**       |
-| MinimizeEnergy   | Python         | obs     | 22403.76 µs | **296.64x (slower)**       |
+| Strategy | Implementation | Mode | Mean Time | Ratio vs. MostFrequentNode |
+|:---|:---|:---|:---|:---|
+| MostFrequentNode | \- | \- | 75.53 µs | 1.0x |
+| MinimizeEnergy | Numba | uniform | 887.46 µs | **11.75x (slower)** |
+| MinimizeEnergy | Numba | obs | 991.32 µs | **13.13x (slower)** |
+| MinimizeEnergy | Python | uniform | 21690.35 µs | **287.19x (slower)** |
+| MinimizeEnergy | Python | obs | 22403.76 µs | **296.64x (slower)** |
 
 The `MinimizeEnergy` strategy is significantly slower than
 `MostFrequentNode` because it relies on the `calculate_energy` function,
@@ -141,22 +141,22 @@ operations, including mean, min, and max execution times.
 
 ![](performance_files/figure-commonmark/cell-4-output-14.png)
 
-| Benchmark                      | Mean Time (µs) | Min Time (µs) | Max Time (µs) | Rounds |
-|:-------------------------------|---------------:|--------------:|--------------:|-------:|
-| Mostfrequentnode               |          75.53 |         72.67 |        240.46 |   8912 |
-| Minimize Energy Uniform        |         887.46 |        877.21 |       1037.54 |   1096 |
-| Minimize Energy Obs            |         991.32 |        981.08 |       1157.71 |    986 |
-| Minimize Energy Uniform Python |        21690.3 |       21474.6 |       22081.1 |     46 |
-| Minimize Energy Obs Python     |        22403.8 |       22251.5 |       22851.9 |     45 |
+| Benchmark | Mean Time (µs) | Min Time (µs) | Max Time (µs) | Rounds |
+|:---|---:|---:|---:|---:|
+| Mostfrequentnode | 75.53 | 72.67 | 240.46 | 8912 |
+| Minimize Energy Uniform | 887.46 | 877.21 | 1037.54 | 1096 |
+| Minimize Energy Obs | 991.32 | 981.08 | 1157.71 | 986 |
+| Minimize Energy Uniform Python | 21690.3 | 21474.6 | 22081.1 | 46 |
+| Minimize Energy Obs Python | 22403.8 | 22251.5 | 22851.9 | 45 |
 
 ### Simulated Annealing
 
 ![](performance_files/figure-commonmark/cell-4-output-17.png)
 
-| Benchmark                           | Mean Time (µs) | Min Time (µs) | Max Time (µs) | Rounds |
-|:------------------------------------|---------------:|--------------:|--------------:|-------:|
-| Sequential Small                    |        1318.44 |       1205.63 |       1706.79 |    738 |
-| Interleaved Small                   |        1461.48 |        1168.5 |       1769.21 |    299 |
-| Interleaved Mostfrequentnode Medium |        4341.57 |       4055.17 |       4840.63 |    213 |
-| Interleaved Medium                  |        4390.18 |       3989.96 |       4841.08 |    222 |
-| Sequential Medium                   |           4681 |       4397.58 |       4893.62 |    211 |
+| Benchmark | Mean Time (µs) | Min Time (µs) | Max Time (µs) | Rounds |
+|:---|---:|---:|---:|---:|
+| Sequential Small | 1318.44 | 1205.63 | 1706.79 | 738 |
+| Interleaved Small | 1461.48 | 1168.5 | 1769.21 | 299 |
+| Interleaved Mostfrequentnode Medium | 4341.57 | 4055.17 | 4840.63 | 213 |
+| Interleaved Medium | 4390.18 | 3989.96 | 4841.08 | 222 |
+| Sequential Medium | 4681 | 4397.58 | 4893.62 | 211 |

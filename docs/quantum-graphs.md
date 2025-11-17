@@ -161,9 +161,9 @@ for node in ['A', 'B', 'C']:
 ```
 
     Observations per node (approximate):
-      Node A (weight=1.0): 349 observations
-      Node B (weight=5.0): 352 observations
-      Node C (weight=1.0): 299 observations
+      Node A (weight=1.0): 328 observations
+      Node B (weight=5.0): 315 observations
+      Node C (weight=1.0): 357 observations
 
 You should see approximately a 1:5:1 ratio matching the node weights
 (A=1.0, B=5.0, C=1.0). Points are sampled proportionally to the combined

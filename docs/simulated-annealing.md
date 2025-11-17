@@ -229,7 +229,9 @@ sa = SimulatedAnnealing(
 ```
 
 <!-- TODO: Add empirical results showing performance with different parameter settings -->
+
 <!-- TODO: Add section on parameter tuning strategies -->
+
 <!-- TODO: Discuss computational cost vs. quality tradeoffs -->
 
 ### Theoretical Foundation
@@ -238,7 +240,9 @@ For detailed mathematical derivations and theoretical justification of
 these parameters, see:
 
 <!-- TODO: Add your HAL/ArXiv reference here -->
+
 <!-- [1] Your Name. "Title of your paper". HAL/ArXiv, 2025. -->
+
 <!--     URL: https://... -->
 
 ## Robustification
