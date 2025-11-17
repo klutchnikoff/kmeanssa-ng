@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Render README.qmd to README.md
-quarto render docs-src/README.qmd -o README.md --execute
+quarto render docs-src/README.qmd --to gfm -o README.md --execute
 
 # Generate performance documentation from benchmark results
 python scripts/generate_benchmark_docs.py
