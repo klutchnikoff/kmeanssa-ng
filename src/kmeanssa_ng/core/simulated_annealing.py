@@ -317,8 +317,6 @@ class SimulatedAnnealing:
             return self.space.calculate_energy_numba(centers, how=self._energy_mode)
         return self.space.calculate_energy(centers, how=self._energy_mode)
 
-
-
     def run(
         self,
         initialization_strategy: InitializationStrategy,
