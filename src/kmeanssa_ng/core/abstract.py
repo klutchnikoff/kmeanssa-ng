@@ -169,3 +169,19 @@ class Space(ABC):
     def center_from_point(self, point: Point) -> Center:
         """Create a Center object from a Point object."""
         raise NotImplementedError
+
+    @abstractmethod
+    def frechet_mean(self, points: list[Point]) -> Center:
+        """Compute the Fréchet mean (barycenter) of a list of points.
+
+        The Fréchet mean is the point that minimizes the sum of squared
+        distances to the given points. This is used to update cluster centers
+        in generalized Lloyd's algorithm.
+
+        Args:
+            points: A list of Point objects for which to compute the Fréchet mean.
+
+        Returns:
+            A Center object representing the Fréchet mean of the input points.
+        """
+        raise NotImplementedError

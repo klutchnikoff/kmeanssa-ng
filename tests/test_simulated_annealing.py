@@ -367,7 +367,7 @@ class TestSimulatedAnnealing:
         """Test that MostFrequentNode raises TypeError on a non-graph space."""
         # MostFrequentNode is now in quantum_graph package
         from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
-        from kmeanssa_ng.core.abstract import Space
+        from kmeanssa_ng.core.abstract import Space, Point, Center
 
         # 1. Create a dummy space that is not a QuantumGraph
         class DummySpace(Space):
@@ -385,6 +385,10 @@ class TestSimulatedAnnealing:
 
             def center_from_point(self, point):
                 return point
+
+            def frechet_mean(self, points: list[Point]) -> Center:
+                # Dummy implementation for testing purposes
+                return points[0] if points else None
 
             def sample_centers(self, k: int) -> list:
                 return [1] * k

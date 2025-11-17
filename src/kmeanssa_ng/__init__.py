@@ -33,6 +33,7 @@ from .core import (
     Point,
     SimulatedAnnealing,
     Space,
+    Lloyd,
     run_parallel,
     run_parallel_with_callback,
 )
@@ -71,6 +72,7 @@ __all__ = [
     "Center",
     "Space",
     "SimulatedAnnealing",
+    "Lloyd",
     # Parallel execution
     "run_parallel",
     "run_parallel_with_callback",
