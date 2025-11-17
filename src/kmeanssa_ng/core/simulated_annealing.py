@@ -41,7 +41,7 @@ class SimulatedAnnealing:
 
         # Run simulated annealing with the interleaved algorithm
         sa = SimulatedAnnealing(points, k=5)
-        centers = sa.run_interleaved(robust_prop=0.1)
+        centers = sa.run(robust_prop=0.1)
         ```
     """
 
@@ -317,63 +317,23 @@ class SimulatedAnnealing:
             return self.space.calculate_energy_numba(centers, how=self._energy_mode)
         return self.space.calculate_energy(centers, how=self._energy_mode)
 
-    def _prepare_run(
-        self,
-        robust_prop: float,
-        initialization_strategy: InitializationStrategy,
-        robustification_strategy: RobustificationStrategy,
-    ) -> tuple[int, RobustificationStrategy]:
-        """Prepare the simulation by initializing centers and strategy."""
-        if robust_prop < 0 or robust_prop > 1:
-            raise ValueError("The proportion must be in [0,1]")
 
-        i0 = int(np.floor((self.n - 1) * (1 - robust_prop)))
 
-        self._centers = initialization_strategy.initialize_centers(self)
-
-        robustification_strategy.initialize(self)
-        return i0, robustification_strategy
-
-    def run_interleaved(
+    def run(
         self,
         initialization_strategy: InitializationStrategy,
         robustification_strategy: RobustificationStrategy,
         robust_prop: float = 0.0,
     ):
-        """Run SA with interleaved drift and brownian motion."""
-        return self._run_algorithm(
-            "interleaved",
-            initialization_strategy,
-            robustification_strategy,
-            robust_prop,
-        )
+        """Run the simulated annealing algorithm.
 
-    def run_sequential(
-        self,
-        initialization_strategy: InitializationStrategy,
-        robustification_strategy: RobustificationStrategy,
-        robust_prop: float = 0.0,
-    ):
-        """Run SA with sequential brownian motion then drift."""
-        return self._run_algorithm(
-            "sequential",
-            initialization_strategy,
-            robustification_strategy,
-            robust_prop,
-        )
-
-    def _run_algorithm(
-        self,
-        mode: str,
-        initialization_strategy: InitializationStrategy,
-        robustification_strategy: RobustificationStrategy,
-        robust_prop: float = 0.0,
-    ):
-        """Core SA algorithm, supporting interleaved and sequential modes."""
+        This is the primary method to execute the simulated annealing algorithm.
+        It performs an interleaved sequence of Brownian motion (exploration)
+        and drift (exploitation) for the cluster centers.
+        """
         logger.info(
-            "Starting %s SA: k=%d, n_obs=%d, lambda0=%.3f, beta0=%.3f, "
+            "Starting SA: k=%d, n_obs=%d, lambda0=%.3f, beta0=%.3f, "
             "step_size=%.4f, robust_prop=%.2f",
-            mode,
             self._k,
             self.n,
             self._lambda,
@@ -382,15 +342,22 @@ class SimulatedAnnealing:
             robust_prop,
         )
 
-        i0, strategy = self._prepare_run(
-            robust_prop, initialization_strategy, robustification_strategy
-        )
+        if robust_prop < 0 or robust_prop > 1:
+            raise ValueError("The proportion must be in [0,1]")
+
+        i0 = int(np.floor((self.n - 1) * (1 - robust_prop)))
+
+        self._centers = initialization_strategy.initialize_centers(self)
+
+        robustification_strategy.initialize(self)
+        strategy = robustification_strategy
+
         times = self._initialize_times(self.n)
         time = 0.0
         progress_interval = max(1, self.n // 10)
 
         for i, point in enumerate(self._observations):
-            T = times[i] if mode == "interleaved" else times[i + 1]
+            T = times[i]
 
             if i % progress_interval == 0 and i > 0:
                 progress = 100 * i / self.n
@@ -403,34 +370,18 @@ class SimulatedAnnealing:
 
             logger.debug("Processing observation %d, target time T=%.4f", i, T)
 
-            if mode == "interleaved":
-                while time <= T - self._step_size:
-                    h = min(time + self._step_size, T) - time
-                    prop = min(h * self._beta * np.log(1 + time), 1)
-                    logger.debug(
-                        "Time step: time=%.4f, h=%.4f, drift_prop=%.4f", time, h, prop
-                    )
-                    for center in self._centers:
-                        center.brownian_motion(h)
-                    distances = self.space.distances_from_centers(self._centers, point)
-                    closest_idx = np.argmin(distances)
-                    self._centers[closest_idx].drift(point, prop)
-                    time += h
-            else:  # sequential
-                while time <= T - self._step_size:
-                    h = min(time + self._step_size, T) - time
-                    logger.debug("Brownian motion: time=%.4f, h=%.4f", time, h)
-                    for center in self._centers:
-                        center.brownian_motion(h)
-                    time += h
+            while time <= T - self._step_size:
+                h = min(time + self._step_size, T) - time
+                prop = min(h * self._beta * np.log(1 + time), 1)
+                logger.debug(
+                    "Time step: time=%.4f, h=%.4f, drift_prop=%.4f", time, h, prop
+                )
+                for center in self._centers:
+                    center.brownian_motion(h)
                 distances = self.space.distances_from_centers(self._centers, point)
                 closest_idx = np.argmin(distances)
-                prop = min((times[i + 1] - times[i]) * self._beta * np.log(1 + time), 1)
-                logger.debug(
-                    "Drift: closest_center=%d, drift_prop=%.4f", closest_idx, prop
-                )
                 self._centers[closest_idx].drift(point, prop)
-                time = T
+                time += h
 
             if i >= i0:
                 strategy.collect(self)
@@ -439,5 +390,5 @@ class SimulatedAnnealing:
                 )
 
         result = strategy.get_result()
-        logger.info("%s SA completed successfully", mode.capitalize())
+        logger.info("SA completed successfully")
         return result

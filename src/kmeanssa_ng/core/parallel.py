@@ -26,7 +26,6 @@ def _run_with_seed(
     n_points: int,
     k: int,
     seed: int,
-    algorithm: Literal["interleaved", "sequential"],
     lambda0: float,
     beta0: float,
     step_size: float,
@@ -45,7 +44,6 @@ def _run_with_seed(
         n_points: Number of points to sample.
         k: Number of clusters.
         seed: Random seed for reproducibility.
-        algorithm: Which algorithm to use ("interleaved" or "sequential").
         lambda0: Poisson process intensity parameter.
         beta0: Inverse temperature parameter.
         step_size: Time step size.
@@ -79,18 +77,11 @@ def _run_with_seed(
     )
 
     # Run the algorithm
-    if algorithm == "interleaved":
-        centers = sa.run_interleaved(
-            initialization_strategy=initialization_strategy,
-            robustification_strategy=robustification_strategy,
-            robust_prop=robust_prop,
-        )
-    else:  # sequential
-        centers = sa.run_sequential(
-            initialization_strategy=initialization_strategy,
-            robustification_strategy=robustification_strategy,
-            robust_prop=robust_prop,
-        )
+    centers = sa.run(
+        initialization_strategy=initialization_strategy,
+        robustification_strategy=robustification_strategy,
+        robust_prop=robust_prop,
+    )
 
     # Calculate final energy
     energy = sa.calculate_energy_fallback(centers, observations)
@@ -106,7 +97,6 @@ def run_parallel(
     initialization_strategy: InitializationStrategy,
     robustification_strategy: RobustificationStrategy,
     n_runs: int = 10,
-    algorithm: Literal["interleaved", "sequential"] = "interleaved",
     lambda0: float = 1,
     beta0: float = 1.0,
     step_size: float = 0.1,
@@ -129,7 +119,6 @@ def run_parallel(
         n_points: Number of points to sample for each run.
         k: Number of clusters.
         n_runs: Number of parallel runs to execute.
-        algorithm: Which algorithm variant to use ("interleaved" or "sequential").
         lambda_param: Poisson process intensity parameter (must be > 0).
         beta: Inverse temperature parameter (must be > 0).
         step_size: Time step for updating centers (must be > 0).
@@ -217,7 +206,6 @@ def run_parallel(
                 n_points,
                 k,
                 seed,
-                algorithm,
                 lambda0,
                 beta0,
                 step_size,
@@ -253,7 +241,6 @@ def run_parallel_with_callback(
     initialization_strategy: InitializationStrategy,
     robustification_strategy: RobustificationStrategy,
     n_runs: int = 10,
-    algorithm: Literal["interleaved", "sequential"] = "interleaved",
     lambda0: float = 1.0,
     beta0: float = 1.0,
     step_size: float = 0.1,
@@ -275,7 +262,6 @@ def run_parallel_with_callback(
         n_points: Number of points to sample for each run.
         k: Number of clusters.
         n_runs: Number of parallel runs to execute.
-        algorithm: Which algorithm variant to use.
         lambda_param: Poisson process intensity parameter.
         beta: Inverse temperature parameter.
         step_size: Time step for updating centers.
@@ -351,7 +337,6 @@ def run_parallel_with_callback(
                 n_points,
                 k,
                 seed,
-                algorithm,
                 lambda0,
                 beta0,
                 step_size,

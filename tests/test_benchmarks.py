@@ -142,8 +142,8 @@ class TestBenchmarks:
         result = benchmark(KMeansPlusPlus().initialize_centers, sa)
         assert len(result) == 5
 
-    def test_benchmark_sa_interleaved_small(self, benchmark, small_graph_precomputed):
-        """Benchmark interleaved SA algorithm on small graph (50 points, k=2).
+    def test_benchmark_sa_small(self, benchmark, small_graph_precomputed):
+        """Benchmark SA algorithm on small graph (50 points, k=2).
 
         This is the main clustering algorithm.
         """
@@ -153,15 +153,15 @@ class TestBenchmarks:
         sa = SimulatedAnnealing(points, k=2, lambda0=1.0, beta0=1.0, step_size=0.1)
 
         result = benchmark(
-            sa.run_interleaved,
+            sa.run,
             initialization_strategy=KMeansPlusPlus(),
             robustification_strategy=MinimizeEnergy(),
         )
         assert len(result) == 2
 
     @pytest.mark.slow
-    def test_benchmark_sa_interleaved_medium(self, benchmark, medium_graph_precomputed):
-        """Benchmark interleaved SA algorithm on medium graph (150 points, k=3).
+    def test_benchmark_sa_medium(self, benchmark, medium_graph_precomputed):
+        """Benchmark SA algorithm on medium graph (150 points, k=3).
 
         This test is marked as slow and can be skipped with: -m "not slow"
         """
@@ -171,49 +171,14 @@ class TestBenchmarks:
         sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1)
 
         result = benchmark(
-            sa.run_interleaved,
-            initialization_strategy=KMeansPlusPlus(),
-            robustification_strategy=MinimizeEnergy(),
-        )
-        assert len(result) == 3
-
-    def test_benchmark_sa_sequential_small(self, benchmark, small_graph_precomputed):
-        """Benchmark sequential SA algorithm on small graph (50 points, k=2).
-
-        Compares sequential vs interleaved algorithm performance.
-        """
-        points = small_graph_precomputed.sample_points(
-            50, strategy=UniformNodeSampling()
-        )
-        sa = SimulatedAnnealing(points, k=2, lambda0=1.0, beta0=1.0, step_size=0.1)
-
-        result = benchmark(
-            sa.run_sequential,
-            initialization_strategy=KMeansPlusPlus(),
-            robustification_strategy=MinimizeEnergy(),
-        )
-        assert len(result) == 2
-
-    @pytest.mark.slow
-    def test_benchmark_sa_sequential_medium(self, benchmark, medium_graph_precomputed):
-        """Benchmark sequential SA algorithm on medium graph (150 points, k=3).
-
-        This test is marked as slow and can be skipped with: -m "not slow"
-        """
-        points = medium_graph_precomputed.sample_points(
-            150, strategy=UniformNodeSampling()
-        )
-        sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1)
-
-        result = benchmark(
-            sa.run_sequential,
+            sa.run,
             initialization_strategy=KMeansPlusPlus(),
             robustification_strategy=MinimizeEnergy(),
         )
         assert len(result) == 3
 
     @pytest.mark.slow
-    def test_benchmark_sa_interleaved_mostfrequentnode_medium(
+    def test_benchmark_sa_mostfrequentnode_medium(
         self, benchmark, medium_graph_precomputed
     ):
         points = medium_graph_precomputed.sample_points(
@@ -222,7 +187,7 @@ class TestBenchmarks:
         sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1)
 
         result = benchmark(
-            sa.run_interleaved,
+            sa.run,
             initialization_strategy=KMeansPlusPlus(),
             robustification_strategy=MostFrequentNode(),
         )
