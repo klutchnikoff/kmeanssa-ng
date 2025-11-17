@@ -118,22 +118,6 @@ class TestRunParallel:
         for e1, e2 in zip(energies1, energies2):
             assert abs(e1 - e2) < max(e1, e2) * 0.95  # Within 95% of each other
 
-    def test_parallel_with_sequential_algorithm(self, simple_graph):
-        """Test parallel execution with sequential algorithm."""
-        centers = run_parallel(
-            simple_graph,
-            n_points=20,
-            k=2,
-            sampling_strategy=UniformNodeSampling(),
-            initialization_strategy=KMeansPlusPlus(),
-            robustification_strategy=MinimizeEnergy(),
-            n_runs=3,
-            algorithm="sequential",
-            n_jobs=2,
-        )
-
-        assert len(centers) == 2
-
     def test_parallel_with_different_parameters(self, simple_graph):
         """Test parallel execution with custom parameters."""
         centers = run_parallel(
@@ -311,7 +295,6 @@ class TestWorkerFunction:
                 n_points=10,
                 k=2,
                 seed=42,
-                algorithm="interleaved",
                 lambda0=1,
                 beta0=1.0,
                 step_size=0.1,

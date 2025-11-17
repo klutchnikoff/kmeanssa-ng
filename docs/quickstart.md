@@ -75,7 +75,7 @@ sa = SimulatedAnnealing(
 )
 
 # Get cluster centers. The robustification strategy ensures these are node IDs.
-centers = sa.run_interleaved(
+centers = sa.run(
     robust_prop=0.1,  # 10% robustness
     initialization_strategy=KMeansPlusPlus(),  # K-means++ initialization
     robustification_strategy=MostFrequentNode(),  # Choose centers as most frequent nodes in clusters
@@ -87,8 +87,8 @@ for center in centers:
 ```
 
     Cluster centers (position in edge):
-    Center near node 44 [edge (44, 48), pos=0.000]
-    Center near node 23 [edge (23, 10), pos=0.000]
+    Center near node 68 [edge (68, 57), pos=0.000]
+    Center near node 18 [edge (18, 42), pos=0.000]
 
 ## 4. Visualize the Results
 

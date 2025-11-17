@@ -135,7 +135,7 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2, lambda0=1, beta0=1.0, step_size=0.1)
 
-        centers = sa.run_interleaved(
+        centers = sa.run(
             initialization_strategy=RandomInit(),
             robustification_strategy=MinimizeEnergy(),
             robust_prop=0.0,
@@ -152,7 +152,7 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_interleaved(
+        centers = sa.run(
             initialization_strategy=KMeansPlusPlus(),
             robustification_strategy=MinimizeEnergy(),
         )
@@ -165,7 +165,7 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(20, strategy=UniformNodeSampling())
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_interleaved(
+        centers = sa.run(
             initialization_strategy=KMeansPlusPlus(),
             robustification_strategy=MinimizeEnergy(),
             robust_prop=0.1,
@@ -180,30 +180,18 @@ class TestSimulatedAnnealing:
         sa = SimulatedAnnealing(points, k=2)
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run_interleaved(
+            sa.run(
                 initialization_strategy=KMeansPlusPlus(),
                 robustification_strategy=MinimizeEnergy(),
                 robust_prop=1.5,
             )
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run_interleaved(
+            sa.run(
                 initialization_strategy=KMeansPlusPlus(),
                 robustification_strategy=MinimizeEnergy(),
                 robust_prop=-0.1,
             )
-
-    def test_sequential_algorithm(self):
-        """Test running the sequential algorithm."""
-        graph = generate_simple_graph()
-        points = graph.sample_points(20, strategy=UniformNodeSampling())
-        sa = SimulatedAnnealing(points, k=2)
-
-        centers = sa.run_sequential(
-            initialization_strategy=KMeansPlusPlus(),
-            robustification_strategy=MinimizeEnergy(),
-        )
-        assert len(centers) == 2
 
     def test_calculate_energy_fallback(self):
         """Test energy calculation."""
@@ -250,7 +238,7 @@ class TestSimulatedAnnealing:
         assert sa.centers == []
 
         # After running, should have centers
-        sa.run_interleaved(
+        sa.run(
             initialization_strategy=KMeansPlusPlus(),
             robustification_strategy=MinimizeEnergy(),
         )
@@ -266,7 +254,7 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=1)
 
-        centers = sa.run_interleaved(
+        centers = sa.run(
             initialization_strategy=KMeansPlusPlus(),
             robustification_strategy=MostFrequentNode(),
             robust_prop=0.1,
@@ -287,7 +275,7 @@ class TestSimulatedAnnealing:
         points = graph.sample_points(20, strategy=UniformNodeSampling())
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_interleaved(
+        centers = sa.run(
             initialization_strategy=KMeansPlusPlus(),
             robustification_strategy=MostFrequentNode(),
         )
@@ -303,14 +291,14 @@ class TestSimulatedAnnealing:
         sa = SimulatedAnnealing(points, k=1)
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run_interleaved(
+            sa.run(
                 initialization_strategy=KMeansPlusPlus(),
                 robustification_strategy=MostFrequentNode(),
                 robust_prop=1.5,
             )
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run_interleaved(
+            sa.run(
                 initialization_strategy=KMeansPlusPlus(),
                 robustification_strategy=MostFrequentNode(),
                 robust_prop=-0.1,
@@ -324,14 +312,14 @@ class TestSimulatedAnnealing:
         sa = SimulatedAnnealing(points, k=2)
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run_interleaved(
+            sa.run(
                 initialization_strategy=KMeansPlusPlus(),
                 robustification_strategy=MostFrequentNode(),
                 robust_prop=1.5,
             )
 
         with pytest.raises(ValueError, match=r"proportion must be in \[0,1\]"):
-            sa.run_interleaved(
+            sa.run(
                 initialization_strategy=KMeansPlusPlus(),
                 robustification_strategy=MostFrequentNode(),
                 robust_prop=-0.1,
@@ -346,7 +334,7 @@ class TestSimulatedAnnealing:
 
         sa = SimulatedAnnealing(points, k=2)
 
-        centers = sa.run_interleaved(
+        centers = sa.run(
             initialization_strategy=KMeansPlusPlus(),
             robustification_strategy=MostFrequentNode(),
         )
@@ -435,7 +423,7 @@ class TestIntegration:
 
         # Run simulated annealing
         sa = SimulatedAnnealing(points, k=2, lambda0=1, beta0=2.0)
-        centers = sa.run_interleaved(
+        centers = sa.run(
             initialization_strategy=KMeansPlusPlus(),
             robustification_strategy=MinimizeEnergy(),
             robust_prop=0.1,
