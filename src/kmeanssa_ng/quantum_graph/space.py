@@ -891,8 +891,7 @@ class QuantumGraph(nx.Graph, Space):
             )
 
 
-
-    def frechet_mean(self, points: list[Point]) -> QGCenter:
+    def frechet_mean(self, points: list[QGPoint]) -> QGCenter:
         """Compute the Fréchet mean (barycenter) of a list of points.
 
         For QuantumGraph, this is approximated by finding the most frequent

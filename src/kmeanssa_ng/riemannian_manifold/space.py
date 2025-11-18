@@ -151,7 +151,7 @@ class RiemannianManifold(Space):
 
         return total_energy / len(self.observations)
 
-    def frechet_mean(self, points: list[Point]) -> RiemannianCenter:
+    def frechet_mean(self, points: list[RiemannianPoint]) -> RiemannianCenter:
         """Compute the Fréchet mean (Karcher mean) of a list of points.
 
         Uses geomstats' metric.mean() method to compute the Karcher mean.

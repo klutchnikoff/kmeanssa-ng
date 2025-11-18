@@ -11,7 +11,7 @@ from .abstract import Center, Point, Space
 from .strategies.initialization import InitializationStrategy
 
 if TYPE_CHECKING:
-    from .strategies.robustification import RobustificationStrategy
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -107,24 +107,6 @@ class Lloyd:
         )
 
         self._centers = initialization_strategy.initialize_centers(self)
-
-        for i in range(max_iter):
-            old_centers = [center.clone() for center in self._centers]
-
-            # Assignment step
-            # This will require a method to assign points to clusters,
-            # which can be done by finding the closest center for each point.
-            # We'll need to implement this logic.
-
-            # Update step (Fréchet mean)
-            # This will require the frechet_mean method in the Space class.
-            # We'll implement this after adding the abstract method to Space.
-
-            # Check for convergence
-            # This will require calculating the change in centers.
-
-            if i % 10 == 0:
-                logger.info("Iteration %d: (add convergence info here)", i)
 
         logger.info("Lloyd's algorithm completed successfully.")
         return self._centers
