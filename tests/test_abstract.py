@@ -11,14 +11,12 @@ class DummySpace(Space):
     def distance(self, p1: Point, p2: Point) -> float:
         return super().distance(p1, p2)
 
-    def compute_clusters(self, centers: list[Center]) -> None:
-        return super().compute_clusters(centers)
-
     def calculate_energy(self, centers: list[Center]) -> float:
         return super().calculate_energy(centers)
 
     def distances_from_centers(self, centers: list[Center], target: Point):
         return super().distances_from_centers(centers, target)
+
 
     def center_from_point(self, point: Point) -> Center:
         return super().center_from_point(point)
@@ -68,7 +66,7 @@ def test_abstract_methods_raise_not_implemented():
         space.distance(point, point)
 
     with pytest.raises(NotImplementedError):
-        space.compute_clusters([center])
+        space.assign_clusters([point], [center])
 
     with pytest.raises(NotImplementedError):
         space.calculate_energy([center])

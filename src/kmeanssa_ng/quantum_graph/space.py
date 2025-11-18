@@ -575,22 +575,6 @@ class QuantumGraph(nx.Graph, Space):
             self._pairwise_nodes_distance_array,
         )
 
-    def light_sample_points(self, n: int) -> list[QGPoint]:
-        """Fast sampling of points at random nodes.
-
-        Args:
-            n: Number of points to sample.
-
-        Returns:
-            List of n points at random nodes.
-        """
-        nodes = rd.choices(list(self.nodes()), k=n)
-        points = []
-        for node in nodes:
-            neighbor = rd.choice(list(self.neighbors(node)))
-            points.append(QGPoint(self, (node, neighbor), 0))
-        return points
-
     def center_from_point(self, point: QGPoint) -> QGCenter:
         """Create a QGCenter object from a QGPoint object."""
         return QGCenter(point)
@@ -619,20 +603,6 @@ class QuantumGraph(nx.Graph, Space):
         neighbor = rd.choice(list(self.neighbors(node)))
         point = QGPoint(self, (node, neighbor), 0)
         return QGCenter(point)
-
-    def compute_clusters(self, centers: list[QGCenter]) -> None:
-        """Assign each node to its nearest center.
-
-        Updates node 'cluster' attribute.
-
-        Args:
-            centers: List of cluster centers.
-        """
-        for node in self.nodes:
-            distances = np.array(
-                [self.node_distance(center.edge[0], node) for center in centers]
-            )
-            nx.set_node_attributes(self, {node: {"cluster": np.argmin(distances)}})
 
     def calculate_energy(
         self,

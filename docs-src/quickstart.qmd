@@ -76,13 +76,25 @@ for center in centers:
 
 ## 4. Visualize the Results
 
-Finally, we visualize the graph, the data points, and the resulting cluster centers using the built-in plotting capabilities of `kmeanssa-ng`. Note that you need to install the `plot` extras for this: `pip install kmeanssa-ng[plot]`.
+Finally, we visualize the graph and the resulting cluster centers.
+
+The `draw()` method can color nodes based on a `"cluster"` attribute. To get the cluster assignments, we use the `assign_clusters()` method. This is a **stateless** operation that returns a list of cluster labels for a given list of points. We can then use these labels to set the node attributes for visualization.
 
 ```{python}
 import matplotlib.pyplot as plt
+import networkx as nx
 
-# Compute cluster assignments for all nodes
-graph.compute_clusters(centers)
+# Get the nodes as a list of points
+nodes_as_points = graph.nodes_as_points()
+
+# Assign each node to the nearest center and get the labels
+labels = graph.assign_clusters(nodes_as_points, centers)
+
+# Create a dictionary to map node IDs to cluster labels
+node_to_cluster = {node.closest_node(): label for node, label in zip(nodes_as_points, labels)}
+
+# Set the 'cluster' attribute on the graph for visualization
+nx.set_node_attributes(graph, node_to_cluster, "cluster")
 
 # Visualize the graph and clusters
 fig, ax = plt.subplots(figsize=(10, 8))

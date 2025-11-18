@@ -67,19 +67,6 @@ class RiemannianManifold(Space):
         """Create a RiemannianCenter object from a RiemannianPoint object."""
         return RiemannianCenter(point)
 
-    def compute_clusters(self, centers: list[RiemannianCenter]) -> None:
-        """Assign observations to their nearest center.
-
-        For continuous manifolds, this is primarily for compatibility with
-        the Space interface. The actual clustering is implicit in calculate_energy.
-
-        Args:
-            centers: List of cluster centers.
-        """
-        # For continuous manifolds, clustering is implicit
-        # This could be extended to track cluster assignments if needed
-        pass
-
     def distances_from_centers(
         self, centers: list[RiemannianCenter], target: RiemannianPoint
     ) -> np.ndarray:

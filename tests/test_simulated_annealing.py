@@ -380,9 +380,6 @@ class TestSimulatedAnnealing:
             def calculate_energy(self, centers: list) -> float:
                 return 0.0
 
-            def compute_clusters(self, centers: list) -> None:
-                pass
-
             def center_from_point(self, point):
                 return point
 
@@ -433,8 +430,14 @@ class TestIntegration:
             robust_prop=0.1,
         )
 
-        # Compute clusters
-        graph.compute_clusters(centers)
+        # Assign clusters
+        nodes_as_points = graph.nodes_as_points()
+        labels = graph.assign_clusters(nodes_as_points, centers)
+        
+        # Set node attributes for verification
+        import networkx as nx
+        node_to_cluster = {node.edge[0]: label for node, label in zip(nodes_as_points, labels)}
+        nx.set_node_attributes(graph, node_to_cluster, "cluster")
 
         # Check that centers were found
         assert len(centers) == 2

@@ -114,17 +114,25 @@ class Space(ABC):
         """
         return strategy.sample(self, n)
 
-    @abstractmethod
-    def compute_clusters(self, centers: list[Center]) -> None:
-        """Assign points to their nearest center.
-
-        This method typically updates internal state or annotations
-        indicating which cluster each point belongs to.
+    def assign_clusters(
+        self, points: list[Point], centers: list[Center]
+    ) -> list[int]:
+        """Assign points to the nearest center and return cluster labels.
 
         Args:
-            centers: List of cluster centers.
+            points: A list of points to be clustered.
+            centers: A list of centers.
+
+        Returns:
+            A list of integer labels, where each label is the index of the
+            closest center for the corresponding point in the input list.
         """
-        raise NotImplementedError
+        labels = []
+        for point in points:
+            distances = [self.distance(point, center) for center in centers]
+            closest_center_idx = distances.index(min(distances))
+            labels.append(closest_center_idx)
+        return labels
 
     @abstractmethod
     def calculate_energy(self, centers: list[Center]) -> float:

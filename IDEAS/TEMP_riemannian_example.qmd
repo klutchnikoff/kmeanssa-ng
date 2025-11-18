@@ -106,7 +106,7 @@ energy = sphere.calculate_energy(centers)
 print(f"Énergie finale : {energy:.6f}")
 
 # Assigner les observations aux clusters
-sphere.compute_clusters(centers)
+# sphere.compute_clusters(centers)
 ```
 
 ## Exemple Complet : Clustering sur une Sphère

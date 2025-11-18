@@ -163,7 +163,7 @@ class TestSamplingEdgeCases:
         assert center.position == 0.0
         assert center.edge[0] == 1 or center.edge[1] == 1  # One end is node 1
 
-    def test_compute_clusters(self):
+    def test_assign_clusters(self):
         """Test cluster assignment."""
         graph = QuantumGraph()
         graph.add_edge(0, 1, length=1.0)
@@ -174,13 +174,24 @@ class TestSamplingEdgeCases:
         center1 = graph.node_as_center(0)
         center2 = graph.node_as_center(2)
         centers = [center1, center2]
+        
+        points = graph.nodes_as_points()
 
-        graph.compute_clusters(centers)
+        labels = graph.assign_clusters(points, centers)
 
-        # Check that cluster attributes were set
-        cluster_attrs = nx.get_node_attributes(graph, "cluster")
-        assert len(cluster_attrs) == 3
-        assert all(cluster in [0, 1] for cluster in cluster_attrs.values())
+        # Check that labels are correct
+        # Node 0 is closest to center 0
+        # Node 1 is equidistant, can be 0 or 1
+        # Node 2 is closest to center 2
+        
+        node_list = [p.edge[0] for p in points]
+        
+        label_map = dict(zip(node_list, labels))
+
+        assert label_map[0] == 0
+        assert label_map[2] == 1
+        assert label_map[1] in [0, 1]
+        assert len(labels) == 3
 
     def test_calculate_energy_uniform(self):
         """Test energy calculation with uniform weighting."""
@@ -262,19 +273,6 @@ class TestSamplingEdgeCases:
 
         # Check positions are at nodes (position 0)
         assert all(c.position == 0.0 for c in centers)
-
-    def test_light_sample_points(self):
-        """Test light sampling of points."""
-        graph = QuantumGraph()
-        graph.add_edge(0, 1, length=1.0)
-        graph.add_edge(1, 2, length=1.0)
-
-        points = graph.light_sample_points(5)
-
-        assert len(points) == 5
-        assert all(isinstance(p, QGPoint) for p in points)
-        assert all(p.position == 0.0 for p in points)  # All at nodes
-
 
 class TestDrawingCoverage:
     """Tests for drawing method coverage."""
