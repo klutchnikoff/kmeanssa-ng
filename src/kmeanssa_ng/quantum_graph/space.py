@@ -880,6 +880,16 @@ class QuantumGraph(nx.Graph, Space):
                 else node_sizes * 2
             )
 
+            nx.draw_networkx_nodes(
+                self,
+                pos,
+                nodelist=center_nodes,
+                ax=ax,
+                node_size=center_sizes,
+                edgecolors="grey",
+                linewidths=2,
+            )
+
 
 
     def frechet_mean(self, points: list[Point]) -> QGCenter:
