@@ -138,36 +138,7 @@ class RiemannianManifold(Space):
 
         return total_energy / len(self.observations)
 
-    def frechet_mean(self, points: list[RiemannianPoint]) -> RiemannianCenter:
-        """Compute the Fréchet mean (Karcher mean) of a list of points.
+    def get_point_type(self) -> type[RiemannianPoint]:
+        """Return the type of points in this space."""
+        return RiemannianPoint
 
-        Uses geomstats' metric.mean() method to compute the Karcher mean.
-
-        Args:
-            points: A list of RiemannianPoint objects for which to compute the Fréchet mean.
-
-        Returns:
-            A RiemannianCenter object representing the Fréchet mean of the input points.
-
-        Raises:
-            ValueError: If the list of points is empty.
-            TypeError: If any point in the list is not a RiemannianPoint.
-        """
-        if not points:
-            raise ValueError("Cannot compute Fréchet mean for an empty list of points.")
-
-        # Extract coordinates from RiemannianPoint objects
-        points_coords = []
-        for p in points:
-            if not isinstance(p, RiemannianPoint):
-                raise TypeError("All points must be RiemannianPoint instances.")
-            points_coords.append(p.coordinates)
-
-        # Convert to numpy array for geomstats
-        points_coords_array = np.array(points_coords)
-
-        # Compute the Fréchet mean (Karcher mean) using geomstats
-        mean_coords = self.manifold.metric.mean(points_coords_array)
-
-        # Create a RiemannianCenter from the mean coordinates
-        return RiemannianCenter(RiemannianPoint(self, mean_coords))

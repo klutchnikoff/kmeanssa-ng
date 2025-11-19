@@ -383,10 +383,6 @@ class TestSimulatedAnnealing:
             def center_from_point(self, point):
                 return point
 
-            def frechet_mean(self, points: list[Point]) -> Center:
-                # Dummy implementation for testing purposes
-                return points[0] if points else None
-
             def sample_centers(self, k: int) -> list:
                 return [1] * k
 
@@ -397,6 +393,9 @@ class TestSimulatedAnnealing:
                 import numpy as np
 
                 return np.zeros(len(centers))
+
+            def get_point_type(self) -> type:
+                return Point
 
         # 2. Create a mock SA instance using this space
         class MockSA:

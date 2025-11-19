@@ -64,6 +64,15 @@ from .quantum_graph import (
     generate_simple_graph,
     generate_simple_random_graph,
     MostFrequentNode,
+    MostFrequentNodeUpdate,
+)
+from .riemannian_manifold import (
+    RiemannianManifold,
+    RiemannianPoint,
+    RiemannianCenter,
+    create_sphere,
+    create_hyperbolic_space,
+    FrechetMeanUpdate,
 )
 
 __all__ = [
@@ -91,10 +100,18 @@ __all__ = [
     "RobustificationStrategy",
     "MinimizeEnergy",
     "MostFrequentNode",
+    "MostFrequentNodeUpdate",
+    "FrechetMeanUpdate",
     # Quantum graph classes
     "QGPoint",
     "QGCenter",
     "QuantumGraph",
+    # Riemannian manifold classes
+    "RiemannianManifold",
+    "RiemannianPoint",
+    "RiemannianCenter",
+    "create_sphere",
+    "create_hyperbolic_space",
     # Generators
     "generate_simple_graph",
     "generate_simple_random_graph",

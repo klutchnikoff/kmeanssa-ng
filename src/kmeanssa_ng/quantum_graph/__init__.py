@@ -12,12 +12,14 @@ from .generators import (
 from .point import QGPoint
 from .robustification import MostFrequentNode
 from .space import QuantumGraph
+from .update import MostFrequentNodeUpdate
 
 __all__ = [
     "QGPoint",
     "QGCenter",
     "QuantumGraph",
     "MostFrequentNode",
+    "MostFrequentNodeUpdate",
     "generate_simple_graph",
     "generate_simple_random_graph",
     "generate_sbm",

@@ -18,11 +18,11 @@ class DummySpace(Space):
         return super().distances_from_centers(centers, target)
 
 
+    def get_point_type(self) -> type[Point]:
+        return DummyPoint
+
     def center_from_point(self, point: Point) -> Center:
         return super().center_from_point(point)
-
-    def frechet_mean(self, points: list[Point]) -> Center:
-        return super().frechet_mean(points)
 
 
 class DummyPoint(Point):
@@ -76,6 +76,3 @@ def test_abstract_methods_raise_not_implemented():
 
     with pytest.raises(NotImplementedError):
         space.center_from_point(point)
-
-    with pytest.raises(NotImplementedError):
-        space.frechet_mean([point])

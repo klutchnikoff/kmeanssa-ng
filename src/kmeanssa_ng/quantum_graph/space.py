@@ -860,42 +860,7 @@ class QuantumGraph(nx.Graph, Space):
                 linewidths=2,
             )
 
-    def frechet_mean(self, points: list[QGPoint]) -> QGCenter:
-        """Compute the Fréchet mean (barycenter) of a list of points.
+    def get_point_type(self) -> type[QGPoint]:
+        """Return the type of points in this space."""
+        return QGPoint
 
-        For QuantumGraph, this is approximated by finding the most frequent
-        closest node to the given points. This is a simplification and
-        a more accurate implementation would involve an optimization process
-        to find the true Fréchet mean which could lie on an edge.
-
-        Args:
-            points: A list of QGPoint objects for which to compute the Fréchet mean.
-
-        Returns:
-            A QGCenter object representing the Fréchet mean of the input points.
-        """
-        if not points:
-            raise ValueError("Cannot compute Fréchet mean for an empty list of points.")
-
-        # Find the closest node for each point
-        closest_nodes = []
-        for p in points:
-            if not isinstance(p, QGPoint):
-                raise TypeError("All points must be QGPoint instances.")
-            closest_nodes.append(p.closest_node())
-
-        # Count occurrences of each node
-        node_counts = {}
-        for node in closest_nodes:
-            node_counts[node] = node_counts.get(node, 0) + 1
-
-        # Find the most frequent node
-        if not node_counts:
-            # This case should ideally not happen if points is not empty
-            # and closest_node always returns a valid node.
-            raise ValueError("No valid nodes found for Fréchet mean approximation.")
-
-        most_frequent_node = max(node_counts, key=node_counts.get)
-
-        # Return a QGCenter at the most frequent node
-        return self.node_as_center(most_frequent_node)

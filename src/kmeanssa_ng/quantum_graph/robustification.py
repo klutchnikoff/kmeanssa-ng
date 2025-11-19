@@ -36,7 +36,7 @@ class MostFrequentNode(RobustificationStrategy[list[Any]]):
 
     def collect(self, sa: SimulatedAnnealing) -> None:
         """Collect the closest node for each center at the current step."""
-        current_nodes = [center._closest_node() for center in sa.centers]
+        current_nodes = [center.closest_node() for center in sa.centers]
         self._central_nodes_collections.append(current_nodes)
 
     def get_result(self) -> list[Any]:
