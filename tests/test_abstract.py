@@ -17,7 +17,6 @@ class DummySpace(Space):
     def distances_from_centers(self, centers: list[Center], target: Point):
         return super().distances_from_centers(centers, target)
 
-
     def get_point_type(self) -> type[Point]:
         return DummyPoint
 

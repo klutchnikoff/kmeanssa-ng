@@ -141,4 +141,3 @@ class RiemannianManifold(Space):
     def get_point_type(self) -> type[RiemannianPoint]:
         """Return the type of points in this space."""
         return RiemannianPoint
-

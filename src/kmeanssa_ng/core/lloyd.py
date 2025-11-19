@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .abstract import Center, Point, Space
+    from .abstract import Center, Point
     from .strategies.initialization import InitializationStrategy
     from .strategies.update import UpdateStrategy
 
@@ -73,8 +73,8 @@ class Lloyd:
         """
         # 1. Initialization
         centers = initialization_strategy.initialize_centers(self)
-        
-        last_energy = float('inf')
+
+        last_energy = float("inf")
 
         for i in range(max_iterations):
             # 2. Assignment step
@@ -87,19 +87,17 @@ class Lloyd:
                     p for j, p in enumerate(self.points) if labels[j] == cluster_idx
                 ]
                 if cluster_points:
-                    new_center = self.update_strategy.update(
-                        cluster_points, self.space
-                    )
+                    new_center = self.update_strategy.update(cluster_points, self.space)
                     if new_center:
                         new_centers.append(new_center)
-            
+
             if not new_centers:
                 # This can happen if all points are in one cluster and the update fails
                 # Or if all clusters are empty
                 break
 
             centers = new_centers
-            
+
             # Check for convergence
             current_energy = self.space.calculate_energy(centers)
             if abs(last_energy - current_energy) < tolerance:

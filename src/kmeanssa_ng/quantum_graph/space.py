@@ -863,4 +863,3 @@ class QuantumGraph(nx.Graph, Space):
     def get_point_type(self) -> type[QGPoint]:
         """Return the type of points in this space."""
         return QGPoint
-

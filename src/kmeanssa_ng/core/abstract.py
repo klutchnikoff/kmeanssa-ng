@@ -114,9 +114,7 @@ class Space(ABC):
         """
         return strategy.sample(self, n)
 
-    def assign_clusters(
-        self, points: list[Point], centers: list[Center]
-    ) -> list[int]:
+    def assign_clusters(self, points: list[Point], centers: list[Center]) -> list[int]:
         """Assign points to the nearest center and return cluster labels.
 
         Args:

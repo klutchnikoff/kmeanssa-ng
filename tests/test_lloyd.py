@@ -28,6 +28,7 @@ def test_lloyd_on_quantum_graph():
     # A more robust test would check for convergence or energy decrease.
     assert len(centers) == 2
 
+
 def test_lloyd_on_riemannian_manifold():
     """Test Lloyd's algorithm on a Riemannian manifold."""
     sphere = Hypersphere(dim=2)
@@ -40,10 +41,12 @@ def test_lloyd_on_riemannian_manifold():
     assert len(centers) == 2
     assert all(isinstance(c, RiemannianCenter) for c in centers)
 
+
 def test_lloyd_empty_points_raises():
     """Test that Lloyd raises ValueError with empty points list."""
     with pytest.raises(ValueError, match="Input points list cannot be empty."):
         Lloyd([], k=2, update_strategy=MostFrequentNodeUpdate())
+
 
 def test_lloyd_invalid_k_raises():
     """Test that Lloyd raises ValueError with invalid k."""

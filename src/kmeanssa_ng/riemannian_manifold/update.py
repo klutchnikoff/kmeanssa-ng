@@ -9,9 +9,9 @@ from ..core.strategies.update import UpdateStrategy
 from geomstats.learning.frechet_mean import FrechetMean
 
 if TYPE_CHECKING:
-    from ..core.abstract import Center, Point, Space
     from .point import RiemannianPoint
     from .center import RiemannianCenter
+    from .space import RiemannianManifold
 
 
 class FrechetMeanUpdate(UpdateStrategy):
@@ -19,7 +19,9 @@ class FrechetMeanUpdate(UpdateStrategy):
     (Karcher mean) of the points in the cluster.
     """
 
-    def update(self, points: list[RiemannianPoint], space: "RiemannianManifold") -> "RiemannianCenter":
+    def update(
+        self, points: list[RiemannianPoint], space: "RiemannianManifold"
+    ) -> "RiemannianCenter":
         """Compute the new center for a given cluster of points.
 
         Args:
@@ -49,5 +51,6 @@ class FrechetMeanUpdate(UpdateStrategy):
 
         # Create a RiemannianCenter from the mean coordinates
         return space.center_from_point(space.get_point_type()(space, mean_coords))
+
 
 # I will also need to add get_point_type to RiemannianManifold

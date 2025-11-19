@@ -7,8 +7,9 @@ from typing import TYPE_CHECKING
 from ..core.strategies.update import UpdateStrategy
 
 if TYPE_CHECKING:
-    from ..core.abstract import Center, Point, Space
     from .point import QGPoint
+    from .space import QuantumGraph
+    from .center import QGCenter
 
 
 class MostFrequentNodeUpdate(UpdateStrategy):
@@ -52,6 +53,7 @@ class MostFrequentNodeUpdate(UpdateStrategy):
 
         # Return a QGCenter at the most frequent node
         return space.node_as_center(most_frequent_node)
+
 
 # Helper method in QuantumGraph to get the point type
 # I need to add this to QuantumGraph

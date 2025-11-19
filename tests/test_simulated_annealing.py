@@ -367,7 +367,7 @@ class TestSimulatedAnnealing:
         """Test that MostFrequentNode raises TypeError on a non-graph space."""
         # MostFrequentNode is now in quantum_graph package
         from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
-        from kmeanssa_ng.core.abstract import Space, Point, Center
+        from kmeanssa_ng.core.abstract import Space, Point
 
         # 1. Create a dummy space that is not a QuantumGraph
         class DummySpace(Space):
@@ -432,10 +432,13 @@ class TestIntegration:
         # Assign clusters
         nodes_as_points = graph.nodes_as_points()
         labels = graph.assign_clusters(nodes_as_points, centers)
-        
+
         # Set node attributes for verification
         import networkx as nx
-        node_to_cluster = {node.edge[0]: label for node, label in zip(nodes_as_points, labels)}
+
+        node_to_cluster = {
+            node.edge[0]: label for node, label in zip(nodes_as_points, labels)
+        }
         nx.set_node_attributes(graph, node_to_cluster, "cluster")
 
         # Check that centers were found

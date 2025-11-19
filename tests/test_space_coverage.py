@@ -174,7 +174,7 @@ class TestSamplingEdgeCases:
         center1 = graph.node_as_center(0)
         center2 = graph.node_as_center(2)
         centers = [center1, center2]
-        
+
         points = graph.nodes_as_points()
 
         labels = graph.assign_clusters(points, centers)
@@ -183,9 +183,9 @@ class TestSamplingEdgeCases:
         # Node 0 is closest to center 0
         # Node 1 is equidistant, can be 0 or 1
         # Node 2 is closest to center 2
-        
+
         node_list = [p.edge[0] for p in points]
-        
+
         label_map = dict(zip(node_list, labels))
 
         assert label_map[0] == 0
@@ -273,6 +273,7 @@ class TestSamplingEdgeCases:
 
         # Check positions are at nodes (position 0)
         assert all(c.position == 0.0 for c in centers)
+
 
 class TestDrawingCoverage:
     """Tests for drawing method coverage."""
