@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .abstract import Center, Point
     from .strategies.initialization import InitializationStrategy
-    from .strategies.update import UpdateStrategy
+    from .strategies.lloyd_update import LloydUpdateStrategy
 
 
 class Lloyd:
@@ -28,7 +28,7 @@ class Lloyd:
         self,
         points: list[Point],
         k: int,
-        update_strategy: UpdateStrategy,
+        update_strategy: LloydUpdateStrategy,
     ):
         """Initialize Lloyd's algorithm.
 

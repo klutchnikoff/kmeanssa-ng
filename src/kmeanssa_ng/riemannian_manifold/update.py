@@ -5,16 +5,17 @@ from __future__ import annotations
 import numpy as np
 from typing import TYPE_CHECKING
 
-from ..core.strategies.update import UpdateStrategy
 from geomstats.learning.frechet_mean import FrechetMean
 
+from ..core.strategies.lloyd_update import LloydUpdateStrategy
+
 if TYPE_CHECKING:
-    from .point import RiemannianPoint
     from .center import RiemannianCenter
+    from .point import RiemannianPoint
     from .space import RiemannianManifold
 
 
-class FrechetMeanUpdate(UpdateStrategy):
+class FrechetMeanUpdate(LloydUpdateStrategy):
     """Update strategy that computes the new center as the Fréchet mean
     (Karcher mean) of the points in the cluster.
     """

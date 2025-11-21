@@ -4,15 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..core.strategies.update import UpdateStrategy
-
-if TYPE_CHECKING:
-    from .point import QGPoint
-    from .space import QuantumGraph
-    from .center import QGCenter
+from ..core.strategies.lloyd_update import LloydUpdateStrategy
 
 
-class MostFrequentNodeUpdate(UpdateStrategy):
+class MostFrequentNodeUpdate(LloydUpdateStrategy):
     """Update strategy that computes the new center as the most frequent
     closest node to the points in the cluster.
     """

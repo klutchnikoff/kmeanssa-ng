@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from ..abstract import Center, Point, Space
 
 
-class UpdateStrategy(ABC):
+class LloydUpdateStrategy(ABC):
     """Abstract base class for strategies that update a cluster center.
 
     This is used in Lloyd's algorithm to compute the new center of a cluster
