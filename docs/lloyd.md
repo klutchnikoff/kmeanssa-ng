@@ -1,0 +1,7 @@
+---
+title: Lloyd's Algorithm
+---
+
+
+This page will describe Lloyd’s algorithm for k-means clustering, with
+code examples.

@@ -6,10 +6,13 @@ quarto render docs-src/README.qmd --to gfm -o README.md --execute
 # Generate performance documentation from benchmark results
 python scripts/generate_benchmark_docs.py
 
+# Clean up old markdown files in docs/
+find docs/ -maxdepth 1 -type f -name "*.md" -delete
+
 # Render all Quarto documents as a project
 # This respects _quarto.yml settings (freeze, seed, etc.)
 cd docs-src
-quarto render --to gfm
+quarto render --to gfm --no-cache
 cd ..
 
 # Copy API documentation
