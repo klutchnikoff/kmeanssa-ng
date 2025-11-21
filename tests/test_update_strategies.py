@@ -11,6 +11,7 @@ from kmeanssa_ng import (
     QuantumGraph,
     MostFrequentNodeUpdate,
     MinimizeEnergyNodeUpdate,
+    SimulatedAnnealingFrechetMean,
 )
 from kmeanssa_ng.quantum_graph.generators import generate_simple_graph
 from geomstats.geometry.hypersphere import Hypersphere
@@ -109,3 +110,34 @@ class TestMinimizeEnergyNodeUpdate:
         assert new_center is not None
         # The center is a point at position 0 on an arbitrary edge starting at the best node
         assert new_center.closest_node() == 2
+
+
+class TestSimulatedAnnealingFrechetMean:
+    def test_update_on_sphere(self):
+        """Test that the SA-based Fréchet mean strategy finds a reasonable center."""
+        # 1. Setup space and points
+        sphere = Hypersphere(dim=2)
+        space = RiemannianManifold(sphere)
+
+        # Create a cluster of points close to the north pole ([0, 0, 1])
+        points = [
+            RiemannianPoint(space, np.array([0.1, 0, 0.995])),
+            RiemannianPoint(space, np.array([-0.1, 0, 0.995])),
+            RiemannianPoint(space, np.array([0, 0.1, 0.995])),
+            RiemannianPoint(space, np.array([0, -0.1, 0.995])),
+            RiemannianPoint(space, np.array([0, 0, 1.0])),
+        ]
+
+        # The Fréchet mean should be very close to the north pole
+        expected_mean = np.array([0, 0, 1.0])
+
+        # 2. Run strategy
+        # Use a small number of samples for a fast test
+        strategy = SimulatedAnnealingFrechetMean(n_samples=20, lambda0=0.5, beta0=3.0)
+        new_center = strategy.update(points, space)
+
+        # 3. Assert result
+        assert new_center is not None
+        # Check that the result is close to the expected mean
+        distance_to_expected = space.distance(new_center, RiemannianPoint(space, expected_mean))
+        assert distance_to_expected < 0.1

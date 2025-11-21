@@ -129,8 +129,12 @@ class RiemannianManifold(Space):
         total_energy = 0.0
 
         # For each observation, find squared distance to nearest center
-        for obs_coords in self.observations:
-            obs_point = RiemannianPoint(self, obs_coords)
+        for obs in self.observations:
+            if isinstance(obs, RiemannianPoint):
+                obs_point = obs
+            else:  # It's a numpy array (coordinates)
+                obs_point = RiemannianPoint(self, obs)
+
             min_dist_sq = min(
                 self.distance(center, obs_point) ** 2 for center in centers
             )

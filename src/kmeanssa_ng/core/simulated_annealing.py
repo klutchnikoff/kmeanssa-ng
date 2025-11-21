@@ -178,6 +178,10 @@ class SimulatedAnnealing:
         self._step_size = float(step_size)
         self._energy_mode = energy_mode
 
+        # Set observations on the space if it has the attribute (for RiemannianManifold)
+        if hasattr(self.space, "observations"):
+            self.space.observations = self._observations
+
         # Use random.shuffle (global state) for consistency with rest of codebase
         # If we used self._rng.shuffle, it would desynchronize from global state
         random.shuffle(self._observations)

@@ -52,6 +52,8 @@ from .core.strategies import (
     MinimizeEnergy,
     RandomInit,
     RobustificationStrategy,
+    LloydUpdateStrategy,
+    SimulatedAnnealingFrechetMean,
 )
 from .quantum_graph import (
     QGCenter,
@@ -100,6 +102,8 @@ __all__ = [
     "RandomInit",
     "RobustificationStrategy",
     "MinimizeEnergy",
+    "LloydUpdateStrategy",
+    "SimulatedAnnealingFrechetMean",
     "MostFrequentNode",
     "MostFrequentNodeUpdate",
     "MinimizeEnergyNodeUpdate",
