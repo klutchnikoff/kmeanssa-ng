@@ -1,6 +1,8 @@
 """Tests for Lloyd's algorithm."""
 
 import pytest
+import random
+import numpy as np
 
 from kmeanssa_ng import (
     generate_sbm,
@@ -18,6 +20,8 @@ from geomstats.geometry.hypersphere import Hypersphere
 
 def test_lloyd_on_quantum_graph():
     """Test Lloyd's algorithm on a quantum graph."""
+    random.seed(42)
+    np.random.seed(42)
     graph = generate_sbm(sizes=[20, 20], p=[[0.8, 0.1], [0.1, 0.8]])
     points = graph.sample_points(100, strategy=UniformNodeSampling())
 

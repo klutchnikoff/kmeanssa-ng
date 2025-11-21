@@ -12,7 +12,7 @@ from .generators import (
 from .point import QGPoint
 from .robustification import MostFrequentNode
 from .space import QuantumGraph
-from .update import MostFrequentNodeUpdate
+from .lloyd_update import MostFrequentNodeUpdate, MinimizeEnergyNodeUpdate
 
 __all__ = [
     "QGPoint",
@@ -20,6 +20,7 @@ __all__ = [
     "QuantumGraph",
     "MostFrequentNode",
     "MostFrequentNodeUpdate",
+    "MinimizeEnergyNodeUpdate",
     "generate_simple_graph",
     "generate_simple_random_graph",
     "generate_sbm",

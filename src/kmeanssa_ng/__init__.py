@@ -65,6 +65,7 @@ from .quantum_graph import (
     generate_simple_random_graph,
     MostFrequentNode,
     MostFrequentNodeUpdate,
+    MinimizeEnergyNodeUpdate,
 )
 from .riemannian_manifold import (
     RiemannianManifold,
@@ -101,6 +102,7 @@ __all__ = [
     "MinimizeEnergy",
     "MostFrequentNode",
     "MostFrequentNodeUpdate",
+    "MinimizeEnergyNodeUpdate",
     "FrechetMeanUpdate",
     # Quantum graph classes
     "QGPoint",
