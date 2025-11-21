@@ -9,7 +9,8 @@ This guide provides a basic example of how to use `kmeanssa-ng` to perform clust
 To run this entire guide, including the visualization step, you need to install `kmeanssa-ng` with the `plot` extra:
 
 ```bash
-pip install "kmeanssa-ng[plot]"
+pip install "kmeanssa-ng[plot]" # latest version
+pip install "kmeanssa-ng[plot] == 0.6.1" # specific version 
 ```
 
 ## 1. Generate a Sample Graph
