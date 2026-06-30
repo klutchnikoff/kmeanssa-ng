@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-06-30
+
+### Added
+- Complete implementation of **Lloyd's Algorithm** for k-means clustering.
+- Multiple Lloyd update strategies: `SimulatedAnnealingFrechetMean`, `MostFrequentNodeUpdate`, `MinimizeEnergyNodeUpdate`, and `FrechetMeanUpdate`.
+- Propagated local generator (`random_state`) to all components (initialization, sampling strategies, and graph neighbor selections) for **100% reproducible results**.
+- Pre-commit (linting/formatting with Ruff) and pre-push (testing with Pytest) hooks configuration.
+
+### Fixed
+- Fixed flakiness in Spherical Fréchet Mean update and Lloyd manifold tests by seeding state and adjusting distance tolerances.
+
 ## [0.5.0] - 2025-11-01
 
 ### Changed
@@ -118,7 +129,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NumPy and pandas dependencies for numerical operations
 - MIT license
 
-[Unreleased]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.3.0...main
+[Unreleased]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.7.0...main
+[0.7.0]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.5.0...v0.7.0
+[0.5.0]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.3.0...v0.5.0
 [0.3.0]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.2.3...v0.3.0
 [0.2.3]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.2.2...v0.2.3
 [0.2.2]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.2.1...v0.2.2

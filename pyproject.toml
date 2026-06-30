@@ -1,6 +1,6 @@
 [project]
 name = "kmeanssa-ng"
-version = "0.6.1"
+version = "0.7.0"
 description = "K-means clustering on quantum graphs and metric spaces using simulated annealing"
 readme = "README.md"
 requires-python = ">=3.10"
