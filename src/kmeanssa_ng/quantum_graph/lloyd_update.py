@@ -101,7 +101,7 @@ class MinimizeEnergyNodeUpdate(LloydUpdateStrategy):
 
         cluster_node_indices = [node_to_idx[n] for n in cluster_nodes]
 
-        min_energy = float('inf')
+        min_energy = float("inf")
         best_node = -1
 
         # Iterate through all nodes of the graph as potential centers

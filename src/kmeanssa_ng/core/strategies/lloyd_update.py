@@ -64,10 +64,10 @@ class SimulatedAnnealingFrechetMean(LloydUpdateStrategy):
 
         if sa_initialization_strategy is None:
             from .initialization import RandomInit
+
             self.sa_initialization_strategy = RandomInit()
         else:
             self.sa_initialization_strategy = sa_initialization_strategy
-
 
     def update(self, points: list[Point], space: Space) -> Center:
         """Computes the Fréchet mean of the points using SA."""
@@ -93,9 +93,9 @@ class SimulatedAnnealingFrechetMean(LloydUpdateStrategy):
             observations=observations,
             k=1,
             random_state=self.random_state,
-            **self.sa_kwargs
+            **self.sa_kwargs,
         )
-        
+
         # The run method requires a robustification strategy.
         # MinimizeEnergy is a sensible default to find the best center.
         from .robustification import MinimizeEnergy
@@ -103,11 +103,11 @@ class SimulatedAnnealingFrechetMean(LloydUpdateStrategy):
         # run() returns a list of centers, we want the single one
         centers = sa.run(
             initialization_strategy=self.sa_initialization_strategy,
-            robustification_strategy=MinimizeEnergy()
+            robustification_strategy=MinimizeEnergy(),
         )
 
         if not centers:
             # This could happen if the SA run fails for some reason
             return None
-            
+
         return centers[0]

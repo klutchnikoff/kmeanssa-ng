@@ -63,7 +63,8 @@ class MostFrequentNode(RobustificationStrategy[list[Any]]):
 
         if isinstance(self.sa.space, QuantumGraph):
             robust_centers = [
-                self.sa.space.node_as_center(node, rng=self.sa._rng) for node in robust_nodes
+                self.sa.space.node_as_center(node, rng=self.sa._rng)
+                for node in robust_nodes
             ]
         else:
             # Fallback for non-QuantumGraph spaces (shouldn't happen with this strategy)
