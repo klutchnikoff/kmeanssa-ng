@@ -36,7 +36,7 @@ class MostFrequentNode(RobustificationStrategy[list[Any]]):
 
     def collect(self, sa: SimulatedAnnealing) -> None:
         """Collect the closest node for each center at the current step."""
-        current_nodes = [center._closest_node() for center in sa.centers]
+        current_nodes = [center.closest_node() for center in sa.centers]
         self._central_nodes_collections.append(current_nodes)
 
     def get_result(self) -> list[Any]:
@@ -63,7 +63,8 @@ class MostFrequentNode(RobustificationStrategy[list[Any]]):
 
         if isinstance(self.sa.space, QuantumGraph):
             robust_centers = [
-                self.sa.space.node_as_center(node) for node in robust_nodes
+                self.sa.space.node_as_center(node, rng=self.sa._rng)
+                for node in robust_nodes
             ]
         else:
             # Fallback for non-QuantumGraph spaces (shouldn't happen with this strategy)

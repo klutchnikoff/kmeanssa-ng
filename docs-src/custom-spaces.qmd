@@ -78,33 +78,26 @@ class MySpace(Space):
         """Compute your metric."""
         # Your distance computation
         pass
-    
-    def sample_points(self, n: int, strategy) -> list[Point]:
-        """Sample random points using a strategy."""
-        # Your sampling logic, e.g., by delegating to the strategy
-        return strategy.sample(self, n)
 
-    def center_from_point(self, point: Point) -> Center:
-        """Create a Center from a Point."""
-        # e.g., return MyCenter(point)
-        pass
-    
-    def compute_clusters(self, centers: list[Center]) -> None:
-        """Assign each observation to the nearest center."""
-        # Your cluster assignment logic
-        pass
+    def assign_clusters(self, points: list[Point], centers: list[Center]) -> list[int]:
+        """Assign points to the nearest center and return cluster labels."""
+        # This method has a default implementation in the base class,
+        # but you can override it for performance if needed.
+        return super().assign_clusters(points, centers)
     
     def calculate_energy(self, centers: list[Center]) -> float:
         """Compute sum of squared distances to nearest centers."""
         # Your energy calculation
         pass
+
+    # ... other required methods like sample_points, center_from_point, etc. ...
 ```
 
 Key responsibilities:
 - `distance`: The metric $d(p_1, p_2)$.
-- `sample_points`: A factory method for creating points, which typically delegates to a `SamplingStrategy`.
-- `center_from_point`: A factory method for creating a `Center` from a `Point`.
-- `compute_clusters` and `calculate_energy`: Methods for assigning points to clusters and calculating the total k-means energy.
+- `assign_clusters`: A **stateless** method that takes a list of points and centers and returns a list of integer labels indicating the closest center for each point. The base class provides a default implementation that works for any space, so you don't have to implement it unless you want to provide a more optimized version.
+- `calculate_energy`: Calculates the k-means energy (sum of squared distances from each point to its nearest center).
+- `sample_points` and `center_from_point`: Factory methods for creating points and centers.
 
 ## Step 4: Use the Algorithm
 

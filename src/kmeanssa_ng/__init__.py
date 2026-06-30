@@ -52,6 +52,8 @@ from .core.strategies import (
     MinimizeEnergy,
     RandomInit,
     RobustificationStrategy,
+    LloydUpdateStrategy,
+    SimulatedAnnealingFrechetMean,
 )
 from .quantum_graph import (
     QGCenter,
@@ -64,6 +66,16 @@ from .quantum_graph import (
     generate_simple_graph,
     generate_simple_random_graph,
     MostFrequentNode,
+    MostFrequentNodeUpdate,
+    MinimizeEnergyNodeUpdate,
+)
+from .riemannian_manifold import (
+    RiemannianManifold,
+    RiemannianPoint,
+    RiemannianCenter,
+    create_sphere,
+    create_hyperbolic_space,
+    FrechetMeanUpdate,
 )
 
 __all__ = [
@@ -90,11 +102,22 @@ __all__ = [
     "RandomInit",
     "RobustificationStrategy",
     "MinimizeEnergy",
+    "LloydUpdateStrategy",
+    "SimulatedAnnealingFrechetMean",
     "MostFrequentNode",
+    "MostFrequentNodeUpdate",
+    "MinimizeEnergyNodeUpdate",
+    "FrechetMeanUpdate",
     # Quantum graph classes
     "QGPoint",
     "QGCenter",
     "QuantumGraph",
+    # Riemannian manifold classes
+    "RiemannianManifold",
+    "RiemannianPoint",
+    "RiemannianCenter",
+    "create_sphere",
+    "create_hyperbolic_space",
     # Generators
     "generate_simple_graph",
     "generate_simple_random_graph",

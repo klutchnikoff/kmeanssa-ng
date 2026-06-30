@@ -9,6 +9,7 @@ Concrete implementations are provided in space-specific modules:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import numpy as np
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -34,6 +35,20 @@ class SamplingStrategy(ABC):
         points = graph.sample_points(100, strategy=strategy)
         ```
     """
+
+    def __init__(self, random_state: int | np.random.Generator | None = None):
+        """Initialize the sampling strategy.
+
+        Args:
+            random_state: Controls randomness for reproducibility.
+        """
+        self.random_state = random_state
+
+    def _get_rng(self) -> np.random.Generator:
+        """Get a numpy Generator instance based on the random_state."""
+        if isinstance(self.random_state, np.random.Generator):
+            return self.random_state
+        return np.random.default_rng(self.random_state)
 
     @abstractmethod
     def sample(self, space: Space, n: int) -> list[Point]:

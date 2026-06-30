@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import random as rd
-
 import numpy as np
 from numpy.random import Generator, default_rng
 
@@ -74,7 +72,7 @@ class QGCenter(QGPoint, Center):
             elif distance == min_distance:
                 best_neighbors.append(neighbor)
 
-        return rd.choice(best_neighbors)
+        return best_neighbors[self._rng.integers(len(best_neighbors))]
 
     def drift(self, target_point: QGPoint, prop_to_travel: float) -> None:
         """Move toward a target point.
@@ -240,7 +238,8 @@ class QGCenter(QGPoint, Center):
         while remaining_dist >= dist_to_next_node:
             remaining_dist -= dist_to_next_node
             cur_node = next_node
-            next_node = rd.choice(list(self.space.neighbors(cur_node)))
+            _nbrs = list(self.space.neighbors(cur_node))
+            next_node = _nbrs[self._rng.integers(len(_nbrs))]
             self.edge = (cur_node, next_node)
             edge_length = self.space.get_edge_length(*self.edge)
             self.position = 0
@@ -255,5 +254,5 @@ class QGCenter(QGPoint, Center):
 
     def __str__(self) -> str:
         """User-friendly string representation."""
-        closest = self._closest_node()
+        closest = self.closest_node()
         return f"Center near node {closest} [edge {self.edge}, pos={self.position:.3f}]"

@@ -129,7 +129,7 @@ class QGPoint(Point):
 
         self._edge = new_edge
 
-    def _closest_node(self) -> int:
+    def closest_node(self) -> int:
         """Get the closest node to this point.
 
         Returns:

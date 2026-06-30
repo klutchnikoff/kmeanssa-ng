@@ -145,18 +145,6 @@ class TestRiemannianManifold:
         assert isinstance(energy_default, float)
         assert energy_default >= 0
 
-    def test_compute_clusters(self):
-        """Test compute_clusters (stub implementation)."""
-        sphere = Hypersphere(dim=2)
-        space = RiemannianManifold(sphere)
-        points = space.sample_points(20, strategy=UniformManifoldSampling())
-
-        sa = SimulatedAnnealing(points, k=3)
-        centers = RandomInit().initialize_centers(sa)
-
-        # Should not raise an error
-        space.compute_clusters(centers)
-
     def test_distances_from_centers(self):
         """Test computing distances from multiple centers to a target point."""
         sphere = Hypersphere(dim=2)

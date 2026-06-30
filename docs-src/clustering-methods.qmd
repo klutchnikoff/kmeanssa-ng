@@ -1,0 +1,16 @@
+---
+title: "Clustering Methods"
+---
+
+This page introduces the k-means clustering problem and the different algorithmic approaches provided by this library.
+
+## The K-Means Problem
+
+Explanation of the k-means objective function in a general metric space.
+
+## Algorithms
+
+This library provides two main algorithms to solve the k-means problem:
+
+- **[Lloyd's Algorithm](lloyd.md):** A classic iterative approach.
+- **[Simulated Annealing](simulated-annealing.md):** A more robust method based on stochastic optimization.

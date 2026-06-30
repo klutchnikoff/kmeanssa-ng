@@ -43,8 +43,10 @@ nav:
     - "Quickstart": quickstart.md
     - "Concepts": concepts.md
   - "User Guide":
-    - "Quantum Graphs": quantum-graphs.md
+    - "Clustering Methods": clustering-methods.md
+    - "Lloyd's Algorithm": lloyd.md
     - "Simulated Annealing": simulated-annealing.md
+    - "Quantum Graphs": quantum-graphs.md
     - "Parallel Execution": parallel-execution.md
     - "Generators": generators.md
     - "Advanced Usage": advanced-usage.md

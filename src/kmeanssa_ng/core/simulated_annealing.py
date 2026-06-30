@@ -178,6 +178,10 @@ class SimulatedAnnealing:
         self._step_size = float(step_size)
         self._energy_mode = energy_mode
 
+        # Set observations on the space if it has the attribute (for RiemannianManifold)
+        if hasattr(self.space, "observations"):
+            self.space.observations = self._observations
+
         # Use random.shuffle (global state) for consistency with rest of codebase
         # If we used self._rng.shuffle, it would desynchronize from global state
         random.shuffle(self._observations)
@@ -346,6 +350,11 @@ class SimulatedAnnealing:
         i0 = int(np.floor((self.n - 1) * (1 - robust_prop)))
 
         self._centers = initialization_strategy.initialize_centers(self)
+        # Seed each center's RNG from the SA's generator so that all stochastic moves
+        # (Brownian step size and vertex routing) are reproducible from random_state.
+        for _center in self._centers:
+            if hasattr(_center, "_rng"):
+                _center._rng = self._rng
 
         robustification_strategy.initialize(self)
         strategy = robustification_strategy

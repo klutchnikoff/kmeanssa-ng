@@ -343,6 +343,39 @@ class TestSimulatedAnnealing:
         assert all(isinstance(c, QGCenter) for c in centers)
         assert all(c.space == graph for c in centers)
 
+    def test_full_reproducibility_with_random_state(self):
+        """Test that random_state gives fully reproducible results."""
+        import random
+        import numpy as np
+
+        # Setup
+        random.seed(1000)
+        np.random.seed(1000)
+        graph = generate_simple_graph(n_a=3)
+        points = graph.sample_points(30, strategy=UniformNodeSampling(random_state=42))
+
+        # Run 1
+        sa1 = SimulatedAnnealing(points, k=3, random_state=42)
+        centers1 = sa1.run(
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+            robust_prop=0.1,
+        )
+
+        # Run 2 - same seed
+        sa2 = SimulatedAnnealing(points, k=3, random_state=42)
+        centers2 = sa2.run(
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+            robust_prop=0.1,
+        )
+
+        # Assert identical results
+        assert len(centers1) == len(centers2)
+        for c1, c2 in zip(centers1, centers2):
+            assert c1.edge == c2.edge
+            assert abs(c1.position - c2.position) < 1e-10
+
     def test_most_frequent_node_strategy_empty_collection(self):
         """Test MostFrequentNode with an empty collection."""
 
@@ -367,7 +400,7 @@ class TestSimulatedAnnealing:
         """Test that MostFrequentNode raises TypeError on a non-graph space."""
         # MostFrequentNode is now in quantum_graph package
         from kmeanssa_ng.quantum_graph.robustification import MostFrequentNode
-        from kmeanssa_ng.core.abstract import Space, Point, Center
+        from kmeanssa_ng.core.abstract import Space, Point
 
         # 1. Create a dummy space that is not a QuantumGraph
         class DummySpace(Space):
@@ -380,15 +413,8 @@ class TestSimulatedAnnealing:
             def calculate_energy(self, centers: list) -> float:
                 return 0.0
 
-            def compute_clusters(self, centers: list) -> None:
-                pass
-
             def center_from_point(self, point):
                 return point
-
-            def frechet_mean(self, points: list[Point]) -> Center:
-                # Dummy implementation for testing purposes
-                return points[0] if points else None
 
             def sample_centers(self, k: int) -> list:
                 return [1] * k
@@ -400,6 +426,9 @@ class TestSimulatedAnnealing:
                 import numpy as np
 
                 return np.zeros(len(centers))
+
+            def get_point_type(self) -> type:
+                return Point
 
         # 2. Create a mock SA instance using this space
         class MockSA:
@@ -433,8 +462,17 @@ class TestIntegration:
             robust_prop=0.1,
         )
 
-        # Compute clusters
-        graph.compute_clusters(centers)
+        # Assign clusters
+        nodes_as_points = graph.nodes_as_points()
+        labels = graph.assign_clusters(nodes_as_points, centers)
+
+        # Set node attributes for verification
+        import networkx as nx
+
+        node_to_cluster = {
+            node.edge[0]: label for node, label in zip(nodes_as_points, labels)
+        }
+        nx.set_node_attributes(graph, node_to_cluster, "cluster")
 
         # Check that centers were found
         assert len(centers) == 2

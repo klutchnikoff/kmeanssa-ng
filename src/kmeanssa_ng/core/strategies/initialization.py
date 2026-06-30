@@ -5,7 +5,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-import random as rd
 import numpy as np
 
 if TYPE_CHECKING:
@@ -42,7 +41,8 @@ class RandomInit(InitializationStrategy):
                 "No observations available. Call sample_points() first or provide observations."
             )
 
-        points = rd.choices(sa.observations, k=sa.k)
+        indices = sa._rng.choice(len(sa.observations), size=sa.k, replace=True)
+        points = [sa.observations[idx] for idx in indices]
         return [sa.space.center_from_point(p) for p in points]
 
 
@@ -62,7 +62,8 @@ class KMeansPlusPlus(InitializationStrategy):
         centers = []
 
         # Step 1: Choose first center uniformly at random from observations
-        first_point = rd.choice(sa.observations)
+        first_idx = sa._rng.integers(len(sa.observations))
+        first_point = sa.observations[first_idx]
         centers.append(sa.space.center_from_point(first_point))
 
         # Step 2-3: Choose remaining centers
@@ -81,7 +82,8 @@ class KMeansPlusPlus(InitializationStrategy):
             else:
                 probabilities = np.ones(len(sa.observations)) / len(sa.observations)
 
-            next_point = rd.choices(sa.observations, weights=probabilities, k=1)[0]
+            next_idx = sa._rng.choice(len(sa.observations), p=probabilities)
+            next_point = sa.observations[next_idx]
             centers.append(sa.space.center_from_point(next_point))
 
         return centers

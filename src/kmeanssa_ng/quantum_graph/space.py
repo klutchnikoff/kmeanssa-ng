@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import random as rd
 from typing import TYPE_CHECKING
 
 import networkx as nx
@@ -468,10 +467,10 @@ class QuantumGraph(nx.Graph, Space):
             self.node_distance(edge1[1], edge2[1]) + (length1 - pos1) + (length2 - pos2)
         )
 
-        # Find minimum distance (break ties randomly)
+        # Find minimum distance (break ties deterministically)
         distances = np.array([d0, d1, d2, d3])
         all_idx = np.where(distances == distances.min())[0]
-        idx = rd.choice(all_idx)
+        idx = all_idx[0]
         d_min = distances[idx]
 
         # Check if points are on the same edge
@@ -575,25 +574,9 @@ class QuantumGraph(nx.Graph, Space):
             self._pairwise_nodes_distance_array,
         )
 
-    def light_sample_points(self, n: int) -> list[QGPoint]:
-        """Fast sampling of points at random nodes.
-
-        Args:
-            n: Number of points to sample.
-
-        Returns:
-            List of n points at random nodes.
-        """
-        nodes = rd.choices(list(self.nodes()), k=n)
-        points = []
-        for node in nodes:
-            neighbor = rd.choice(list(self.neighbors(node)))
-            points.append(QGPoint(self, (node, neighbor), 0))
-        return points
-
-    def center_from_point(self, point: QGPoint) -> QGCenter:
+    def center_from_point(self, point: QGPoint, rng=None) -> QGCenter:
         """Create a QGCenter object from a QGPoint object."""
-        return QGCenter(point)
+        return QGCenter(point, rng=rng)
 
     def nodes_as_points(self) -> list[QGPoint]:
         """Convert all nodes to points.
@@ -603,36 +586,27 @@ class QuantumGraph(nx.Graph, Space):
         """
         points = []
         for node in self.nodes:
-            neighbor = rd.choice(list(self.neighbors(node)))
+            neighbor = next(self.neighbors(node))
             points.append(QGPoint(self, (node, neighbor), 0))
         return points
 
-    def node_as_center(self, node: int) -> QGCenter:
+    def node_as_center(self, node: int, rng=None) -> QGCenter:
         """Create a center at a specific node.
 
         Args:
             node: The node to place the center at.
+            rng: Optional random number generator for neighbor selection.
 
         Returns:
             A center located at the node.
         """
-        neighbor = rd.choice(list(self.neighbors(node)))
+        if rng is not None:
+            nbrs = list(self.neighbors(node))
+            neighbor = nbrs[rng.integers(len(nbrs))]
+        else:
+            neighbor = next(self.neighbors(node))
         point = QGPoint(self, (node, neighbor), 0)
-        return QGCenter(point)
-
-    def compute_clusters(self, centers: list[QGCenter]) -> None:
-        """Assign each node to its nearest center.
-
-        Updates node 'cluster' attribute.
-
-        Args:
-            centers: List of cluster centers.
-        """
-        for node in self.nodes:
-            distances = np.array(
-                [self.node_distance(center.edge[0], node) for center in centers]
-            )
-            nx.set_node_attributes(self, {node: {"cluster": np.argmin(distances)}})
+        return QGCenter(point, rng=rng)
 
     def calculate_energy(
         self,
@@ -666,7 +640,7 @@ class QuantumGraph(nx.Graph, Space):
             for node, data in self.nodes(data=True):
                 nb_obs = data.get("nb_obs", 0)
                 if nb_obs > 0:
-                    neighbor = rd.choice(list(self.neighbors(node)))
+                    neighbor = next(self.neighbors(node))
                     point = QGPoint(self, (node, neighbor), 0)
                     min_dist_sq = min(
                         self.distance(center, point) ** 2 for center in centers
@@ -890,42 +864,6 @@ class QuantumGraph(nx.Graph, Space):
                 linewidths=2,
             )
 
-    def frechet_mean(self, points: list[QGPoint]) -> QGCenter:
-        """Compute the Fréchet mean (barycenter) of a list of points.
-
-        For QuantumGraph, this is approximated by finding the most frequent
-        closest node to the given points. This is a simplification and
-        a more accurate implementation would involve an optimization process
-        to find the true Fréchet mean which could lie on an edge.
-
-        Args:
-            points: A list of QGPoint objects for which to compute the Fréchet mean.
-
-        Returns:
-            A QGCenter object representing the Fréchet mean of the input points.
-        """
-        if not points:
-            raise ValueError("Cannot compute Fréchet mean for an empty list of points.")
-
-        # Find the closest node for each point
-        closest_nodes = []
-        for p in points:
-            if not isinstance(p, QGPoint):
-                raise TypeError("All points must be QGPoint instances.")
-            closest_nodes.append(p.closest_node())
-
-        # Count occurrences of each node
-        node_counts = {}
-        for node in closest_nodes:
-            node_counts[node] = node_counts.get(node, 0) + 1
-
-        # Find the most frequent node
-        if not node_counts:
-            # This case should ideally not happen if points is not empty
-            # and closest_node always returns a valid node.
-            raise ValueError("No valid nodes found for Fréchet mean approximation.")
-
-        most_frequent_node = max(node_counts, key=node_counts.get)
-
-        # Return a QGCenter at the most frequent node
-        return self.node_as_center(most_frequent_node)
+    def get_point_type(self) -> type[QGPoint]:
+        """Return the type of points in this space."""
+        return QGPoint

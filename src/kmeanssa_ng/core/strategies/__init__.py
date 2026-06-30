@@ -11,6 +11,7 @@ from .initialization import (
     KMeansPlusPlus,
     RandomInit,
 )
+from .lloyd_update import LloydUpdateStrategy, SimulatedAnnealingFrechetMean
 from .robustification import MinimizeEnergy, RobustificationStrategy
 from .sampling import SamplingStrategy
 
@@ -21,4 +22,6 @@ __all__ = [
     "RobustificationStrategy",
     "MinimizeEnergy",
     "SamplingStrategy",
+    "LloydUpdateStrategy",
+    "SimulatedAnnealingFrechetMean",
 ]

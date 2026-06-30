@@ -168,11 +168,11 @@ class TestQGPoint:
 
         # Point closer to node 0
         point1 = QGPoint(graph, edge=(0, 1), position=0.3)
-        assert point1._closest_node() == 0
+        assert point1.closest_node() == 0
 
         # Point closer to node 1
         point2 = QGPoint(graph, edge=(0, 1), position=0.7)
-        assert point2._closest_node() == 1
+        assert point2.closest_node() == 1
 
     def test_reverse(self):
         """Test reversing edge orientation."""

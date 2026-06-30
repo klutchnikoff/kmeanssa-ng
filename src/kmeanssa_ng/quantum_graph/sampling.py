@@ -6,7 +6,7 @@ allowing different probability distributions for selecting points on the graph.
 
 from __future__ import annotations
 
-import random as rd
+import numpy as np
 from typing import TYPE_CHECKING
 
 import networkx as nx
@@ -59,12 +59,13 @@ class UniformNodeSampling(SamplingStrategy):
         nx.set_node_attributes(space, 0, "nb_obs")
         points = []
         nodes = list(space.nodes())
+        rng = self._get_rng()
 
         for _ in range(n):
-            node = rd.choice(nodes)
+            node = rng.choice(nodes)
             nb_obs = nx.get_node_attributes(space, "nb_obs").get(node, 0) + 1
             nx.set_node_attributes(space, {node: {"nb_obs": nb_obs}})
-            neighbor = rd.choice(list(space.neighbors(node)))
+            neighbor = next(space.neighbors(node))
             points.append(QGPoint(space, (node, neighbor), 0))
 
         return points
@@ -130,13 +131,16 @@ class UniformEdgeSampling(SamplingStrategy):
         # Create list of edges and weights (lengths)
         edge_list = list(edge_lengths.keys())
         weights = [edge_lengths[e] for e in edge_list]
+        probabilities = np.array(weights) / sum(weights)
+        rng = self._get_rng()
 
         points = []
         for _ in range(n):
             # Choose edge proportionally to its length
-            edge = rd.choices(edge_list, weights=weights, k=1)[0]
+            idx = rng.choice(len(edge_list), p=probabilities)
+            edge = edge_list[idx]
             # Sample position uniformly along the edge
-            position = rd.uniform(0, edge_lengths[edge])
+            position = rng.uniform(0, edge_lengths[edge])
             points.append(QGPoint(space, edge, position))
 
         return points
@@ -209,12 +213,14 @@ class WeightedNodeSampling(SamplingStrategy):
 
         keys = list(node_weights.keys())
         values = list(node_weights.values())
+        probabilities = np.array(values) / sum(values)
+        rng = self._get_rng()
 
         for _ in range(n):
-            node = rd.choices(keys, weights=values, k=1)[0]
+            node = rng.choice(keys, p=probabilities)
             nb_obs = nx.get_node_attributes(space, "nb_obs").get(node, 0) + 1
             nx.set_node_attributes(space, {node: {"nb_obs": nb_obs}})
-            neighbor = rd.choice(list(space.neighbors(node)))
+            neighbor = next(space.neighbors(node))
             points.append(QGPoint(space, (node, neighbor), 0))
 
         return points

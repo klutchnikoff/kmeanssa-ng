@@ -4,6 +4,7 @@ from .center import RiemannianCenter
 from .generators import create_hyperbolic_space, create_sphere
 from .point import RiemannianPoint
 from .space import RiemannianManifold
+from .update import FrechetMeanUpdate
 
 __all__ = [
     "RiemannianManifold",
@@ -11,4 +12,5 @@ __all__ = [
     "RiemannianCenter",
     "create_sphere",
     "create_hyperbolic_space",
+    "FrechetMeanUpdate",
 ]
