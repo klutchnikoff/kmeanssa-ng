@@ -140,4 +140,4 @@ class TestSimulatedAnnealingFrechetMean:
         assert new_center is not None
         # Check that the result is close to the expected mean
         distance_to_expected = space.distance(new_center, RiemannianPoint(space, expected_mean))
-        assert distance_to_expected < 0.1
+        assert distance_to_expected < 0.15

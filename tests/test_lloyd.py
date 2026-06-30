@@ -23,9 +23,9 @@ def test_lloyd_on_quantum_graph():
     random.seed(42)
     np.random.seed(42)
     graph = generate_sbm(sizes=[20, 20], p=[[0.8, 0.1], [0.1, 0.8]])
-    points = graph.sample_points(100, strategy=UniformNodeSampling())
+    points = graph.sample_points(100, strategy=UniformNodeSampling(random_state=42))
 
-    lloyd = Lloyd(points, k=2, update_strategy=MostFrequentNodeUpdate())
+    lloyd = Lloyd(points, k=2, update_strategy=MostFrequentNodeUpdate(random_state=42), random_state=42)
     centers = lloyd.run(initialization_strategy=RandomInit())
 
     # For now, just check that the algorithm runs and returns the correct number of centers.
@@ -37,9 +37,9 @@ def test_lloyd_on_riemannian_manifold():
     """Test Lloyd's algorithm on a Riemannian manifold."""
     sphere = Hypersphere(dim=2)
     space = RiemannianManifold(sphere)
-    points = space.sample_points(100, strategy=UniformManifoldSampling())
+    points = space.sample_points(100, strategy=UniformManifoldSampling(random_state=42))
 
-    lloyd = Lloyd(points, k=2, update_strategy=FrechetMeanUpdate())
+    lloyd = Lloyd(points, k=2, update_strategy=FrechetMeanUpdate(), random_state=42)
     centers = lloyd.run(initialization_strategy=RandomInit())
 
     assert len(centers) == 2

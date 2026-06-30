@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import random as rd
 from typing import TYPE_CHECKING
 
 import networkx as nx
@@ -468,10 +467,10 @@ class QuantumGraph(nx.Graph, Space):
             self.node_distance(edge1[1], edge2[1]) + (length1 - pos1) + (length2 - pos2)
         )
 
-        # Find minimum distance (break ties randomly)
+        # Find minimum distance (break ties deterministically)
         distances = np.array([d0, d1, d2, d3])
         all_idx = np.where(distances == distances.min())[0]
-        idx = rd.choice(all_idx)
+        idx = all_idx[0]
         d_min = distances[idx]
 
         # Check if points are on the same edge
@@ -575,9 +574,9 @@ class QuantumGraph(nx.Graph, Space):
             self._pairwise_nodes_distance_array,
         )
 
-    def center_from_point(self, point: QGPoint) -> QGCenter:
+    def center_from_point(self, point: QGPoint, rng=None) -> QGCenter:
         """Create a QGCenter object from a QGPoint object."""
-        return QGCenter(point)
+        return QGCenter(point, rng=rng)
 
     def nodes_as_points(self) -> list[QGPoint]:
         """Convert all nodes to points.
@@ -587,22 +586,27 @@ class QuantumGraph(nx.Graph, Space):
         """
         points = []
         for node in self.nodes:
-            neighbor = rd.choice(list(self.neighbors(node)))
+            neighbor = next(self.neighbors(node))
             points.append(QGPoint(self, (node, neighbor), 0))
         return points
 
-    def node_as_center(self, node: int) -> QGCenter:
+    def node_as_center(self, node: int, rng=None) -> QGCenter:
         """Create a center at a specific node.
 
         Args:
             node: The node to place the center at.
+            rng: Optional random number generator for neighbor selection.
 
         Returns:
             A center located at the node.
         """
-        neighbor = rd.choice(list(self.neighbors(node)))
+        if rng is not None:
+            nbrs = list(self.neighbors(node))
+            neighbor = nbrs[rng.integers(len(nbrs))]
+        else:
+            neighbor = next(self.neighbors(node))
         point = QGPoint(self, (node, neighbor), 0)
-        return QGCenter(point)
+        return QGCenter(point, rng=rng)
 
     def calculate_energy(
         self,
@@ -636,7 +640,7 @@ class QuantumGraph(nx.Graph, Space):
             for node, data in self.nodes(data=True):
                 nb_obs = data.get("nb_obs", 0)
                 if nb_obs > 0:
-                    neighbor = rd.choice(list(self.neighbors(node)))
+                    neighbor = next(self.neighbors(node))
                     point = QGPoint(self, (node, neighbor), 0)
                     min_dist_sq = min(
                         self.distance(center, point) ** 2 for center in centers

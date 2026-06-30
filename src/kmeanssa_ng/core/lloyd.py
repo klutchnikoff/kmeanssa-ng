@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+import numpy as np
 
 if TYPE_CHECKING:
     from .abstract import Center, Point
@@ -29,6 +30,7 @@ class Lloyd:
         points: list[Point],
         k: int,
         update_strategy: LloydUpdateStrategy,
+        random_state: int | np.random.Generator | None = None,
     ):
         """Initialize Lloyd's algorithm.
 
@@ -36,6 +38,7 @@ class Lloyd:
             points: A list of points to be clustered.
             k: The number of clusters.
             update_strategy: The strategy for updating cluster centers.
+            random_state: Controls randomness for reproducibility.
         """
         if not points:
             raise ValueError("Input points list cannot be empty.")
@@ -46,6 +49,11 @@ class Lloyd:
         self.k = k
         self.space = points[0].space
         self.update_strategy = update_strategy
+
+        if isinstance(random_state, np.random.Generator):
+            self._rng = random_state
+        else:
+            self._rng = np.random.default_rng(random_state)
 
     @property
     def observations(self) -> list[Point]:

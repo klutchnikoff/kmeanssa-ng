@@ -350,6 +350,11 @@ class SimulatedAnnealing:
         i0 = int(np.floor((self.n - 1) * (1 - robust_prop)))
 
         self._centers = initialization_strategy.initialize_centers(self)
+        # Seed each center's RNG from the SA's generator so that all stochastic moves
+        # (Brownian step size and vertex routing) are reproducible from random_state.
+        for _center in self._centers:
+            if hasattr(_center, "_rng"):
+                _center._rng = self._rng
 
         robustification_strategy.initialize(self)
         strategy = robustification_strategy

@@ -343,6 +343,39 @@ class TestSimulatedAnnealing:
         assert all(isinstance(c, QGCenter) for c in centers)
         assert all(c.space == graph for c in centers)
 
+    def test_full_reproducibility_with_random_state(self):
+        """Test that random_state gives fully reproducible results."""
+        import random
+        import numpy as np
+
+        # Setup
+        random.seed(1000)
+        np.random.seed(1000)
+        graph = generate_simple_graph(n_a=3)
+        points = graph.sample_points(30, strategy=UniformNodeSampling(random_state=42))
+
+        # Run 1
+        sa1 = SimulatedAnnealing(points, k=3, random_state=42)
+        centers1 = sa1.run(
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+            robust_prop=0.1,
+        )
+
+        # Run 2 - same seed
+        sa2 = SimulatedAnnealing(points, k=3, random_state=42)
+        centers2 = sa2.run(
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+            robust_prop=0.1,
+        )
+
+        # Assert identical results
+        assert len(centers1) == len(centers2)
+        for c1, c2 in zip(centers1, centers2):
+            assert c1.edge == c2.edge
+            assert abs(c1.position - c2.position) < 1e-10
+
     def test_most_frequent_node_strategy_empty_collection(self):
         """Test MostFrequentNode with an empty collection."""
 

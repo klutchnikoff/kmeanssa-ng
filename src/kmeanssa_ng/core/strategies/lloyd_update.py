@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import random
+import numpy as np
 from typing import TYPE_CHECKING
 
 from abc import ABC, abstractmethod
 
 if TYPE_CHECKING:
     from ..abstract import Center, Point, Space
-    from ..simulated_annealing import SimulatedAnnealing
     from .initialization import InitializationStrategy
 
 
@@ -56,10 +55,12 @@ class SimulatedAnnealingFrechetMean(LloydUpdateStrategy):
         self,
         n_samples: int | None = None,
         sa_initialization_strategy: "InitializationStrategy" | None = None,
+        random_state: int | np.random.Generator | None = None,
         **sa_kwargs,
     ):
         self.n_samples = n_samples
         self.sa_kwargs = sa_kwargs
+        self.random_state = random_state
 
         if sa_initialization_strategy is None:
             from .initialization import RandomInit
@@ -75,14 +76,25 @@ class SimulatedAnnealingFrechetMean(LloydUpdateStrategy):
 
         # Import locally to avoid circular dependency at module level
         from ..simulated_annealing import SimulatedAnnealing
+        import numpy as np
 
         if self.n_samples is not None and len(points) > self.n_samples:
-            observations = random.choices(points, k=self.n_samples)
+            if isinstance(self.random_state, np.random.Generator):
+                rng = self.random_state
+            else:
+                rng = np.random.default_rng(self.random_state)
+            indices = rng.choice(len(points), size=self.n_samples, replace=True)
+            observations = [points[idx] for idx in indices]
         else:
             observations = points
 
         # Use SA to find the point that minimizes the energy (the Fréchet mean)
-        sa = SimulatedAnnealing(observations=observations, k=1, **self.sa_kwargs)
+        sa = SimulatedAnnealing(
+            observations=observations,
+            k=1,
+            random_state=self.random_state,
+            **self.sa_kwargs
+        )
         
         # The run method requires a robustification strategy.
         # MinimizeEnergy is a sensible default to find the best center.
