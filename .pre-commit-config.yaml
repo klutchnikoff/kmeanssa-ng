@@ -1,0 +1,24 @@
+# .pre-commit-config.yaml
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: pdm run ruff check --fix
+        language: system
+        types: [python]
+        stages: [pre-commit]
+
+      - id: ruff-format
+        name: ruff format
+        entry: pdm run ruff format
+        language: system
+        types: [python]
+        stages: [pre-commit]
+
+      - id: pytest
+        name: pytest
+        entry: pdm run pytest
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
