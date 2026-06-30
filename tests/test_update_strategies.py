@@ -35,6 +35,7 @@ class TestMostFrequentNodeUpdate:
         with pytest.raises(TypeError):
             strategy.update(points, graph)
 
+
 class TestFrechetMeanUpdate:
     def test_update_with_empty_points(self):
         """Test that update with empty points list returns None."""
@@ -84,7 +85,7 @@ class TestMinimizeEnergyNodeUpdate:
         graph.add_edge(2, 3, length=1.0)
         graph.add_edge(3, 4, length=1.0)
         graph.precomputing()
-        
+
         # 3 points near node 1, 1 point near node 4
         points = [
             QGPoint(graph, (0, 1), 0.9),  # closest_node is 1
@@ -139,5 +140,7 @@ class TestSimulatedAnnealingFrechetMean:
         # 3. Assert result
         assert new_center is not None
         # Check that the result is close to the expected mean
-        distance_to_expected = space.distance(new_center, RiemannianPoint(space, expected_mean))
+        distance_to_expected = space.distance(
+            new_center, RiemannianPoint(space, expected_mean)
+        )
         assert distance_to_expected < 0.15
