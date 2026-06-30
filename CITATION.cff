@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Klutchnikoff"
+    given-names: "Nicolas"
+    email: "nicolas.klutchnikoff@univ-rennes2.fr"
+    affiliation: "Université Rennes 2"
+  - family-names: "Gavra"
+    given-names: "Ioana"
+    email: "ioana.gavra@univ-rennes2.fr"
+    affiliation: "Université Rennes 2"
+title: "kmeanssa-ng: K-means clustering on quantum graphs and metric spaces using simulated annealing"
+version: "0.7.0"
+date-released: "2026-06-30"
+url: "https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng"
+license: "MIT"
+keywords:
+  - "clustering"
+  - "k-means"
+  - "metric-spaces"
+  - "quantum-graphs"
+  - "simulated-annealing"
