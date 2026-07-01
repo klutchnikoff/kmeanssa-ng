@@ -574,6 +574,56 @@ class QuantumGraph(nx.Graph, Space):
             self._pairwise_nodes_distance_array,
         )
 
+    def node_center_distances(self, centers: list[QGCenter]) -> np.ndarray:
+        """Geodesic distance from every node to every center.
+
+        Args:
+            centers: List of k centers.
+
+        Returns:
+            Array of shape (n_nodes, k), with rows in ``list(self.nodes())``
+            order: entry (v, i) is the geodesic distance from node v to center i.
+
+        Raises:
+            ValueError: If pairwise distances have not been precomputed.
+        """
+        if self._pairwise_nodes_distance_array is None:
+            raise ValueError("Must call precomputing() before node_center_distances")
+
+        distances = self._pairwise_nodes_distance_array  # (n, n), node order
+        index = self._node_to_index
+        out = np.empty((distances.shape[0], len(centers)))
+        for i, center in enumerate(centers):
+            a, b = center.edge
+            length = self.get_edge_length(a, b)
+            # A center sits at `position` along edge (a, b); a node reaches it
+            # via whichever endpoint is closer.
+            out[:, i] = np.minimum(
+                center.position + distances[:, index[a]],
+                (length - center.position) + distances[:, index[b]],
+            )
+        return out
+
+    def node_energy(
+        self, centers: list[QGCenter], weights: np.ndarray | None = None
+    ) -> float:
+        """Node-weighted k-means energy ``sum_v w[v] * min_i d(v, c_i)^2``.
+
+        Args:
+            centers: List of cluster centers.
+            weights: Per-node weights in ``list(self.nodes())`` order. Defaults
+                to the nodes' ``weight`` attribute (1.0 when absent).
+
+        Returns:
+            The weighted energy.
+        """
+        min_sq = self.node_center_distances(centers).min(axis=1) ** 2
+        if weights is None:
+            weights = np.array(
+                [self.nodes[node].get("weight", 1.0) for node in self.nodes()]
+            )
+        return float(np.sum(np.asarray(weights) * min_sq))
+
     def center_from_point(self, point: QGPoint, rng=None) -> QGCenter:
         """Create a QGCenter object from a QGPoint object."""
         return QGCenter(point, rng=rng)
