@@ -1,5 +1,6 @@
 """Test simulated annealing algorithm."""
 
+import numpy as np
 import pytest
 
 from kmeanssa_ng import (
@@ -568,3 +569,48 @@ class TestRobustificationStrategy:
             strategy.collect(None)
         with pytest.raises(NotImplementedError):
             strategy.get_result()
+
+
+class TestEnergyTracking:
+    """Tests for run(record_energy=True) and the history properties."""
+
+    def _sa(self):
+        graph = generate_simple_graph(n_a=3)
+        points = graph.sample_points(30, strategy=UniformNodeSampling(random_state=1))
+        return SimulatedAnnealing(points, k=2, random_state=42)
+
+    def _run(self, sa, record_energy):
+        return sa.run(
+            KMeansPlusPlus(),
+            MinimizeEnergy(),
+            robust_prop=0.1,
+            record_energy=record_energy,
+        )
+
+    def test_history_empty_without_tracking(self):
+        sa = self._sa()
+        self._run(sa, record_energy=False)
+        assert sa.energy_history.size == 0
+        assert sa.time_history.size == 0
+
+    def test_history_recorded_with_tracking(self):
+        sa = self._sa()
+        self._run(sa, record_energy=True)
+        # initial state + one entry per observation
+        assert len(sa.energy_history) == sa.n + 1
+        assert len(sa.time_history) == len(sa.energy_history)
+        assert sa.time_history[0] == 0.0
+        assert np.all(np.diff(sa.time_history) >= -1e-12)
+
+    def test_final_recorded_energy_matches_centers(self):
+        sa = self._sa()
+        centers = self._run(sa, record_energy=True)
+        assert abs(sa.energy_history[-1] - sa.calculate_energy(centers)) < 1e-9
+
+    def test_tracking_does_not_change_result(self):
+        untracked = self._run(self._sa(), record_energy=False)
+        tracked = self._run(self._sa(), record_energy=True)
+        assert len(untracked) == len(tracked)
+        for a, b in zip(untracked, tracked):
+            assert a.edge == b.edge
+            assert abs(a.position - b.position) < 1e-12
