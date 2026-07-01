@@ -15,9 +15,6 @@ import numpy as np
 
 from kmeanssa_ng import (
     QGPoint,
-    SimulatedAnnealing,
-    KMeansPlusPlus,
-    MinimizeEnergy,
     create_sphere,
     RiemannianPoint,
     FibonacciNet,
@@ -27,6 +24,7 @@ from kmeanssa_ng import (
 from kmeanssa_ng.core.metrics import compute_labels, adjusted_rand_index
 
 import baselines as B
+from multistart import annealings, methods_from_raw
 
 MODES = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 KAPPA = 10.0
@@ -88,95 +86,81 @@ def make_data(seed, n_data):
     return data, comps
 
 
+def _sa_graph_runs(qg, V, nbr, node_list, nu_row, proj, n_data, n_obs, b, n_runs, seed):
+    """SA on the approximating graph; return (data_labels, energies, centroids)."""
+
+    def observations_for(rng):
+        on = proj[rng.integers(0, n_data, size=n_obs)]
+        return [QGPoint(qg, (int(v), nbr[int(v)]), 0) for v in on]
+
+    node_label = np.empty(len(V), dtype=int)
+    labels, energies, centroids = [], [], []
+    for _, centers, sa in annealings(observations_for, 3, b, n_runs, seed + 300):
+        node_label[node_list] = np.argmin(qg.node_center_distances(centers), axis=1)
+        labels.append(node_label[proj].copy())
+        energies.append(qg.node_energy(centers, weights=nu_row))
+        centroids.append(np.array([V[c.closest_node()] for c in centers]))
+    return labels, np.array(energies), centroids
+
+
+def _sa_sphere_runs(data, n_data, n_obs, b, n_runs, seed):
+    """SA directly on S^2 (great-circle geodesics); return (data_labels, energies)."""
+    sphere = create_sphere(2)
+    all_points = [RiemannianPoint(sphere, x) for x in data]
+
+    def observations_for(rng):
+        idx = rng.integers(0, n_data, size=n_obs)
+        return [RiemannianPoint(sphere, data[i]) for i in idx]
+
+    labels, energies = [], []
+    for _, centers, sa in annealings(observations_for, 3, b, n_runs, seed + 300):
+        labels.append(np.array(compute_labels(sphere, all_points, centers)))
+        energies.append(sa.calculate_energy(centers))
+    return labels, np.array(energies)
+
+
+def _print_diag(seed, labels, energies, dtrue):
+    """Print SA-graph runs sorted by energy (the first is the selected one)."""
+    print(f"  [diag seed {seed}] SA-graph runs by energy:", flush=True)
+    for o in np.argsort(energies):
+        sizes = tuple(int(x) for x in np.bincount(labels[o], minlength=3))
+        ari = adjusted_rand_index(labels[o], dtrue)
+        print(f"    E={energies[o]:.3f}  ARI={ari:.3f}  sizes={sizes}", flush=True)
+
+
 def eval_seed(
     qg, V, nbr, node_list, seed, n_data=2000, n_obs=2000, b=0.2, n_runs=20, diag=False
 ):
     """Run all four methods for one seed; return raw per-run data at the data level."""
     data, dtrue = make_data(seed, n_data)
     proj = np.argmin(np.arccos(np.clip(data @ V.T, -1, 1)), axis=1)
-    n_net = len(V)
-    nu = np.bincount(proj, minlength=n_net).astype(float)
+    nu = np.bincount(proj, minlength=len(V)).astype(float)
     nu /= nu.sum()
     nu_row = nu[node_list]
-    lbn = np.empty(n_net, dtype=int)
-    raw = {}
 
-    # SA on the graph (shortest-path distances, no exponential map).
-    labs, ens, sizes, cents = [], [], [], []
-    for r in range(n_runs):
-        idx_ss, sa_ss = np.random.SeedSequence(seed + r + 300).spawn(2)
-        on = proj[np.random.default_rng(idx_ss).integers(0, n_data, size=n_obs)]
-        obs = [QGPoint(qg, (int(v), nbr[int(v)]), 0) for v in on]
-        sa = SimulatedAnnealing(
-            observations=obs,
-            k=3,
-            lambda0=1.0,
-            beta0=b,
-            step_size=0.01,
-            energy_mode="obs",
-            random_state=np.random.default_rng(sa_ss),
-        )
-        centers = sa.run(KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1)
-        lbn[node_list] = np.argmin(qg.node_center_distances(centers), axis=1)
-        dl = lbn[proj].copy()
-        labs.append(dl)
-        ens.append(qg.node_energy(centers, weights=nu_row))
-        sizes.append(tuple(int(x) for x in np.bincount(dl, minlength=3)))
-        cents.append(np.array([V[c.closest_node()] for c in centers]))
-    raw["SA-graph"] = (labs, np.array(ens))
+    graph_labels, graph_energies, centroids = _sa_graph_runs(
+        qg, V, nbr, node_list, nu_row, proj, n_data, n_obs, b, n_runs, seed
+    )
     if diag:
-        order = np.argsort(ens)
-        print(
-            f"  [diag seed {seed}] SA-graph runs by energy (selected = first):",
-            flush=True,
-        )
-        for o in order:
-            print(
-                f"    E={ens[o]:.3f}  ARI={adjusted_rand_index(labs[o], dtrue):.3f}  "
-                f"sizes={sizes[o]}",
-                flush=True,
-            )
+        _print_diag(seed, graph_labels, graph_energies, dtrue)
+    sphere_labels, sphere_energies = _sa_sphere_runs(
+        data, n_data, n_obs, b, n_runs, seed
+    )
 
-    # SA directly on the sphere (great-circle geodesics, exponential map).
-    sp = create_sphere(2)
-    allp = [RiemannianPoint(sp, x) for x in data]
-    labs, ens = [], []
-    for r in range(n_runs):
-        idx_ss, sa_ss = np.random.SeedSequence(seed + r + 300).spawn(2)
-        idx = np.random.default_rng(idx_ss).integers(0, n_data, size=n_obs)
-        obs = [RiemannianPoint(sp, data[i]) for i in idx]
-        sa = SimulatedAnnealing(
-            observations=obs,
-            k=3,
-            lambda0=1.0,
-            beta0=b,
-            step_size=0.01,
-            energy_mode="obs",
-            random_state=np.random.default_rng(sa_ss),
-        )
-        centers = sa.run(KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1)
-        labs.append(np.array(compute_labels(sp, allp, centers)))
-        ens.append(sa.calculate_energy(centers))
-    raw["SA-sphere"] = (labs, np.array(ens))
-
-    # CLVQ and k-medoids on the exact geodesic distances of the data.
+    raw = {
+        "SA-graph": (graph_labels, graph_energies),
+        "SA-sphere": (sphere_labels, sphere_energies),
+    }
     labc, enc = B.clvq_sphere(data, k=3, n_runs=n_runs, base_seed=seed + 300)
     raw["CLVQ"] = (labc, np.array(enc))
-    Dd = np.arccos(np.clip(data @ data.T, -1, 1))
+    geodesic = np.arccos(np.clip(data @ data.T, -1, 1))
     labm, enm = B.weighted_kmedoids(
-        Dd, np.ones(n_data) / n_data, k=3, n_runs=n_runs, base_seed=seed + 300
+        geodesic, np.ones(n_data) / n_data, k=3, n_runs=n_runs, base_seed=seed + 300
     )
     raw["k-medoids"] = (labm, np.array(enm))
 
-    methods = {}
-    for name, (labs, ens) in raw.items():
-        aris = np.array([adjusted_rand_index(lbl, dtrue) for lbl in labs])
-        methods[name] = {
-            "aris": aris,
-            "energies": ens,
-            "labels": [np.asarray(lbl) for lbl in labs],
-        }
-    methods["SA-graph"]["centroids"] = cents
+    methods = methods_from_raw(raw, dtrue)
+    methods["SA-graph"]["centroids"] = centroids
     return {"data": data, "dtrue": dtrue, "proj": proj, "methods": methods}
 
 
@@ -208,7 +192,7 @@ def summarize(store):
         )
 
 
-def run_multi(
+def run(
     seeds=(42, 43, 44, 45, 46), n_net=5000, n_data=2000, n_obs=2000, b=0.2, n_runs=20
 ):
     qg, V, nbr, node_list, eps, l_eps = build_graph(n_net)
@@ -243,4 +227,4 @@ def run_multi(
 
 
 if __name__ == "__main__":
-    run_multi()
+    run()

@@ -9,7 +9,8 @@ pipeline in seconds without producing publication-grade numbers.
 
 import sys
 
-import experiments
+import grid
+import sbm
 import sphere
 import make_tables
 import make_figures
@@ -17,13 +18,13 @@ import make_figures
 
 def main(quick=False):
     if quick:
-        experiments.run_grid_multi(seeds=(42, 43), n_runs=3, n_data=200, n_obs=200)
-        experiments.run_sbm_multi(seeds=(42, 43), n_runs=3)
-        sphere.run_multi(seeds=(42, 43), n_net=400, n_data=200, n_obs=200, n_runs=3)
+        grid.run(seeds=(42, 43), n_runs=3, n_data=200, n_obs=200)
+        sbm.run(seeds=(42, 43), n_runs=3)
+        sphere.run(seeds=(42, 43), n_net=400, n_data=200, n_obs=200, n_runs=3)
     else:
-        experiments.run_grid_multi()
-        experiments.run_sbm_multi()
-        sphere.run_multi()
+        grid.run()
+        sbm.run()
+        sphere.run()
     make_tables.main()
     make_figures.figure_grid()
     make_figures.figure_sbm()

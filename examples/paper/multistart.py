@@ -1,0 +1,56 @@
+"""Shared multi-start driver for the simulated-annealing experiments.
+
+Every experiment runs the annealer many times from independent seeds and keeps the
+per-run labels and energies; the lowest-energy run is selected downstream. This
+module factors out that seeded loop and the per-method ARI aggregation.
+"""
+
+import numpy as np
+
+from kmeanssa_ng import SimulatedAnnealing, KMeansPlusPlus, MinimizeEnergy
+from kmeanssa_ng.core.metrics import adjusted_rand_index
+
+
+def annealings(observations_for, k, beta0, n_runs, seed_base, track_first=False):
+    """Yield (run_index, centers, sa) for ``n_runs`` independently-seeded SA runs.
+
+    Args:
+        observations_for: callback ``rng -> observations`` building a run's data from
+            a dedicated Generator, kept separate from the annealing stream.
+        k, beta0: number of clusters and drift strength.
+        n_runs: number of restarts.
+        seed_base: run ``r`` is seeded from ``seed_base + r``.
+        track_first: record the energy history of the first run (``sa.energy_history``).
+    """
+    for r in range(n_runs):
+        obs_seed, sa_seed = np.random.SeedSequence(seed_base + r).spawn(2)
+        observations = observations_for(np.random.default_rng(obs_seed))
+        sa = SimulatedAnnealing(
+            observations=observations,
+            k=k,
+            lambda0=1.0,
+            beta0=beta0,
+            step_size=0.01,
+            energy_mode="obs",
+            random_state=np.random.default_rng(sa_seed),
+        )
+        centers = sa.run(
+            KMeansPlusPlus(),
+            MinimizeEnergy(),
+            robust_prop=0.1,
+            record_energy=track_first and r == 0,
+        )
+        yield r, centers, sa
+
+
+def methods_from_raw(raw, true_labels):
+    """Turn ``{method: (labels_per_run, energies)}`` into ARI/energy/label records."""
+    methods = {}
+    for name, (labels, energies) in raw.items():
+        aris = np.array([adjusted_rand_index(lbl, true_labels) for lbl in labels])
+        methods[name] = {
+            "aris": aris,
+            "energies": np.asarray(energies) if energies is not None else None,
+            "labels": [np.asarray(lbl) for lbl in labels],
+        }
+    return methods

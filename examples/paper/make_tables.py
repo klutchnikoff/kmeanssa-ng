@@ -49,80 +49,86 @@ def fmt(x):
     return f"{x:.3f}"
 
 
-def main():
-    grid = load("grid_multi")
-    sbm = load("sbm_multi")
-    sph = load("sphere_multi")
+# On the sphere the reference SA is the graph route.
+SA_KEY = {"grid": "SA", "sbm": "SA", "sphere": "SA-graph"}
+METHODS = {
+    "grid": ["SA", "k-medoids", "spectral"],
+    "sbm": ["SA", "k-medoids", "spectral"],
+    "sphere": ["SA-graph", "SA-sphere", "CLVQ", "k-medoids"],
+}
+PRETTY = {
+    "SA": "SA (graph)",
+    "SA-graph": "SA (graph)",
+    "SA-sphere": "SA (sphere)",
+    "k-medoids": "$k$-medoids",
+    "spectral": "spectral",
+    "CLVQ": "CLVQ",
+}
 
-    # On the sphere the reference SA is the graph route.
-    sa_key = {"grid": "SA", "sbm": "SA", "sphere": "SA-graph"}
-    meta = {
-        "grid": ("Grid $10\\times10$", 100, 2, grid),
-        "sbm": ("SBM", 100, 2, sbm),
-        "sphere": ("Sphere $\\mathbb{S}^2$", sph["config"]["n_net"], 3, sph),
-    }
 
-    lines = []
-    lines.append("% ---- Table 1: SA performance ----")
-    lines.append("\\begin{tabular}{lccccccc}")
-    lines.append("\\hline")
-    lines.append(
+def _performance_table(meta):
+    """Table 1: per-experiment SA final energy and ARI."""
+    lines = [
+        "% ---- Table 1: SA performance ----",
+        "\\begin{tabular}{lccccccc}",
+        "\\hline",
         "Experiment & $|V|$ & $k$ & Runs & \\multicolumn{2}{c}{Final energy $U$} "
-        "& \\multicolumn{2}{c}{ARI} \\\\"
-    )
-    lines.append("\\cline{5-6}\\cline{7-8}")
-    lines.append(
-        "& & & & Mean$\\pm\\sigma$ & Best & Mean$\\pm\\sigma$ & Best / Sel. \\\\"
-    )
-    lines.append("\\hline")
+        "& \\multicolumn{2}{c}{ARI} \\\\",
+        "\\cline{5-6}\\cline{7-8}",
+        "& & & & Mean$\\pm\\sigma$ & Best & Mean$\\pm\\sigma$ & Best / Sel. \\\\",
+        "\\hline",
+    ]
     for key in ("grid", "sbm", "sphere"):
         label, V, k, store = meta[key]
         ps = store["per_seed"]
         n_runs = store.get("n_runs", store.get("config", {}).get("n_runs"))
         n_seeds = len(store.get("seeds", store.get("config", {}).get("seeds", [])))
-        em, es, eb = energy_stats(ps, sa_key[key])
-        s = method_stats(ps, sa_key[key])
+        em, es, eb = energy_stats(ps, SA_KEY[key])
+        s = method_stats(ps, SA_KEY[key])
         lines.append(
             f"{label} & {V} & {k} & {n_runs}$\\times${n_seeds} & "
             f"${em:.2f}\\pm{es:.2f}$ & {eb:.2f} & "
             f"${fmt(s['mean'])}\\pm{fmt(s['std'])}$ & {fmt(s['best'])} / {fmt(s['sel_mean'])} \\\\"
         )
-    lines.append("\\hline")
-    lines.append("\\end{tabular}")
-    lines.append("")
+    return lines + ["\\hline", "\\end{tabular}", ""]
 
-    methods = {
-        "grid": ["SA", "k-medoids", "spectral"],
-        "sbm": ["SA", "k-medoids", "spectral"],
-        "sphere": ["SA-graph", "SA-sphere", "CLVQ", "k-medoids"],
-    }
-    pretty = {
-        "SA": "SA (graph)",
-        "SA-graph": "SA (graph)",
-        "SA-sphere": "SA (sphere)",
-        "k-medoids": "$k$-medoids",
-        "spectral": "spectral",
-        "CLVQ": "CLVQ",
-    }
-    lines.append("% ---- Table 2: comparison with baselines (ARI) ----")
-    lines.append("\\begin{tabular}{llcc}")
-    lines.append("\\hline")
-    lines.append("Experiment & Method & ARI (sel., mean$\\pm\\sigma$) & ARI best \\\\")
-    lines.append("\\hline")
+
+def _comparison_table(meta):
+    """Table 2: ARI comparison against the baselines."""
+    lines = [
+        "% ---- Table 2: comparison with baselines (ARI) ----",
+        "\\begin{tabular}{llcc}",
+        "\\hline",
+        "Experiment & Method & ARI (sel., mean$\\pm\\sigma$) & ARI best \\\\",
+        "\\hline",
+    ]
     for key in ("grid", "sbm", "sphere"):
-        label, V, k, store = meta[key]
+        label, _V, _k, store = meta[key]
         ps = store["per_seed"]
-        for j, mth in enumerate(methods[key]):
-            s = method_stats(ps, mth)
+        for j, method in enumerate(METHODS[key]):
+            s = method_stats(ps, method)
             exp_cell = label if j == 0 else ""
             lines.append(
-                f"{exp_cell} & {pretty[mth]} & "
+                f"{exp_cell} & {PRETTY[method]} & "
                 f"${fmt(s['sel_mean'])}\\pm{fmt(s['sel_std'])}$ & {fmt(s['best'])} \\\\"
             )
         lines.append("\\hline")
-    lines.append("\\end{tabular}")
+    return lines + ["\\end{tabular}"]
 
-    out = "\n".join(lines)
+
+def main():
+    sphere_store = load("sphere_multi")
+    meta = {
+        "grid": ("Grid $10\\times10$", 100, 2, load("grid_multi")),
+        "sbm": ("SBM", 100, 2, load("sbm_multi")),
+        "sphere": (
+            "Sphere $\\mathbb{S}^2$",
+            sphere_store["config"]["n_net"],
+            3,
+            sphere_store,
+        ),
+    }
+    out = "\n".join(_performance_table(meta) + _comparison_table(meta))
     print(out)
     open(f"{RESULTS}/tables.tex", "w").write(out + "\n")
     print("\n% written to results/tables.tex")
