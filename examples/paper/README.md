@@ -15,11 +15,13 @@ against baseline methods (weighted k-medoids, spectral clustering, CLVQ):
 ## Layout
 
 ```
-common.py        shared helpers (labels, energy, tracking SA, sphere geometry)
+calibration.py   temperature calibration: the critical depth c*
+multistart.py    the seeded multi-start SA loop, shared by every experiment
 baselines.py     k-medoids, spectral, CLVQ
-experiments.py   grid + SBM  -> results/grid_multi.pkl, results/sbm_multi.pkl
-sphere.py        sphere      -> results/sphere_multi.pkl
-make_tables.py   results/*.pkl -> results/tables.tex
+grid.py          grid experiment    -> results/grid_multi.pkl
+sbm.py           SBM experiment     -> results/sbm_multi.pkl
+sphere.py        sphere experiment  -> results/sphere_multi.pkl
+make_tables.py   results/*.pkl -> results/table_{performance,comparison}.csv
 make_figures.py  results/*.pkl -> figures/figure_{1,2,3}.pdf
 reproduce.py     run everything end to end
 ```
@@ -33,11 +35,38 @@ without re-running the (slow) experiments.
 pip install "kmeanssa-ng>=0.8.0" scikit-learn matplotlib
 python reproduce.py            # experiments + tables + figures
 # or step by step:
-python experiments.py          # grid + SBM
-python sphere.py               # sphere (~20 min)
+python grid.py
+python sbm.py
+python sphere.py               # ~20 min
 python make_tables.py
 python make_figures.py
 ```
 
 Every experiment is seeded (`seeds = 42..46` by default), so results are
 reproducible across machines.
+
+## Typesetting the tables
+
+`make_tables.py` only emits the numbers, as CSV at full precision — the table
+model stays in the article. With `csvsimple` and `siunitx`, rounding and layout
+are controlled entirely in LaTeX:
+
+```latex
+\usepackage{csvsimple,siunitx}
+\sisetup{round-mode=places, round-precision=3}
+
+% Comparison with the baselines (results/table_comparison.csv)
+\begin{tabular}{llcc}
+\hline
+Experiment & Method & ARI (sel., mean$\pm\sigma$) & ARI best \\
+\hline
+\csvreader[late after line=\\]{results/table_comparison.csv}%
+  {experiment=\exper, method=\meth, ari_sel_mean=\selm,
+   ari_sel_std=\sels, ari_best=\best}%
+  {\exper & \meth & $\num{\selm} \pm \num{\sels}$ & \num{\best}}
+\hline
+\end{tabular}
+```
+
+Change the precision, columns or layout without touching Python. (`pgfplotstable`
+is an alternative if you prefer automatic numeric formatting.)

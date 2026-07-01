@@ -1,56 +1,24 @@
-"""Build the LaTeX tables from the saved pickles (no recomputation).
+"""Compute the experiment statistics and write them as CSV.
 
-  Table 1: SA performance per experiment (|V|, k, runs, final energy, ARI).
-  Table 2: comparison with baselines (ARI selected, mean +/- std over seeds).
+Presentation (the LaTeX table model) lives in the article, not here: this module
+only emits the numbers at full precision. See the README for a \\csvreader
+snippet that typesets these files.
 
-Writes results/tables.tex and prints it.
+  results/table_performance.csv   (one row per experiment: energy + ARI of the SA)
+  results/table_comparison.csv    (one row per experiment x method: ARI)
 """
 
+import csv
 import pickle
 
 import numpy as np
 
 RESULTS = "results"
 
-
-def load(name):
-    return pickle.load(open(f"{RESULTS}/{name}.pkl", "rb"))
-
-
-def method_stats(per_seed, method):
-    """Pooled mean/std/best over all runs; selected = per-seed (argmin energy), averaged."""
-    aris_all, sel = [], []
-    for sres in per_seed.values():
-        m = sres["methods"][method]
-        aris_all.append(np.asarray(m["aris"]))
-        en = m["energies"]
-        if en is not None and len(en):
-            sel.append(float(m["aris"][int(np.argmin(en))]))
-        else:  # spectral has no energy -> report the mean as "selected"
-            sel.append(float(np.mean(m["aris"])))
-    a = np.concatenate(aris_all)
-    return {
-        "mean": a.mean(),
-        "std": a.std(),
-        "best": a.max(),
-        "sel_mean": float(np.mean(sel)),
-        "sel_std": float(np.std(sel)),
-    }
-
-
-def energy_stats(per_seed, method="SA"):
-    e = np.concatenate(
-        [np.asarray(s["methods"][method]["energies"]) for s in per_seed.values()]
-    )
-    return e.mean(), e.std(), e.min()
-
-
-def fmt(x):
-    return f"{x:.3f}"
-
-
 # On the sphere the reference SA is the graph route.
 SA_KEY = {"grid": "SA", "sbm": "SA", "sphere": "SA-graph"}
+LABEL = {"grid": "Grid $10\\times10$", "sbm": "SBM", "sphere": "Sphere $\\mathbb{S}^2$"}
+V = {"grid": 100, "sbm": 100}  # sphere's |V| comes from its config
 METHODS = {
     "grid": ["SA", "k-medoids", "spectral"],
     "sbm": ["SA", "k-medoids", "spectral"],
@@ -66,72 +34,104 @@ PRETTY = {
 }
 
 
-def _performance_table(meta):
-    """Table 1: per-experiment SA final energy and ARI."""
-    lines = [
-        "% ---- Table 1: SA performance ----",
-        "\\begin{tabular}{lccccccc}",
-        "\\hline",
-        "Experiment & $|V|$ & $k$ & Runs & \\multicolumn{2}{c}{Final energy $U$} "
-        "& \\multicolumn{2}{c}{ARI} \\\\",
-        "\\cline{5-6}\\cline{7-8}",
-        "& & & & Mean$\\pm\\sigma$ & Best & Mean$\\pm\\sigma$ & Best / Sel. \\\\",
-        "\\hline",
-    ]
+def load(name):
+    return pickle.load(open(f"{RESULTS}/{name}.pkl", "rb"))
+
+
+def method_stats(per_seed, method):
+    """Pooled mean/std/best over all runs; selected = per-seed (argmin energy), averaged."""
+    aris_all, sel = [], []
+    for sres in per_seed.values():
+        m = sres["methods"][method]
+        aris_all.append(np.asarray(m["aris"]))
+        energies = m["energies"]
+        if energies is not None and len(energies):
+            sel.append(float(m["aris"][int(np.argmin(energies))]))
+        else:  # spectral has no energy -> report the mean as "selected"
+            sel.append(float(np.mean(m["aris"])))
+    aris = np.concatenate(aris_all)
+    return {
+        "mean": aris.mean(),
+        "std": aris.std(),
+        "best": aris.max(),
+        "sel_mean": float(np.mean(sel)),
+        "sel_std": float(np.std(sel)),
+    }
+
+
+def energy_stats(per_seed, method):
+    energies = np.concatenate(
+        [np.asarray(s["methods"][method]["energies"]) for s in per_seed.values()]
+    )
+    return energies.mean(), energies.std(), energies.min()
+
+
+def _config(store, field):
+    return store.get(field, store.get("config", {}).get(field))
+
+
+def performance_rows(stores):
+    """One row per experiment: SA final energy and ARI statistics."""
+    rows = []
     for key in ("grid", "sbm", "sphere"):
-        label, V, k, store = meta[key]
-        ps = store["per_seed"]
-        n_runs = store.get("n_runs", store.get("config", {}).get("n_runs"))
-        n_seeds = len(store.get("seeds", store.get("config", {}).get("seeds", [])))
-        em, es, eb = energy_stats(ps, SA_KEY[key])
-        s = method_stats(ps, SA_KEY[key])
-        lines.append(
-            f"{label} & {V} & {k} & {n_runs}$\\times${n_seeds} & "
-            f"${em:.2f}\\pm{es:.2f}$ & {eb:.2f} & "
-            f"${fmt(s['mean'])}\\pm{fmt(s['std'])}$ & {fmt(s['best'])} / {fmt(s['sel_mean'])} \\\\"
+        store = stores[key]
+        per_seed = store["per_seed"]
+        em, es, eb = energy_stats(per_seed, SA_KEY[key])
+        ari = method_stats(per_seed, SA_KEY[key])
+        rows.append(
+            {
+                "experiment": LABEL[key],
+                "V": V.get(key, _config(store, "n_net")),
+                "k": 3 if key == "sphere" else 2,
+                "n_runs": _config(store, "n_runs"),
+                "n_seeds": len(_config(store, "seeds")),
+                "energy_mean": em,
+                "energy_std": es,
+                "energy_best": eb,
+                "ari_mean": ari["mean"],
+                "ari_std": ari["std"],
+                "ari_best": ari["best"],
+                "ari_sel": ari["sel_mean"],
+            }
         )
-    return lines + ["\\hline", "\\end{tabular}", ""]
+    return rows
 
 
-def _comparison_table(meta):
-    """Table 2: ARI comparison against the baselines."""
-    lines = [
-        "% ---- Table 2: comparison with baselines (ARI) ----",
-        "\\begin{tabular}{llcc}",
-        "\\hline",
-        "Experiment & Method & ARI (sel., mean$\\pm\\sigma$) & ARI best \\\\",
-        "\\hline",
-    ]
+def comparison_rows(stores):
+    """One row per (experiment, method): selected/best ARI against the baselines."""
+    rows = []
     for key in ("grid", "sbm", "sphere"):
-        label, _V, _k, store = meta[key]
-        ps = store["per_seed"]
-        for j, method in enumerate(METHODS[key]):
-            s = method_stats(ps, method)
-            exp_cell = label if j == 0 else ""
-            lines.append(
-                f"{exp_cell} & {PRETTY[method]} & "
-                f"${fmt(s['sel_mean'])}\\pm{fmt(s['sel_std'])}$ & {fmt(s['best'])} \\\\"
+        per_seed = stores[key]["per_seed"]
+        for method in METHODS[key]:
+            ari = method_stats(per_seed, method)
+            rows.append(
+                {
+                    "experiment": LABEL[key],
+                    "method": PRETTY[method],
+                    "ari_sel_mean": ari["sel_mean"],
+                    "ari_sel_std": ari["sel_std"],
+                    "ari_best": ari["best"],
+                }
             )
-        lines.append("\\hline")
-    return lines + ["\\end{tabular}"]
+    return rows
+
+
+def write_csv(path, rows):
+    with open(path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def main():
-    sphere_store = load("sphere_multi")
-    meta = {
-        "grid": ("Grid $10\\times10$", 100, 2, load("grid_multi")),
-        "sbm": ("SBM", 100, 2, load("sbm_multi")),
-        "sphere": (
-            "Sphere $\\mathbb{S}^2$",
-            sphere_store["config"]["n_net"],
-            3,
-            sphere_store,
-        ),
+    stores = {
+        "grid": load("grid_multi"),
+        "sbm": load("sbm_multi"),
+        "sphere": load("sphere_multi"),
     }
-    out = "\n".join(_performance_table(meta) + _comparison_table(meta))
-    print(out)
-    open(f"{RESULTS}/tables.tex", "w").write(out + "\n")
-    print("\n% written to results/tables.tex")
+    write_csv(f"{RESULTS}/table_performance.csv", performance_rows(stores))
+    write_csv(f"{RESULTS}/table_comparison.csv", comparison_rows(stores))
+    print(f"wrote {RESULTS}/table_performance.csv and {RESULTS}/table_comparison.csv")
 
 
 if __name__ == "__main__":
