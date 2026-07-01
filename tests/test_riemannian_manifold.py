@@ -553,3 +553,62 @@ class TestIntegration:
             # Should still be on sphere
             norm = np.linalg.norm(center.coordinates)
             np.testing.assert_allclose(norm, 1.0, rtol=1e-5)
+
+
+class TestGeodesicOperations:
+    """Tests for the exp/log/norm/random_uniform geodesic wrappers."""
+
+    def test_dim_and_is_sphere(self):
+        assert create_sphere(dim=2).dim == 2
+        assert create_sphere(dim=2).is_sphere is True
+        assert create_hyperbolic_space(dim=2).is_sphere is False
+
+    def test_random_uniform_reproducible_and_on_manifold(self):
+        sphere = create_sphere(dim=2)
+        a = sphere.random_uniform(50, random_state=42)
+        b = sphere.random_uniform(50, random_state=42)
+        np.testing.assert_array_equal(a, b)
+        assert a.shape == (50, 3)
+        np.testing.assert_allclose(np.linalg.norm(a, axis=1), 1.0, atol=1e-12)
+
+    def test_random_uniform_accepts_generator(self):
+        sphere = create_sphere(dim=2)
+        rng = np.random.default_rng(0)
+        pts = sphere.random_uniform(10, random_state=rng)
+        assert pts.shape == (10, 3)
+
+    def test_exp_log_round_trip(self):
+        sphere = create_sphere(dim=2)
+        base = sphere.random_uniform(20, random_state=1)
+        target = sphere.random_uniform(20, random_state=2)
+        recovered = sphere.exp(base, sphere.log(base, target))
+        np.testing.assert_allclose(recovered, target, atol=1e-6)
+
+    def test_norm_equals_geodesic_distance(self):
+        sphere = create_sphere(dim=2)
+        base = sphere.random_uniform(20, random_state=3)
+        target = sphere.random_uniform(20, random_state=4)
+        tangent = sphere.log(base, target)
+        expected = np.array(
+            [
+                sphere.distance(
+                    RiemannianPoint(sphere, base[i]),
+                    RiemannianPoint(sphere, target[i]),
+                )
+                for i in range(len(base))
+            ]
+        )
+        np.testing.assert_allclose(sphere.norm(base, tangent), expected, atol=1e-6)
+
+    def test_geodesic_wrappers_generalise_to_hyperbolic(self):
+        hyp = create_hyperbolic_space(dim=2)
+        base = np.array([[1.0, 0.0, 0.0]])
+        tangent = np.array([[0.0, 0.3, 0.4]])  # Riemannian norm 0.5
+        point = hyp.exp(base, tangent)
+        assert bool(hyp.manifold.belongs(point)[0])
+        np.testing.assert_allclose(hyp.norm(base, tangent), 0.5, atol=1e-6)
+        np.testing.assert_allclose(hyp.log(base, point), tangent, atol=1e-6)
+
+    def test_random_uniform_unsupported_manifold_raises(self):
+        with pytest.raises(NotImplementedError, match="hyperspheres only"):
+            create_hyperbolic_space(dim=2).random_uniform(5, random_state=0)

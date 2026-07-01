@@ -76,6 +76,13 @@ from .riemannian_manifold import (
     create_sphere,
     create_hyperbolic_space,
     FrechetMeanUpdate,
+    EpsilonNetStrategy,
+    UniformNet,
+    RepulsionNet,
+    FibonacciNet,
+    approximate_geodesic_space,
+    build_epsilon_net_graph,
+    estimate_covering_radius,
 )
 
 __all__ = [
@@ -118,6 +125,14 @@ __all__ = [
     "RiemannianCenter",
     "create_sphere",
     "create_hyperbolic_space",
+    # Epsilon-net construction (manifold -> quantum graph)
+    "EpsilonNetStrategy",
+    "UniformNet",
+    "RepulsionNet",
+    "FibonacciNet",
+    "approximate_geodesic_space",
+    "build_epsilon_net_graph",
+    "estimate_covering_radius",
     # Generators
     "generate_simple_graph",
     "generate_simple_random_graph",
