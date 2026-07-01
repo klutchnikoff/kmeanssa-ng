@@ -2,6 +2,7 @@
 
 import os
 import pickle
+from dataclasses import dataclass
 
 import numpy as np
 import networkx as nx
@@ -9,18 +10,28 @@ import networkx as nx
 from kmeanssa_ng import as_quantum_graph, QGPoint
 import baselines as B
 from calibration import potential_matrix, critical_depth
-from multistart import annealings, methods_from_raw
+from multistart import annealings, methods_from_raw, summarize
 
 MODES = [(1, 1), (8, 8)]
 SIGMA = 2.0
 PKL = "results/grid_multi.pkl"
 
 
+@dataclass
+class Space:
+    graph: object
+    nodes: list
+    neighbour: dict
+    distances: np.ndarray
+    densities: list
+    nu: np.ndarray
+    b: float
+
+
 def build_space():
     """Build the grid graph, its mixture density nu, neighbour map and drift b."""
     graph = as_quantum_graph(nx.grid_2d_graph(10, 10), edge_length=1.0)
     graph.precomputing()
-    graph._node_position = {node: node for node in graph.nodes()}
     nodes = list(graph.nodes())
     index = {node: i for i, node in enumerate(nodes)}
     distances = np.array(
@@ -32,17 +43,8 @@ def build_space():
     nu = 0.5 * densities[0] + 0.5 * densities[1]
     for i, node in enumerate(nodes):
         graph.nodes[node]["weight"] = float(nu[i])
-    U = potential_matrix(distances, nu)
-    return {
-        "graph": graph,
-        "nodes": nodes,
-        "neighbour": neighbour,
-        "distances": distances,
-        "densities": densities,
-        "nu": nu,
-        "b": 0.3 / critical_depth(U, graph, nodes, index),
-        "min_U": float(U.min()),
-    }
+    b = 0.3 / critical_depth(potential_matrix(distances, nu), graph, nodes, index)
+    return Space(graph, nodes, neighbour, distances, densities, nu, b)
 
 
 def sample_data(seed, densities, n_nodes, n_data, n_obs):
@@ -58,66 +60,59 @@ def sample_data(seed, densities, n_nodes, n_data, n_obs):
 
 
 def run_seed(space, seed, comps, data_nodes, obs_idx, n_runs, track):
-    """Multi-start SA plus k-medoids and spectral baselines for one seed."""
-    graph, nodes, nu = space["graph"], space["nodes"], space["nu"]
-    obs = [QGPoint(graph, (nodes[v], space["neighbour"][nodes[v]]), 0) for v in obs_idx]
+    """Multi-start SA plus baselines for one seed; return (methods, convergence)."""
+    graph, nu = space.graph, space.nu
+    obs = [
+        QGPoint(graph, (space.nodes[v], space.neighbour[space.nodes[v]]), 0)
+        for v in obs_idx
+    ]
 
-    labels, energies, history = [], [], None
+    labels, energies, convergence = [], [], None
     for r, centers, sa in annealings(
-        lambda _rng: obs, 2, space["b"], n_runs, seed + 100, track_first=track
+        lambda _rng: obs, 2, space.b, n_runs, seed + 100, track_first=track
     ):
         if track and r == 0:
-            history = sa.energy_history
+            convergence = {"time": sa.time_history, "energy": sa.energy_history}
         node_label = np.argmin(graph.node_center_distances(centers), axis=1)
         labels.append(node_label[data_nodes])
         energies.append(graph.node_energy(centers, weights=nu))
     raw = {"SA": (labels, np.array(energies))}
 
     # Baselines run on the nodes (weighted by nu), read out on the data.
-    dist = space["distances"]
+    dist = space.distances
     lk, ek = B.weighted_kmedoids(dist, nu, 2, n_runs, seed + 1000)
     raw["k-medoids"] = ([lbl[data_nodes] for lbl in lk], ek)
     ls, _ = B.spectral_baseline(B.rbf_affinity(dist), 2, 20, seed + 1000)
     raw["spectral"] = ([lbl[data_nodes] for lbl in ls], None)
-    return methods_from_raw(raw, comps), history
+    return methods_from_raw(raw, comps), convergence
 
 
 def run(seeds=(42, 43, 44, 45, 46), n_runs=30, n_data=1000, n_obs=1000):
     space = build_space()
-    print(f"[grid] b={space['b']:.4f}", flush=True)
-    per_seed = {}
+    print(f"[grid] b={space.b:.4f}", flush=True)
+    per_seed, convergence = {}, None
     for i, seed in enumerate(seeds):
         comps, data_nodes, obs_idx = sample_data(
-            seed, space["densities"], len(space["nodes"]), n_data, n_obs
+            seed, space.densities, len(space.nodes), n_data, n_obs
         )
-        methods, history = run_seed(
+        methods, conv = run_seed(
             space, seed, comps, data_nodes, obs_idx, n_runs, track=(i == 0)
         )
-        per_seed[seed] = {
-            "methods": methods,
-            "energy_history": history,
-            "comps": comps,
-            "data_nodes": data_nodes,
-        }
+        per_seed[seed] = {"methods": methods}
+        convergence = conv or convergence
         print(f"[grid] seed {seed} done", flush=True)
 
     store = {
         "name": "grid",
-        "nodes": space["nodes"],
-        "positions": dict(space["graph"]._node_position),
-        "nu": space["nu"],
-        "edges": list(space["graph"].edges()),
-        "min_U": space["min_U"],
-        "b": space["b"],
         "n_runs": n_runs,
-        "n_data": n_data,
-        "n_obs": n_obs,
         "seeds": list(seeds),
         "per_seed": per_seed,
+        "convergence": convergence,
     }
     os.makedirs("results", exist_ok=True)
     pickle.dump(store, open(PKL, "wb"))
     print(f"saved {PKL}", flush=True)
+    summarize(store)
     return store
 
 

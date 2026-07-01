@@ -2,8 +2,7 @@
 
 All baselines produce, for each run, a vector of per-node labels comparable to the
 ground truth, so that the Adjusted Rand Index can be computed exactly as for the
-simulated-annealing method. Aggregation (mean/std/best/energy-selected) is done by
-`aggregate`.
+simulated-annealing method.
 
 - weighted_kmedoids: k-medoids on a precomputed (shortest-path / geodesic) distance
   matrix, minimizing the weighted within-cluster sum of squared distances --- i.e. the
@@ -15,28 +14,6 @@ simulated-annealing method. Aggregation (mean/std/best/energy-selected) is done 
 
 import numpy as np
 from sklearn.cluster import SpectralClustering
-
-
-# --------------------------------------------------------------------------------------
-# Aggregation
-# --------------------------------------------------------------------------------------
-def aggregate(labels_per_run, energies, true_labels, ari_fn):
-    """Return (ari_mean, ari_std, ari_best, ari_selected).
-
-    ari_selected is the ARI of the run with the lowest energy (unsupervised selection,
-    as in the paper). If `energies` is None, ari_selected falls back to the mean.
-    """
-    aris = np.array([ari_fn(lbl, true_labels) for lbl in labels_per_run])
-    ari_mean, ari_std, ari_best = (
-        float(aris.mean()),
-        float(aris.std()),
-        float(aris.max()),
-    )
-    if energies is None:
-        ari_selected = ari_mean
-    else:
-        ari_selected = float(aris[int(np.argmin(energies))])
-    return ari_mean, ari_std, ari_best, ari_selected
 
 
 # --------------------------------------------------------------------------------------

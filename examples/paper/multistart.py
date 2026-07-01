@@ -54,3 +54,25 @@ def methods_from_raw(raw, true_labels):
             "labels": [np.asarray(lbl) for lbl in labels],
         }
     return methods
+
+
+def _selected_ari(method_record):
+    """ARI of the lowest-energy run, or the mean when there is no energy signal."""
+    aris = method_record["aris"]
+    energies = method_record["energies"]
+    if energies is not None and len(energies):
+        return float(aris[int(np.argmin(energies))])
+    return float(np.mean(aris))
+
+
+def summarize(store):
+    """Print, per method, the ARI averaged over seeds (mean / best / selected)."""
+    per_seed = list(store["per_seed"].values())
+    methods = per_seed[0]["methods"].keys()
+    print(f"{'method':12s}  mean   best   selected")
+    for method in methods:
+        records = [sres["methods"][method] for sres in per_seed]
+        mean = np.mean([r["aris"].mean() for r in records])
+        best = np.mean([r["aris"].max() for r in records])
+        selected = np.mean([_selected_ari(r) for r in records])
+        print(f"{method:12s}  {mean:.3f}  {best:.3f}  {selected:.3f}")

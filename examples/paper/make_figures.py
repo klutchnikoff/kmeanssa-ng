@@ -77,20 +77,20 @@ def _draw_partition(graph, pos, panels, node_size, width, centroid_nodes, path):
 
 def figure_grid():
     space = grid.build_space()
-    graph, nodes, nu = space["graph"], space["nodes"], space["nu"]
+    graph, nodes, nu = space.graph, space.nodes, space.nu
     _, data_nodes, obs_idx = grid.sample_data(
-        SEED, space["densities"], len(nodes), 1000, 1000
+        SEED, space.densities, len(nodes), 1000, 1000
     )
-    obs = [QGPoint(graph, (nodes[v], space["neighbour"][nodes[v]]), 0) for v in obs_idx]
+    obs = [QGPoint(graph, (nodes[v], space.neighbour[nodes[v]]), 0) for v in obs_idx]
     lab, cent = _lowest_energy_run(
         graph,
         lambda _rng: obs,
-        space["b"],
+        space.b,
         30,
         SEED,
         energy_of=lambda sa, centers: graph.node_energy(centers, weights=nu),
     )
-    dominant = (space["densities"][1] > space["densities"][0]).astype(int)
+    dominant = (space.densities[1] > space.densities[0]).astype(int)
     pos = {node: node for node in nodes}
     sizes = [nu[i] * 9000 + 40 for i in range(len(nodes))]
     _draw_partition(
@@ -109,13 +109,14 @@ def figure_grid():
 
 
 def figure_sbm():
-    graph, nodes, true, _dist, _nu, b = sbm.build_space(SEED)
+    space = sbm.build_space(SEED)
+    graph, true = space.graph, space.true_labels
     lab, cent = _lowest_energy_run(
         graph,
         lambda rng: graph.sample_points(
             100, strategy=UniformNodeSampling(random_state=rng)
         ),
-        b,
+        space.b,
         50,
         SEED,
         energy_of=lambda sa, centers: sa.calculate_energy(centers),
@@ -187,7 +188,29 @@ def figure_sphere():
     print("figure_3 (sphere) done")
 
 
+def figure_convergence():
+    """Energy along the annealing time for the tracked run of each experiment."""
+    experiments = [
+        ("Grid $10\\times10$", "grid_multi"),
+        ("SBM", "sbm_multi"),
+        ("Sphere $\\mathbb{S}^2$", "sphere_multi"),
+    ]
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+    for axis, (title, name) in zip(axes, experiments):
+        conv = pickle.load(open(f"results/{name}.pkl", "rb"))["convergence"]
+        axis.plot(conv["time"], conv["energy"], color="#377eb8")
+        axis.set_title(title, fontsize=12)
+        axis.set_xlabel("annealing time")
+        axis.set_ylabel("energy $U$")
+    fig.tight_layout()
+    for ext in ("pdf", "png"):
+        fig.savefig(f"figures/figure_4.{ext}", bbox_inches="tight", dpi=200)
+    plt.close(fig)
+    print("figure_4 (convergence) done")
+
+
 if __name__ == "__main__":
     figure_grid()
     figure_sbm()
     figure_sphere()
+    figure_convergence()

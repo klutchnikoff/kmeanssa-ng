@@ -29,6 +29,7 @@ def main(quick=False):
     make_figures.figure_grid()
     make_figures.figure_sbm()
     make_figures.figure_sphere()
+    make_figures.figure_convergence()
 
 
 if __name__ == "__main__":
