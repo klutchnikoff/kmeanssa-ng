@@ -68,5 +68,26 @@ Experiment & Method & ARI (sel., mean$\pm\sigma$) & ARI best \\
 \end{tabular}
 ```
 
-Change the precision, columns or layout without touching Python. (`pgfplotstable`
-is an alternative if you prefer automatic numeric formatting.)
+Or, with `pgfplotstable` driving `siunitx` `S` columns (automatic rounding and
+decimal alignment; `string type` hands the raw CSV number to `siunitx`):
+
+```latex
+\usepackage{pgfplotstable,siunitx,booktabs}
+\sisetup{round-mode=places, round-precision=3}
+
+% Comparison with the baselines (results/table_comparison.csv)
+\pgfplotstabletypeset[
+  col sep=comma,
+  columns={experiment, method, ari_sel_mean, ari_sel_std, ari_best},
+  columns/experiment/.style={string type, column name=Experiment},
+  columns/method/.style={string type, column name=Method},
+  columns/ari_sel_mean/.style={string type, column type={S}, column name={ARI (sel.)}},
+  columns/ari_sel_std/.style={string type, column type={S}, column name={$\sigma$}},
+  columns/ari_best/.style={string type, column type={S}, column name={ARI best}},
+  every head row/.style={before row=\toprule, after row=\midrule},
+  every last row/.style={after row=\bottomrule},
+]{results/table_comparison.csv}
+```
+
+Either way, the precision, columns and layout are changed in LaTeX without
+re-running Python.
