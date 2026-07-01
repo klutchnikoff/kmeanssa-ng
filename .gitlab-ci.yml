@@ -50,10 +50,10 @@ test-coverage:
 
 deploy:
   stage: deploy
-  id_tokens:
-    PYPI_ID_TOKEN:
-      aud: pypi
   script:
-    - pdm publish
+    # Trusted publishing (OIDC) is unsupported from self-hosted GitLab, so we
+    # authenticate with a PyPI API token stored in the masked, non-protected
+    # CI/CD variable PDM_PUBLISH_PASSWORD. The username __token__ is not secret.
+    - pdm publish --username __token__
   only:
     - tags
