@@ -50,6 +50,9 @@ test-coverage:
 
 deploy:
   stage: deploy
+  id_tokens:
+    PYPI_ID_TOKEN:
+      aud: pypi
   script:
     - pdm publish
   only:
