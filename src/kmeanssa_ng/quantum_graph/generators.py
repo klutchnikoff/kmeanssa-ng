@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import random as rd
-
 import networkx as nx
 import numpy as np
 
@@ -11,13 +9,23 @@ from .space import QuantumGraph
 
 
 class UniformDistribution:
-    """Picklable uniform distribution function."""
+    """Picklable uniform distribution over ``[0, length)``.
 
-    def __init__(self, length: float):
+    Draws are backed by a numpy Generator (created lazily so the instance
+    stays cheap to pickle) rather than the global ``random`` module.
+    """
+
+    def __init__(
+        self, length: float, random_state: int | np.random.Generator | None = None
+    ):
         self.length = length
+        self.random_state = random_state
+        self._rng: np.random.Generator | None = None
 
     def __call__(self) -> float:
-        return rd.uniform(0, self.length)
+        if self._rng is None:
+            self._rng = np.random.default_rng(self.random_state)
+        return float(self._rng.uniform(0, self.length))
 
 
 def generate_simple_graph(
@@ -126,6 +134,7 @@ def generate_simple_random_graph(
     lam_b: int = 0,
     bridge_length: float = 10.0,
     precompute: bool = True,
+    random_state: int | np.random.Generator | None = None,
     **attr,
 ) -> QuantumGraph:
     """Generate a random two-cluster graph with Poisson branching.
@@ -142,45 +151,47 @@ def generate_simple_random_graph(
         lam_b: Poisson parameter for B cluster third-level branching.
         bridge_length: Mean length of the bridge edge (actual length is uniform random).
         precompute: If True, precompute pairwise distances (default: True).
+        random_state: Seed or Generator controlling edge lengths and Poisson
+            branching, for reproducible graphs. None (default) is random.
         **attr: Additional graph attributes.
 
     Returns:
         A random quantum graph with two clusters.
     """
     graph = QuantumGraph(precompute=False, **attr)
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(random_state)
 
     # Central nodes and bridge
     graph.add_node("A0", weight=5)
     graph.add_node("B0", weight=5)
     graph.add_edge(
-        "A0", "B0", length=rd.uniform(0.9 * bridge_length, 1.1 * bridge_length)
+        "A0", "B0", length=rng.uniform(0.9 * bridge_length, 1.1 * bridge_length)
     )
 
     # Build cluster A
     for i in range(1, n_a + 1):
         node_a = f"A{i}"
         graph.add_node(node_a, weight=3)
-        graph.add_edge("A0", node_a, length=rd.uniform(0.9, 1.1))
+        graph.add_edge("A0", node_a, length=rng.uniform(0.9, 1.1))
 
         # Poisson-distributed third level
         num_children = rng.poisson(lam_a)
         for j in range(1, num_children + 1):
             node_aa = f"{node_a}{j}"
             graph.add_node(node_aa, weight=1)
-            graph.add_edge(node_a, node_aa, length=rd.uniform(0.4, 0.6))
+            graph.add_edge(node_a, node_aa, length=rng.uniform(0.4, 0.6))
 
     # Build cluster B
     for i in range(1, n_b + 1):
         node_b = f"B{i}"
         graph.add_node(node_b, weight=3)
-        graph.add_edge("B0", node_b, length=rd.uniform(0.9, 1.1))
+        graph.add_edge("B0", node_b, length=rng.uniform(0.9, 1.1))
 
         num_children = rng.poisson(lam_b)
         for j in range(1, num_children + 1):
             node_bb = f"{node_b}{j}"
             graph.add_node(node_bb, weight=1)
-            graph.add_edge(node_b, node_bb, length=rd.uniform(0.4, 0.6))
+            graph.add_edge(node_b, node_bb, length=rng.uniform(0.4, 0.6))
 
     # Set edge weights and distributions
     node_weights = nx.get_node_attributes(graph, "weight")
@@ -202,6 +213,7 @@ def generate_sbm(
     sizes: list[int] | None = None,
     p: list[list[float]] | None = None,
     precompute: bool = True,
+    random_state: int | np.random.Generator | None = None,
 ) -> QuantumGraph:
     """Generate a Stochastic Block Model quantum graph.
 
@@ -216,6 +228,8 @@ def generate_sbm(
             Defaults to [[0.7, 0.1], [0.1, 0.7]].
             Must be a square matrix with probabilities in [0, 1].
         precompute: If True, precompute pairwise distances (default: True).
+        random_state: Seed or Generator controlling the block-model edge draws,
+            for a reproducible graph structure. None (default) is random.
 
     Returns:
         A quantum graph representing the SBM.
@@ -272,7 +286,7 @@ def generate_sbm(
             if prob_float < 0 or prob_float > 1:
                 raise ValueError(f"p[{i}][{j}] must be in [0, 1], got {prob_float}")
 
-    nx_graph = nx.stochastic_block_model(sizes=sizes, p=p)
+    nx_graph = nx.stochastic_block_model(sizes=sizes, p=p, seed=random_state)
     graph = QuantumGraph(
         nx_graph, precompute=False, attr=nx.get_node_attributes(nx_graph, name="block")
     )
@@ -298,6 +312,7 @@ def generate_random_sbm(
     weights: list[float] | None = None,
     lengths: list[list[float]] | None = None,
     precompute: bool = True,
+    random_state: int | np.random.Generator | None = None,
 ) -> QuantumGraph:
     """Generate an SBM quantum graph with block-specific edge lengths and node weights.
 
@@ -308,6 +323,8 @@ def generate_random_sbm(
         lengths: Matrix of edge lengths. Element (i, j) gives the length
             for edges between blocks i and j. Defaults to [[1, 4], [4, 1]].
         precompute: If True, precompute pairwise distances (default: True).
+        random_state: Seed or Generator controlling the block-model edge draws,
+            for a reproducible graph structure. None (default) is random.
 
     Returns:
         A quantum graph with block-specific attributes.
@@ -376,7 +393,7 @@ def generate_random_sbm(
         if not all(isinstance(val, (float, int)) and val > 0 for val in row):
             raise ValueError("Elements of `lengths` must be positive numbers.")
 
-    nx_graph = nx.stochastic_block_model(sizes=sizes, p=p)
+    nx_graph = nx.stochastic_block_model(sizes=sizes, p=p, seed=random_state)
     graph = QuantumGraph(nx_graph, precompute=False)
 
     # Set node weights based on block

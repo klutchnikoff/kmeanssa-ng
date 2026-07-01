@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import random
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -118,26 +117,25 @@ class SimulatedAnnealing:
                 - Initialization strategies (KMeansPlusPlus, RandomInit)
                 - Space-specific random operations
 
-                Pass an int for reproducible results across multiple function calls.
-                When an int is provided, both random.seed() and np.random.seed()
-                are set globally to ensure full reproducibility across all components.
+                All randomness flows through a single numpy Generator
+                (``self._rng``), which is propagated to the centers so that
+                every stochastic component is driven by the same stream. No
+                global random state (``random.seed``/``np.random.seed``) is
+                touched, so runs are isolated and fully reproducible.
 
-                Pass a Generator instance for fine-grained control without affecting
-                global state (advanced usage).
-
-                Pass None for non-deterministic behavior (default).
+                Pass an int for a reproducible seed, a Generator instance for
+                fine-grained control, or None for non-deterministic behavior
+                (default).
 
                 Example:
                     >>> # Reproducible with seed (recommended)
                     >>> sa1 = SimulatedAnnealing(points, k=3, random_state=42)
                     >>> sa2 = SimulatedAnnealing(points, k=3, random_state=42)
-                    >>> # sa1 and sa2 will produce identical results
+                    >>> # sa1 and sa2 produce identical results
                     >>>
-                    >>> # Advanced: use Generator without global state
+                    >>> # Or pass an explicit Generator
                     >>> rng = np.random.default_rng(42)
                     >>> sa = SimulatedAnnealing(points, k=3, random_state=rng)
-                    >>> # Note: This only controls operations using self._rng
-                    >>> # Other components may still use global random state
 
         Raises:
             ValueError: If observations is empty, k <= 0, points are in different spaces,
@@ -182,9 +180,9 @@ class SimulatedAnnealing:
         if hasattr(self.space, "observations"):
             self.space.observations = self._observations
 
-        # Use random.shuffle (global state) for consistency with rest of codebase
-        # If we used self._rng.shuffle, it would desynchronize from global state
-        random.shuffle(self._observations)
+        # Shuffle through the instance Generator so ordering is reproducible
+        # from random_state without touching global random state.
+        self._rng.shuffle(self._observations)
         self._centers: list[Center] = []
 
     def _validate_constructor_parameters(
@@ -226,11 +224,6 @@ class SimulatedAnnealing:
             self._rng = random_state
         else:
             self._rng = np.random.default_rng(random_state)
-            # Also set global random state for full reproducibility
-            # This affects: initialization strategies, centers' brownian motion, space operations
-            if isinstance(random_state, int):
-                random.seed(random_state)
-                np.random.seed(random_state)
 
     @property
     def n(self) -> int:
@@ -289,8 +282,7 @@ class SimulatedAnnealing:
         T = np.zeros(n + 1)
         poiss_sum = 0.0
         for i in range(n):
-            # Use random.random() for consistency with global state
-            poiss_sum += -1 / self._lambda * np.log(random.random())
+            poiss_sum += -1 / self._lambda * np.log(self._rng.random())
             T[i + 1] = np.sqrt(poiss_sum + 1) - 1
         return T
 

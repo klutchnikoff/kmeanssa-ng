@@ -312,6 +312,7 @@ class TestWorkerFunction:
                 beta0=1.0,
                 step_size=0.1,
                 energy_mode="obs",
+                random_state=ANY,
             )
 
     def test_run_parallel_defaults(self, simple_graph):

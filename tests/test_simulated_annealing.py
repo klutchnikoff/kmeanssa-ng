@@ -344,13 +344,7 @@ class TestSimulatedAnnealing:
         assert all(c.space == graph for c in centers)
 
     def test_full_reproducibility_with_random_state(self):
-        """Test that random_state gives fully reproducible results."""
-        import random
-        import numpy as np
-
-        # Setup
-        random.seed(1000)
-        np.random.seed(1000)
+        """Same random_state on shared observations gives identical centers."""
         graph = generate_simple_graph(n_a=3)
         points = graph.sample_points(30, strategy=UniformNodeSampling(random_state=42))
 
@@ -371,6 +365,54 @@ class TestSimulatedAnnealing:
         )
 
         # Assert identical results
+        assert len(centers1) == len(centers2)
+        for c1, c2 in zip(centers1, centers2):
+            assert c1.edge == c2.edge
+            assert abs(c1.position - c2.position) < 1e-10
+
+    @staticmethod
+    def _clustering_pipeline(seed):
+        """End-to-end run: seeded generation, sampling and annealing."""
+        graph = generate_sbm(
+            sizes=[15, 15], p=[[0.7, 0.1], [0.1, 0.7]], random_state=seed
+        )
+        points = graph.sample_points(
+            40, strategy=UniformNodeSampling(random_state=seed)
+        )
+        sa = SimulatedAnnealing(points, k=2, random_state=seed)
+        return sa.run(
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+            robust_prop=0.1,
+        )
+
+    def test_end_to_end_reproducibility(self):
+        """Full pipeline (generation -> sampling -> annealing) is reproducible."""
+        centers1 = self._clustering_pipeline(seed=7)
+        centers2 = self._clustering_pipeline(seed=7)
+
+        assert len(centers1) == len(centers2)
+        for c1, c2 in zip(centers1, centers2):
+            assert c1.edge == c2.edge
+            assert abs(c1.position - c2.position) < 1e-10
+
+    def test_reproducibility_independent_of_global_state(self):
+        """Results depend only on random_state, not on global random state."""
+        import random
+        import numpy as np
+
+        random.seed(0)
+        np.random.seed(0)
+        centers1 = self._clustering_pipeline(seed=123)
+
+        # Perturb both global generators between the two runs.
+        random.seed(999)
+        np.random.seed(999)
+        [random.random() for _ in range(10)]
+        np.random.random(10)
+
+        centers2 = self._clustering_pipeline(seed=123)
+
         assert len(centers1) == len(centers2)
         for c1, c2 in zip(centers1, centers2):
             assert c1.edge == c2.edge
