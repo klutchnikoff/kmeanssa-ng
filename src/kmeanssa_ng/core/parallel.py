@@ -8,7 +8,6 @@ statistical analysis.
 from __future__ import annotations
 
 import multiprocessing as mp
-import random as rd
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Callable, Literal
 
@@ -59,11 +58,13 @@ def _run_with_seed(
     # Import here to avoid circular dependencies
     from .simulated_annealing import SimulatedAnnealing
 
-    # Set random seed for reproducibility (affects sampling, Poisson process, etc.)
-    rd.seed(seed)
-    np.random.seed(seed)
+    # Derive two independent RNG streams from the run seed, without touching any
+    # global random state. One drives sampling, the other the annealing (which
+    # propagates its Generator to the centers, Poisson times and the shuffle).
+    sample_seed, sa_seed = np.random.SeedSequence(seed).spawn(2)
 
-    # Sample observations with this seed
+    # Sample observations reproducibly for this run.
+    sampling_strategy.random_state = np.random.default_rng(sample_seed)
     observations = space.sample_points(n_points, strategy=sampling_strategy)
 
     # Create algorithm instance
@@ -74,6 +75,7 @@ def _run_with_seed(
         beta0=beta0,
         step_size=step_size,
         energy_mode=energy_mode,
+        random_state=np.random.default_rng(sa_seed),
     )
 
     # Run the algorithm
