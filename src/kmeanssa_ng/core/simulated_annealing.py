@@ -184,6 +184,8 @@ class SimulatedAnnealing:
         # from random_state without touching global random state.
         self._rng.shuffle(self._observations)
         self._centers: list[Center] = []
+        self._energy_history: list[float] = []
+        self._time_history: list[float] = []
 
     def _validate_constructor_parameters(
         self,
@@ -249,6 +251,20 @@ class SimulatedAnnealing:
     def k(self) -> int:
         """Number of clusters."""
         return self._k
+
+    @property
+    def energy_history(self) -> np.ndarray:
+        """Energy after each observation from the last ``run(record_energy=True)``.
+
+        Empty until such a run; the first entry is the energy of the initial
+        centers (time 0), aligned with :attr:`time_history`.
+        """
+        return np.asarray(self._energy_history)
+
+    @property
+    def time_history(self) -> np.ndarray:
+        """Annealing time at each recorded energy (see :attr:`energy_history`)."""
+        return np.asarray(self._time_history)
 
     def _clone_centers(self, centers: list[Center]) -> list[Center]:
         """Create independent copies of centers.
@@ -318,12 +334,19 @@ class SimulatedAnnealing:
         initialization_strategy: InitializationStrategy,
         robustification_strategy: RobustificationStrategy,
         robust_prop: float = 0.0,
+        record_energy: bool = False,
     ):
         """Run the simulated annealing algorithm.
 
         This is the primary method to execute the simulated annealing algorithm.
         It performs an interleaved sequence of Brownian motion (exploration)
         and drift (exploitation) for the cluster centers.
+
+        Args:
+            record_energy: If True, record the energy and annealing time after
+                each observation into :attr:`energy_history` and
+                :attr:`time_history` (for convergence diagnostics). Off by
+                default so the energy is not recomputed when not needed.
         """
         logger.info(
             "Starting SA: k=%d, n_obs=%d, lambda0=%.3f, beta0=%.3f, "
@@ -354,6 +377,10 @@ class SimulatedAnnealing:
         times = self._initialize_times(self.n)
         time = 0.0
         progress_interval = max(1, self.n // 10)
+
+        if record_energy:
+            self._energy_history = [self.calculate_energy(self._centers)]
+            self._time_history = [time]
 
         for i, point in enumerate(self._observations):
             T = times[i]
@@ -387,6 +414,10 @@ class SimulatedAnnealing:
                 logger.debug(
                     "Collected centers for robustification at observation %d", i
                 )
+
+            if record_energy:
+                self._energy_history.append(self.calculate_energy(self._centers))
+                self._time_history.append(time)
 
         result = strategy.get_result()
         logger.info("SA completed successfully")
