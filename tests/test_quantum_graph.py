@@ -916,3 +916,50 @@ class TestValidation:
         # Should not raise
         graph.precomputing()
         assert graph._pairwise_nodes_distance is not None
+
+
+class TestNodeCenterAPI:
+    """Tests for node_center_distances / node_labels / node_energy."""
+
+    def _graph_and_centers(self):
+        qg = generate_sbm(sizes=[20, 20], p=[[0.7, 0.1], [0.1, 0.7]], random_state=0)
+        nodes = list(qg.nodes())
+        centers = [qg.node_as_center(nodes[i]) for i in (0, 20, 10)]
+        return qg, nodes, centers
+
+    def test_distances_shape_and_nonnegative(self):
+        qg, nodes, centers = self._graph_and_centers()
+        d = qg.node_center_distances(centers)
+        assert d.shape == (len(nodes), len(centers))
+        assert np.all(d >= 0)
+
+    def test_argmin_distances_match_compute_labels(self):
+        from kmeanssa_ng.core.metrics import compute_labels
+
+        qg, nodes, centers = self._graph_and_centers()
+        points = [QGPoint(qg, (n, next(iter(qg.neighbors(n)))), 0) for n in nodes]
+        expected = np.asarray(compute_labels(qg, points, centers))
+        labels = np.argmin(qg.node_center_distances(centers), axis=1)
+        np.testing.assert_array_equal(labels, expected)
+
+    def test_energy_default_weights(self):
+        qg, nodes, centers = self._graph_and_centers()
+        d = qg.node_center_distances(centers)
+        # SBM nodes carry weight 1, so the default equals the plain sum of min^2.
+        assert qg.node_energy(centers) == pytest.approx(
+            float((d.min(axis=1) ** 2).sum())
+        )
+
+    def test_energy_with_explicit_weights(self):
+        qg, nodes, centers = self._graph_and_centers()
+        d = qg.node_center_distances(centers)
+        nu = np.ones(len(nodes)) / len(nodes)
+        assert qg.node_energy(centers, weights=nu) == pytest.approx(
+            float((nu * d.min(axis=1) ** 2).sum())
+        )
+
+    def test_requires_precomputing(self):
+        qg = generate_sbm(sizes=[5, 5], precompute=False)
+        _, _, centers = self._graph_and_centers()
+        with pytest.raises(ValueError, match="precomputing"):
+            qg.node_center_distances(centers)
