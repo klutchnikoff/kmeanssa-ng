@@ -6,9 +6,28 @@ module factors out that seeded loop and the per-method ARI aggregation.
 """
 
 import numpy as np
+import networkx as nx
 
 from kmeanssa_ng import SimulatedAnnealing, KMeansPlusPlus, MinimizeEnergy
 from kmeanssa_ng.core.metrics import adjusted_rand_index
+
+
+def _register_obs_counts(observations):
+    """Populate the graph's per-node ``nb_obs`` from these observations.
+
+    ``energy_history`` is recorded in "obs" energy mode, which weights each node
+    by its observed-point count (``nb_obs``). Only the graph samplers set that
+    attribute, so experiments that build observations by hand (grid, sphere)
+    must register them too -- otherwise the recorded energy is identically zero.
+    Mirrors what ``QuantumGraph.sample_points`` does: reset, then count.
+    """
+    graph = observations[0].space
+    nx.set_node_attributes(graph, 0, "nb_obs")
+    counts = {}
+    for point in observations:
+        node = point.closest_node()
+        counts[node] = counts.get(node, 0) + 1
+    nx.set_node_attributes(graph, counts, "nb_obs")
 
 
 def annealings(observations_for, k, beta0, n_runs, seed_base, track_first=False):
@@ -25,6 +44,8 @@ def annealings(observations_for, k, beta0, n_runs, seed_base, track_first=False)
     for r in range(n_runs):
         obs_seed, sa_seed = np.random.SeedSequence(seed_base + r).spawn(2)
         observations = observations_for(np.random.default_rng(obs_seed))
+        if track_first and r == 0:
+            _register_obs_counts(observations)
         sa = SimulatedAnnealing(
             observations=observations,
             k=k,
