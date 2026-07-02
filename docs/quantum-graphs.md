@@ -161,15 +161,46 @@ for node in ['A', 'B', 'C']:
 ```
 
     Observations per node (approximate):
-      Node A (weight=1.0): 328 observations
-      Node B (weight=5.0): 315 observations
-      Node C (weight=1.0): 357 observations
+      Node A (weight=1.0): 342 observations
+      Node B (weight=5.0): 336 observations
+      Node C (weight=1.0): 322 observations
 
 You should see approximately a 1:5:1 ratio matching the node weights
 (A=1.0, B=5.0, C=1.0). Points are sampled proportionally to the combined
 weight of their edge’s endpoints, so edges touching high-weight nodes
 receive more observations. This allows you to model scenarios where
 certain regions of the graph have higher data density.
+
+## Analysing a Result Over the Nodes
+
+Once you have cluster centers, it is often useful to look at **every
+node** rather than the sampled observations—to colour a partition, or to
+score it against a reference measure. Two methods work straight from the
+precomputed distances:
+
+- `node_center_distances(centers)` returns an `(n_nodes, k)` array (rows
+  in `list(graph.nodes())` order) of geodesic distances from each node
+  to each center. Its row-wise `argmin` is the **nearest-center label**
+  of every node.
+- `node_energy(centers, weights=None)` is the measure-weighted $k$-means
+  energy $\sum_v w_v \min_i d(v, c_i)^2$, where the weights default to
+  the nodes’ `weight` attribute.
+
+``` python
+import numpy as np
+from kmeanssa_ng import generate_sbm, SimulatedAnnealing, KMeansPlusPlus, MinimizeEnergy
+
+graph = generate_sbm(sizes=[20, 20], p=[[0.8, 0.1], [0.1, 0.8]], random_state=0)
+obs = graph.sample_points(100, strategy=UniformNodeSampling(random_state=0))
+sa = SimulatedAnnealing(obs, k=2, beta0=0.5, step_size=0.05, random_state=0)
+centers = sa.run(KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1)
+
+distances = graph.node_center_distances(centers)   # (n_nodes, k)
+labels = np.argmin(distances, axis=1)              # nearest center per node
+print(f"labelled {len(labels)} nodes; energy = {graph.node_energy(centers):.3f}")
+```
+
+    labelled 40 nodes; energy = 76.246
 
 ## Working with Quantum Graphs: Key Points
 

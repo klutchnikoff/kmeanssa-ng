@@ -75,37 +75,39 @@ Key properties:
 - Controlled by parameter $\lambda$ (intensity)
 - Stochastic schedule adds robustness
 
-## Two Algorithm Variants
+## Running the Algorithm
 
-`kmeanssa-ng` implements two strategies for combining Brownian motion
-and drift:
+The algorithm runs through a single method, `run`, which **interleaves**
+exploration and exploitation as it sweeps once through the (shuffled)
+observations. For each observation $x_i$ it:
 
-#### Interleaved (`run_interleaved`)
+1.  Advances the annealing clock and performs Brownian motion on every
+    center: $c_j \leftarrow \text{move}(c_j, \Delta t)$
+2.  Finds the nearest center $c^*$ to $x_i$ and drifts it toward the
+    observation
 
-At each iteration:
+`run` takes an **initialization strategy** (how the centers
+start—e.g. `KMeansPlusPlus`), a **robustification strategy** (how the
+final centers are chosen from the tail of the
+sweep—e.g. `MinimizeEnergy`), and `robust_prop`, the fraction of the
+final observations used for that selection:
 
-1.  Randomly select one observation $x_i$
-2.  Perform Brownian motion on all centers:
-    $c_j \leftarrow c_j + \text{Brownian}(\Delta t)$
-3.  Find nearest center $c^*$ to $x_i$
-4.  Apply drift: $c^* \leftarrow c^* + \alpha \cdot (x_i - c^*)$
+``` python
+from kmeanssa_ng import generate_sbm, SimulatedAnnealing, KMeansPlusPlus, MinimizeEnergy
+from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 
-This approach **alternates** exploration and exploitation at a
-fine-grained level.
+graph = generate_sbm(sizes=[25, 25], p=[[0.8, 0.1], [0.1, 0.8]], random_state=0)
+points = graph.sample_points(150, strategy=UniformNodeSampling(random_state=0))
 
-#### Sequential (`run_sequential`)
+sa = SimulatedAnnealing(points, k=2, beta0=0.5, step_size=0.05, random_state=0)
+centers = sa.run(KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1)
+print(f"Found {len(centers)} cluster centers")
+```
 
-Separates exploration and exploitation into distinct phases:
+    Found 2 cluster centers
 
-1.  **Brownian phase**: Iterate through all observations, performing
-    only Brownian motion
-2.  **Drift phase**: Iterate through all observations, performing only
-    drift
-
-This approach separates the two mechanisms temporally.
-
-**Choice**: V1 (interleaved) is generally recommended as the default,
-but V2 can be useful for specific problem structures.
+Passing an integer `random_state` (as above) makes a run fully
+reproducible.
 
 ## Algorithm Parameters
 
@@ -228,22 +230,34 @@ sa = SimulatedAnnealing(
 )
 ```
 
-<!-- TODO: Add empirical results showing performance with different parameter settings -->
-
-<!-- TODO: Add section on parameter tuning strategies -->
-
-<!-- TODO: Discuss computational cost vs. quality tradeoffs -->
-
 ### Theoretical Foundation
 
-For detailed mathematical derivations and theoretical justification of
-these parameters, see:
+For the derivation of the annealing dynamics and its convergence
+analysis, see the companion paper: C. Brécheteau, I. Gavra, N.
+Klutchnikoff, *Online k-means Clustering on Metric Graphs and Geodesic
+Spaces* (preprint).
 
-<!-- TODO: Add your HAL/ArXiv reference here -->
+## Monitoring Convergence
 
-<!-- [1] Your Name. "Title of your paper". HAL/ArXiv, 2025. -->
+Pass `record_energy=True` to `run` to record the $k$-means energy after
+every observation (plus the initial state). The trajectory is exposed as
+`energy_history`, with the matching annealing times as `time_history`.
+It is the **raw exploration path** of the centers—it rises and falls as
+the anneal explores—and the robustification returns its lowest-energy
+configuration. Plotting it is the usual way to see how the anneal
+progresses:
 
-<!--     URL: https://... -->
+``` python
+sa = SimulatedAnnealing(points, k=2, beta0=0.5, step_size=0.05, random_state=0)
+sa.run(KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1, record_energy=True)
+history = sa.energy_history          # energy after each observation
+print(f"recorded {len(history)} energies; lowest reached = {history.min():.3f}")
+```
+
+    recorded 151 energies; lowest reached = 0.837
+
+Recording does not affect the result and is off by default, so the
+energy is only recomputed when you ask for it.
 
 ## Robustification
 
