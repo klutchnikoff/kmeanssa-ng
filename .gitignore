@@ -22,6 +22,10 @@ coverage.xml
 # Linter Cache
 .ruff_cache/
 
+# Numba JIT cache
+*.nbc
+*.nbi
+
 # Documentation
 site/
 docs-src/_site/
