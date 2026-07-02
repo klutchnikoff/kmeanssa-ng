@@ -6,14 +6,15 @@ title: "Home"
 ![Logo](./img/logo.png){ width=300px }
 :::
 
-This package provides an implementation of the k-means clustering algorithm using simulated annealing. It is designed to work on various types of spaces, with an initial focus on metric graphs. Future developments will include support for Riemannian manifolds. The core goal of this library is to offer a framework that allows users to easily define and work with their own custom spaces, provided they can define a notion of a Brownian motion and a drift within that space.
+This package implements k-means clustering via simulated annealing on **metric spaces** where the ordinary Euclidean distance does not apply. It clusters on **metric graphs** (quantum graphs) and on **Riemannian manifolds**—either directly, or by approximating a manifold with a graph (an $\varepsilon$-net). Its guiding goal is to let you define and cluster on your own custom spaces, as long as you can specify a Brownian motion and a drift there.
 
 
 ## Next Steps
 
 *   **[Quickstart](quickstart.md)**: To install the package and see a first example.
 *   **[Concepts](concepts.md)**: To understand the theory and the core features.
-*   **[Examples](basic-clustering.md)**: To explore more advanced use cases.
+*   **[Quantum Graphs](quantum-graphs.md)**: To cluster on metric graphs.
+*   **[Riemannian Manifolds](riemannian-manifolds.md)** and **[Meshing a Manifold](epsilon-net.md)**: To cluster on curved spaces.
 
 ## License
 

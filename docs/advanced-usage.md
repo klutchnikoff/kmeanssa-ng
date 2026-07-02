@@ -50,9 +50,8 @@ class MyFixedInit(InitializationStrategy):
 
 ### 2. Use the Custom Strategy
 
-Now, you can instantiate your custom strategy and pass it to the
-`run_interleaved` or `run_sequential` method of the `SimulatedAnnealing`
-object.
+Now, you can instantiate your custom strategy and pass it to the `run`
+method of the `SimulatedAnnealing` object.
 
 ``` python
 # Example setup

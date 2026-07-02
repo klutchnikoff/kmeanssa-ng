@@ -1,0 +1,81 @@
+---
+title: "Meshing a Manifold"
+---
+
+## Why mesh a manifold?
+
+`kmeanssa-ng` clusters points on a [quantum graph](quantum-graphs.md)—a network whose edges are continuous. But a lot of data does not live on a graph at all: directions on a **sphere**, points in **hyperbolic space**, orientations on a rotation group. These are smooth **geodesic spaces**, not networks.
+
+The bridge is an **$\varepsilon$-net**: a finite set of points spread so densely over the manifold that no location is farther than $\varepsilon$ from some net point. Connect the net points that are close together and you obtain a quantum graph that **approximates the manifold**—shortest paths through the graph track true geodesics, to within $\varepsilon$. You can then cluster on that graph exactly as on any other. This approximation is the computational backbone of online $k$-means on geodesic spaces: as the net is refined ($\varepsilon \to 0$), clustering on the graph converges to clustering on the manifold.
+
+The manifolds themselves (`create_sphere`, `create_hyperbolic_space`, `RiemannianPoint`) are described in [Riemannian Manifolds](riemannian-manifolds.md); this page is about turning one into a graph.
+
+## One call: `approximate_geodesic_space`
+
+Given a manifold and a number of net points, `approximate_geodesic_space` builds the whole approximating graph—place the net, estimate its resolution, connect nearby points:
+
+```{python}
+from kmeanssa_ng import create_sphere, approximate_geodesic_space, FibonacciNet
+
+sphere = create_sphere(2)
+graph = approximate_geodesic_space(sphere, 500, net=FibonacciNet())
+print(f"{graph.number_of_nodes()} nodes, {graph.number_of_edges()} edges")
+```
+
+The result is an ordinary `QuantumGraph` whose nodes sit on the sphere and whose edge lengths are geodesic distances. Everything downstream—sampling, simulated annealing, evaluation metrics—works unchanged.
+
+## Clustering on the mesh
+
+Because the mesh **is** a quantum graph, clustering is the familiar workflow:
+
+```{python}
+from kmeanssa_ng import SimulatedAnnealing, KMeansPlusPlus, MinimizeEnergy
+from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
+
+points = graph.sample_points(200, strategy=UniformNodeSampling())
+sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=0.5, step_size=0.05)
+centers = sa.run(KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1)
+print(f"Found {len(centers)} cluster centers on the sphere")
+```
+
+## Choosing the net: placement strategies
+
+How well the graph approximates the manifold depends on how **evenly** the net covers it. Placement follows the same strategy pattern as [sampling](quantum-graphs.md) and [initialization](simulated-annealing.md):
+
+| Strategy | Manifold | Idea |
+|---|---|---|
+| **`RepulsionNet`** | any (compact) | start from a uniform random cloud and let the points **repel each other** along geodesics until they freeze into a near-regular configuration—like charged particles on a surface |
+| **`FibonacciNet`** | sphere $\mathbb{S}^2$ only | a deterministic golden-angle spiral; near-optimal and instant |
+| **`UniformNet`** | any | plain uniform sampling—a fast baseline, but irregular for finite $n$ |
+
+`RepulsionNet` is the general-purpose choice: it is driven only by the manifold's exponential and logarithm maps, so the *same* code meshes the sphere, hyperbolic space, and any other compact manifold.
+
+```{python}
+from kmeanssa_ng import RepulsionNet
+
+net = RepulsionNet(random_state=0)
+net_points = net.build(sphere, 300)
+print(f"Repulsion net: {net_points.shape[0]} points on the sphere")
+```
+
+## How fine is the net? Covering radius
+
+The **covering radius** $\varepsilon$ is the largest distance from any point of the manifold to its nearest net point—the net's resolution. `estimate_covering_radius` measures it by dense sampling, and the graph connects points within $\ell(\varepsilon) = \sqrt{\varepsilon}$, the regime in which the graph faithfully approximates the geodesic space:
+
+```{python}
+import numpy as np
+from kmeanssa_ng import estimate_covering_radius, build_epsilon_net_graph
+
+eps = estimate_covering_radius(sphere, net_points, random_state=0)
+print(f"covering radius eps = {eps:.3f}   connection radius sqrt(eps) = {np.sqrt(eps):.3f}")
+
+# build_epsilon_net_graph gives explicit control over the connection radius
+graph = build_epsilon_net_graph(sphere, net_points, ell=float(np.sqrt(eps)))
+print(f"{graph.number_of_edges()} edges within l(eps)")
+```
+
+Refining the net (more points) shrinks $\varepsilon$, and the graph resolves finer structure on the manifold—at the cost of a larger graph to precompute.
+
+::: {.callout-note}
+On **non-compact** domains such as hyperbolic space, unbounded repulsion pushes points toward the boundary and leaves the interior sparse. `RepulsionNet` targets **compact** manifolds; bounded regions with a soft confining potential are a planned extension.
+:::

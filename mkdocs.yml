@@ -47,6 +47,8 @@ nav:
     - "Lloyd's Algorithm": lloyd.md
     - "Simulated Annealing": simulated-annealing.md
     - "Quantum Graphs": quantum-graphs.md
+    - "Riemannian Manifolds": riemannian-manifolds.md
+    - "Meshing a Manifold": epsilon-net.md
     - "Parallel Execution": parallel-execution.md
     - "Generators": generators.md
     - "Advanced Usage": advanced-usage.md
@@ -59,6 +61,7 @@ nav:
     - "Overview": api/index.md
     - "Core": api/core.md
     - "Quantum Graph": api/quantum_graph.md
+    - "Riemannian Manifold": api/riemannian_manifold.md
     - "Generators": api/generators.md
 
 plugins:

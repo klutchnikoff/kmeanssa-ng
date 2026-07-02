@@ -138,9 +138,9 @@ from kmeanssa_ng.core.strategies.initialization import KMeansPlusPlus
 from kmeanssa_ng.core.strategies.robustification import MinimizeEnergy
 
 sa = SimulatedAnnealing(observations=points, k=5)
-centers = sa.run_interleaved(
+centers = sa.run(
     initialization_strategy=KMeansPlusPlus(),
-    robustification_strategy=MinimizeEnergy()
+    robustification_strategy=MinimizeEnergy(),
 )
 
 print("Found cluster centers:", centers)
