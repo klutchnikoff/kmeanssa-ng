@@ -73,7 +73,8 @@ class SimulatedAnnealing:
                   higher risk of local minima
                 - Recommended default: 1.0 for balanced exploration/exploitation
 
-                TODO: Add reference to article on HAL/ArXiv when available.
+                See the companion paper (References) for the derivation of the
+                diffusion dynamics.
 
             beta0: Initial drift intensity parameter (must be > 0).
                 Controls how strongly centers are pulled toward observations.
@@ -90,7 +91,8 @@ class SimulatedAnnealing:
                   slower convergence
                 - Recommended default: 1.0-2.0 for most cases
 
-                TODO: Add reference to article on HAL/ArXiv when available.
+                See the companion paper (References) for the derivation of the
+                drift schedule.
 
             step_size: Time discretization step for the SDE solver (must be > 0).
                 Controls the temporal resolution of the stochastic process.
@@ -106,8 +108,16 @@ class SimulatedAnnealing:
                 - Rule of thumb: Use step_size much smaller than the typical
                   time scale of the Poisson process (~ 1/lambda0)
 
-            energy_mode: Energy calculation mode, either "uniform" or "obs".
-                TODO: Document the difference between these modes.
+            energy_mode: How the k-means energy (mean squared distance to the
+                nearest center) is averaged over the space:
+                - "uniform": average over all graph nodes with equal weight,
+                  measuring how well the centers cover the whole geometry
+                  irrespective of where the observations lie.
+                - "obs": average over nodes weighted by the number of
+                  observations at each node (the empirical k-means objective);
+                  only nodes carrying observations contribute.
+                Riemannian manifolds support "obs" only, since there is no
+                uniform distribution over all of their points.
 
             random_state: Controls randomness for reproducibility.
                 Determines random number generation for all random operations:
@@ -142,9 +152,9 @@ class SimulatedAnnealing:
                 or hyperparameters are invalid.
 
         References:
-            TODO: Add reference to your article:
-            [1] Your Name. "Title of your paper". HAL/ArXiv, 2025.
-                URL: https://...
+            C. Brécheteau, I. Gavra, N. Klutchnikoff. "Online k-means Clustering
+            on Metric Graphs and Geodesic Spaces" (preprint). Derives the
+            annealing dynamics and its convergence analysis.
 
         Example:
             >>> # Quick convergence setup

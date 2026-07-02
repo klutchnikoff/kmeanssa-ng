@@ -11,7 +11,7 @@ cache:
     - .cache/pip
     - .venv/
 
-# Use Python 3.11 image
+# Default image for lint/deploy; the test stage overrides it per matrix job.
 image: python:3.11
 
 before_script:
@@ -35,6 +35,10 @@ ruff-format:
 # Test and coverage
 test-coverage:
   stage: test
+  image: python:$PY_VERSION
+  parallel:
+    matrix:
+      - PY_VERSION: ["3.10", "3.11", "3.12"]
   variables:
     NUMBA_DISABLE_JIT: "1"
   script:
