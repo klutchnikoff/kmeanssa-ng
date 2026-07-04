@@ -3,3 +3,6 @@ results/*
 figures/*
 !results/.gitkeep
 !figures/.gitkeep
+
+# Heavy pairwise-distance cache of the frozen net; rebuilt on demand from data/.
+cache/

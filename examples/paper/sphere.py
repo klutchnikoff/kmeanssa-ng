@@ -15,6 +15,7 @@ import numpy as np
 
 from kmeanssa_ng import (
     QGPoint,
+    QuantumGraph,
     create_sphere,
     RiemannianPoint,
     FibonacciNet,
@@ -29,6 +30,8 @@ from multistart import annealings, methods_from_raw, summarize
 MODES = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 KAPPA = 10.0
 PKL = "results/sphere_multi.pkl"
+NET_DEF = "data/sphere_net_{n}.npz"       # frozen graph definition, committed (~2 MB)
+NET_DIST = "cache/sphere_dist_{n}.npy"    # pairwise distances, local cache (~200 MB)
 
 
 def sample_vmf(mu, kappa, n_samples, rng):
@@ -56,8 +59,13 @@ def sample_vmf(mu, kappa, n_samples, rng):
     return canonical @ rotation.T
 
 
-def build_graph(n_net):
-    """Fibonacci epsilon-net on S^2, connected within l(eps) = sqrt(eps)."""
+def _construct_net(n_net):
+    """Deterministic Fibonacci epsilon-net graph, connected within l(eps)=sqrt(eps).
+
+    This is the reference construction. It is deterministic in ``n_net`` (the
+    Fibonacci lattice carries no randomness and the covering radius is estimated
+    with a fixed seed), so its output can be frozen and reused.
+    """
     sphere = create_sphere(2)
     V = FibonacciNet().build(sphere, n_net)
     eps = estimate_covering_radius(sphere, V, random_state=0)
@@ -68,9 +76,67 @@ def build_graph(n_net):
         f"edges={qg.number_of_edges()} build={time.time() - t:.0f}s",
         flush=True,
     )
+    return qg, V, eps
+
+
+def _save_net(n_net, qg, V, eps):
+    """Freeze the graph definition (committed) and its distances (local cache)."""
+    edges = np.array(
+        [(u, v, d["length"]) for u, v, d in qg.edges(data=True)], dtype=float
+    )
+    def_path, dist_path = NET_DEF.format(n=n_net), NET_DIST.format(n=n_net)
+    os.makedirs(os.path.dirname(def_path), exist_ok=True)
+    np.savez_compressed(
+        def_path, V=V, edges=edges, n_net=n_net, eps=eps, l_eps=float(np.sqrt(eps))
+    )
+    os.makedirs(os.path.dirname(dist_path), exist_ok=True)
+    np.save(dist_path, qg._pairwise_nodes_distance_array)
+
+
+def _load_net(n_net):
+    """Reconstruct the frozen graph, injecting cached distances if present.
+
+    Nodes are the integers ``0..n_net-1`` in order (as in
+    ``build_epsilon_net_graph``), so ``list(qg.nodes())`` matches the row/column
+    order of the cached distance matrix. Only the numpy distance array and
+    ``_node_to_index`` are needed on the hot path; the dict form is left unset
+    (``node_distance`` then falls back to networkx, which the experiment never hits).
+    """
+    d = np.load(NET_DEF.format(n=n_net))
+    V, edges = d["V"], d["edges"]
+    eps, l_eps = float(d["eps"]), float(d["l_eps"])
+    qg = QuantumGraph()
+    qg.add_nodes_from(range(int(n_net)))
+    for u, v, length in edges:
+        qg.add_edge(int(u), int(v), length=float(length))
+
+    dist_path = NET_DIST.format(n=n_net)
+    if os.path.exists(dist_path):
+        qg._pairwise_nodes_distance_array = np.load(dist_path)
+        qg._node_to_index = {node: i for i, node in enumerate(qg.nodes())}
+    else:
+        qg.precomputing()
+        os.makedirs(os.path.dirname(dist_path), exist_ok=True)
+        np.save(dist_path, qg._pairwise_nodes_distance_array)
+    return qg, V, eps, l_eps
+
+
+def build_graph(n_net):
+    """Frozen Fibonacci epsilon-net on S^2, built once then reloaded identically.
+
+    The graph is deterministic in ``n_net``. The first call builds it and freezes
+    the definition under ``data/`` (committed) together with its pairwise distances
+    under ``cache/`` (local, gitignored); later calls reload the same graph.
+    """
+    if os.path.exists(NET_DEF.format(n=n_net)):
+        qg, V, eps, l_eps = _load_net(n_net)
+    else:
+        qg, V, eps = _construct_net(n_net)
+        _save_net(n_net, qg, V, eps)
+        l_eps = float(np.sqrt(eps))
     nbr = {v: next(iter(qg.neighbors(v))) for v in qg.nodes}
     node_list = np.array(list(qg.nodes()))
-    return qg, V, nbr, node_list, eps, float(np.sqrt(eps))
+    return qg, V, nbr, node_list, eps, l_eps
 
 
 def make_data(seed, n_data):
