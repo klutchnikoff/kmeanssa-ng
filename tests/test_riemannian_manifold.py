@@ -10,6 +10,7 @@ from kmeanssa_ng.riemannian_manifold import (
     RiemannianCenter,
     RiemannianManifold,
     RiemannianPoint,
+    Sphere,
     create_hyperbolic_space,
     create_sphere,
 )
@@ -636,3 +637,47 @@ class TestGeodesicOperations:
     def test_random_uniform_unsupported_manifold_raises(self):
         with pytest.raises(NotImplementedError, match="hyperspheres only"):
             create_hyperbolic_space(dim=2).random_uniform(5, random_state=0)
+
+
+class TestSphere:
+    """The closed-form Sphere must match the generic geomstats implementation."""
+
+    def test_create_sphere_is_sphere_subclass(self):
+        assert isinstance(create_sphere(2), Sphere)
+
+    def test_closed_forms_match_geomstats(self):
+        """exp/log/distance/norm/to_tangent equal geomstats, single and batched."""
+        geo = RiemannianManifold(Hypersphere(2))  # generic geomstats reference
+        sph = create_sphere(2)  # closed-form overrides
+        rng = np.random.default_rng(0)
+
+        def unit(shape):
+            x = rng.standard_normal(shape)
+            return x / np.linalg.norm(x, axis=-1, keepdims=True)
+
+        for batch in ((), (16,)):  # single point and a batch
+            p, q = unit(batch + (3,)), unit(batch + (3,))
+            v = geo.to_tangent(p, rng.standard_normal(batch + (3,)))
+            np.testing.assert_allclose(sph.exp(p, v), geo.exp(p, v), atol=1e-10)
+            np.testing.assert_allclose(sph.log(p, q), geo.log(p, q), atol=1e-9)
+            np.testing.assert_allclose(sph.norm(p, v), geo.norm(p, v), atol=1e-10)
+            w = rng.standard_normal(batch + (3,))
+            np.testing.assert_allclose(
+                sph.to_tangent(p, w), geo.to_tangent(p, w), atol=1e-12
+            )
+        p, q = unit((3,)), unit((3,))
+        np.testing.assert_allclose(
+            sph.distance(RiemannianPoint(sph, p), RiemannianPoint(sph, q)),
+            geo.distance(RiemannianPoint(geo, p), RiemannianPoint(geo, q)),
+            atol=1e-12,
+        )
+
+    def test_exp_projects_radial_component(self):
+        """exp must project a non-tangent input onto the tangent space (as geomstats
+        does), so a radial component does not push the result off the sphere."""
+        sph = create_sphere(2)
+        p = np.array([1.0, 0.0, 0.0])
+        tangent = np.array([0.0, 0.4, 0.3])
+        moved = sph.exp(p, tangent + 0.5 * p)  # add a radial component
+        np.testing.assert_allclose(np.linalg.norm(moved), 1.0, atol=1e-12)
+        np.testing.assert_allclose(moved, sph.exp(p, tangent), atol=1e-12)
