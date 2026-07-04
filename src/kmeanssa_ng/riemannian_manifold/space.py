@@ -101,6 +101,15 @@ class RiemannianManifold(Space):
         """Riemannian norm of ``tangent_vec`` in the tangent space at ``base_point``."""
         return np.asarray(self.manifold.metric.norm(tangent_vec, base_point))
 
+    def to_tangent(self, base_point: np.ndarray, ambient_vec: np.ndarray) -> np.ndarray:
+        """Project an ambient vector onto the tangent space at ``base_point``."""
+        return np.asarray(self.manifold.to_tangent(ambient_vec, base_point))
+
+    @property
+    def shape(self) -> tuple:
+        """Ambient shape of a single point on the manifold."""
+        return self.manifold.shape
+
     def embed(self, points: np.ndarray) -> np.ndarray:
         """Ambient coordinates of ``points`` (for neighbour search).
 
@@ -207,3 +216,53 @@ class RiemannianManifold(Space):
     def get_point_type(self) -> type[RiemannianPoint]:
         """Return the type of points in this space."""
         return RiemannianPoint
+
+
+class Sphere(RiemannianManifold):
+    """Hypersphere with closed-form geodesic operations.
+
+    The unit sphere's exponential, logarithm, distance and tangent projection
+    have simple closed forms. Overriding them here avoids geomstats' generic
+    per-call overhead (~7x on a single point), which dominates the manifold
+    annealing loop; the results match geomstats to machine precision. Every
+    override is vectorised over leading axes, matching the base class.
+    """
+
+    def distance(self, point1: RiemannianPoint, point2: RiemannianPoint) -> float:
+        inner = np.clip(np.dot(point1.coordinates, point2.coordinates), -1.0, 1.0)
+        return float(np.arccos(inner))
+
+    def exp(self, base_point: np.ndarray, tangent_vec: np.ndarray) -> np.ndarray:
+        base_point = np.asarray(base_point, dtype=float)
+        tangent_vec = np.asarray(tangent_vec, dtype=float)
+        # Project onto the tangent space first (as geomstats' exp does), so any
+        # radial component does not push the result off the sphere.
+        radial = np.sum(tangent_vec * base_point, axis=-1, keepdims=True)
+        tangent_vec = tangent_vec - radial * base_point
+        norm = np.linalg.norm(tangent_vec, axis=-1, keepdims=True)
+        # cos|v| * p + sin|v| * v/|v|, with the |v| -> 0 limit equal to p.
+        direction = np.divide(
+            tangent_vec, norm, out=np.zeros_like(tangent_vec), where=norm > 1e-12
+        )
+        return np.cos(norm) * base_point + np.sin(norm) * direction
+
+    def log(self, base_point: np.ndarray, point: np.ndarray) -> np.ndarray:
+        base_point = np.asarray(base_point, dtype=float)
+        point = np.asarray(point, dtype=float)
+        inner = np.clip(np.sum(base_point * point, axis=-1, keepdims=True), -1.0, 1.0)
+        proj = point - inner * base_point  # tangent component of `point` at base
+        proj_norm = np.linalg.norm(proj, axis=-1, keepdims=True)
+        direction = np.divide(
+            proj, proj_norm, out=np.zeros_like(proj), where=proj_norm > 1e-12
+        )
+        return np.arccos(inner) * direction  # scaled by the geodesic distance
+
+    def norm(self, base_point: np.ndarray, tangent_vec: np.ndarray) -> np.ndarray:
+        # A tangent vector's Riemannian norm on the unit sphere is its ambient norm.
+        return np.linalg.norm(np.asarray(tangent_vec, dtype=float), axis=-1)
+
+    def to_tangent(self, base_point: np.ndarray, ambient_vec: np.ndarray) -> np.ndarray:
+        base_point = np.asarray(base_point, dtype=float)
+        ambient_vec = np.asarray(ambient_vec, dtype=float)
+        inner = np.sum(ambient_vec * base_point, axis=-1, keepdims=True)
+        return ambient_vec - inner * base_point

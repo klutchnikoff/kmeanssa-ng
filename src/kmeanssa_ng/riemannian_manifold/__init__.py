@@ -14,11 +14,12 @@ from .graph import (
     estimate_covering_radius,
 )
 from .point import RiemannianPoint
-from .space import RiemannianManifold
+from .space import RiemannianManifold, Sphere
 from .update import FrechetMeanUpdate
 
 __all__ = [
     "RiemannianManifold",
+    "Sphere",
     "RiemannianPoint",
     "RiemannianCenter",
     "create_sphere",

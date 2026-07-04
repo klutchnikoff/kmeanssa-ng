@@ -79,14 +79,13 @@ class RiemannianCenter(RiemannianPoint, AbstractCenter):
         # for the Brownian-motion property. The direction is drawn from this
         # center's own generator: geomstats' random_tangent_vec would draw from
         # the global RNG, which cannot be seeded per run and breaks reproducibility.
-        ambient = self._rng.standard_normal(self.space.manifold.shape)
-        tangent_vec = self.space.manifold.to_tangent(ambient, self.coordinates)
+        ambient = self._rng.standard_normal(self.space.shape)
+        tangent_vec = self.space.to_tangent(self.coordinates, ambient)
         step_size = np.sqrt(time_float) * self._rng.standard_normal()
 
-        # Move along the exponential map
-        self.coordinates = self.space.manifold.metric.exp(
-            step_size * tangent_vec, self.coordinates
-        )
+        # Move along the exponential map (self.space dispatches to a closed form
+        # on known manifolds, e.g. the sphere, and to geomstats otherwise).
+        self.coordinates = self.space.exp(self.coordinates, step_size * tangent_vec)
 
     def drift(self, target_point: RiemannianPoint, prop_to_travel: float) -> None:
         """Move toward a target point along the geodesic.
@@ -128,19 +127,12 @@ class RiemannianCenter(RiemannianPoint, AbstractCenter):
         if prop_float == 0:
             return  # No movement
 
-        # Use Geomstats geodesic to move toward target
-        # geodesic(initial_point, end_point) returns a function t -> point(t)
-        # where t=0 is initial_point and t=1 is end_point
-        geodesic = self.space.manifold.metric.geodesic(
-            initial_point=self.coordinates, end_point=target_point.coordinates
-        )
-
-        # Evaluate geodesic at proportion prop_to_travel
-        new_coords = geodesic(prop_float)
-
-        # Ensure coordinates have consistent shape
-        if new_coords.ndim > self.coordinates.ndim:
-            new_coords = new_coords.squeeze()
+        # Move a proportion prop_float along the geodesic toward the target:
+        # exp_p(prop * log_p(target)). This equals geomstats' geodesic evaluated at
+        # prop, without building a geodesic callable per call, and dispatches to a
+        # closed form on known manifolds (e.g. the sphere) via self.space.
+        log_vec = self.space.log(self.coordinates, target_point.coordinates)
+        new_coords = self.space.exp(self.coordinates, prop_float * log_vec)
 
         self.coordinates = new_coords
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from geomstats.geometry.hypersphere import Hypersphere
 
-from .space import RiemannianManifold
+from .space import RiemannianManifold, Sphere
 
 
 def create_sphere(dim: int = 2, **kwargs) -> RiemannianManifold:
@@ -46,7 +46,7 @@ def create_sphere(dim: int = 2, **kwargs) -> RiemannianManifold:
     #  Note: intrinsic coordinates cause issues with belongs() and BrownianMotion
     # For now, use extrinsic (default) coordinates
     sphere_manifold = Hypersphere(dim=dim, **kwargs)
-    return RiemannianManifold(sphere_manifold)
+    return Sphere(sphere_manifold)
 
 
 def create_hyperbolic_space(dim: int = 2, **kwargs) -> RiemannianManifold:
