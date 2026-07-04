@@ -25,6 +25,9 @@ sphere.py        sphere experiment  -> results/sphere_multi.pkl
 make_tables.py   results/*.pkl -> results/table_{performance,comparison}.csv
 make_figures.py  results/*.pkl -> figures/figure_{1,2,3,5,6}.pdf
 reproduce.py     run everything end to end
+timing_comparison.py  standalone: per-method wall time (SA-graph vs SA on the
+                 sphere with/without closed forms, CLVQ, k-medoids) ->
+                 results/timing_comparison.csv; justifies the epsilon-net
 data/            frozen sphere epsilon-net definition (committed, ~1 MB)
 cache/           its 191 MB pairwise-distance matrix (rebuilt on demand, gitignored)
 ```
