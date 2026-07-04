@@ -223,14 +223,14 @@ def figure_rate():
     for mult in (1, 2, 4, 6):
         eta = mult * ustar
         p = (excess > eta).mean(axis=0)
-        line, = axA.plot(grid[1:], p[1:], lw=1.6, label=fr"$\eta={mult}U^\downarrow$")
+        (line,) = axA.plot(grid[1:], p[1:], lw=1.6, label=rf"$\eta={mult}U^\downarrow$")
         ok = win & (p > 0)
         slope = np.polyfit(np.log(grid[ok]), np.log(p[ok]), 1)[0]
         pred = min(b * eta, 0.5 * (1 - b * cstar))
         axA.text(
             grid[-1] * 1.03,
             p[win][-1],
-            fr"$\hat\rho={-slope:.2f}$" + "\n" + fr"$(\rho<{pred:.2f})$",
+            rf"$\hat\rho={-slope:.2f}$" + "\n" + rf"$(\rho<{pred:.2f})$",
             fontsize=7,
             color=line.get_color(),
             va="center",
@@ -282,14 +282,18 @@ def figure_memory():
     win_01 = max(1, int(0.01 * n_grid))
     for i in range(n_grid):
         start = max(0, i - win_01 + 1)
-        stacked_01[:, i] = np.min(stacked[:, start:i + 1], axis=1)
+        stacked_01[:, i] = np.min(stacked[:, start : i + 1], axis=1)
 
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(12, 4.6))
 
     def plot_memory(ax, data, title):
         q05, q25, med, q75, q95 = np.percentile(data, [5, 25, 50, 75, 95], axis=0)
-        ax.fill_between(grid[1:], q05[1:], q95[1:], color="C0", alpha=0.20, label="5-95%")
-        ax.fill_between(grid[1:], q25[1:], q75[1:], color="C0", alpha=0.40, label="25-75%")
+        ax.fill_between(
+            grid[1:], q05[1:], q95[1:], color="C0", alpha=0.20, label="5-95%"
+        )
+        ax.fill_between(
+            grid[1:], q25[1:], q75[1:], color="C0", alpha=0.40, label="25-75%"
+        )
         ax.plot(grid[1:], med[1:], color="C3", lw=2, label="median")
         ax.axhline(ustar, ls="--", color="k", lw=1, label=r"$U^\downarrow$")
         ax.set_xscale("log")

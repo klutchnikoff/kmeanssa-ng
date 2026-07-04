@@ -31,8 +31,8 @@ from multistart import annealings, methods_from_raw, summarize, run_seeds
 MODES = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 KAPPA = 10.0
 PKL = "results/sphere_multi.pkl"
-NET_DEF = "data/sphere_net_{n}.npz"       # frozen graph definition, committed (~2 MB)
-NET_DIST = "cache/sphere_dist_{n}.npy"    # pairwise distances, local cache (~200 MB)
+NET_DEF = "data/sphere_net_{n}.npz"  # frozen graph definition, committed (~2 MB)
+NET_DIST = "cache/sphere_dist_{n}.npy"  # pairwise distances, local cache (~200 MB)
 
 
 def sample_vmf(mu, kappa, n_samples, rng):

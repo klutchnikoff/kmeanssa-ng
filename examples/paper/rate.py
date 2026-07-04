@@ -127,7 +127,11 @@ def fitted_slopes(store, mults=(1, 2, 4, 6)):
         eta = m * ustar
         p = (excess > eta).mean(axis=0)
         ok = win & (p > 0)
-        slope = np.polyfit(np.log(grid[ok]), np.log(p[ok]), 1)[0] if ok.sum() > 5 else np.nan
+        slope = (
+            np.polyfit(np.log(grid[ok]), np.log(p[ok]), 1)[0]
+            if ok.sum() > 5
+            else np.nan
+        )
         out[m] = (-slope, min(b * eta, 0.5 * (1 - b * cstar)))
     return out
 
@@ -141,7 +145,9 @@ def summarize(store):
     )
     print(f"{'eta':>10} {'rho_hat':>9} {'rho_pred':>10}")
     for m, (rho_hat, pred) in fitted_slopes(store).items():
-        print(f"{m}*U*={m * store['ustar']:>5.3f} {rho_hat:>9.3f} {'<' + f'{pred:.3f}':>10}")
+        print(
+            f"{m}*U*={m * store['ustar']:>5.3f} {rho_hat:>9.3f} {'<' + f'{pred:.3f}':>10}"
+        )
 
 
 if __name__ == "__main__":
