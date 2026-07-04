@@ -53,12 +53,19 @@ class UniformManifoldSampling(SamplingStrategy):
         Returns:
             List of n points sampled uniformly using the volume measure.
         """
-        # Sample coordinates from the manifold
-        # Use random_uniform if available, otherwise random_point
-        if hasattr(space.manifold, "random_uniform"):
-            coords = space.manifold.random_uniform(n_samples=n)
-        else:
-            coords = space.manifold.random_point(n_samples=n)
+        rng = self._get_rng()
+        # Draw through the space's own generator-driven sampler so that
+        # ``random_state`` is honoured. geomstats' manifold.random_uniform /
+        # random_point draw from the global numpy RNG and take no seed.
+        try:
+            coords = space.random_uniform(n, rng)
+        except NotImplementedError:
+            # No generator-driven uniform sampler for this manifold yet: fall back
+            # to geomstats, which draws from the global RNG (not reproducible).
+            if hasattr(space.manifold, "random_uniform"):
+                coords = space.manifold.random_uniform(n_samples=n)
+            else:
+                coords = space.manifold.random_point(n_samples=n)
 
         # Store observations for energy calculation
         if n > 0:
