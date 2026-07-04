@@ -1,5 +1,6 @@
 """Stochastic block model experiment: a fresh weighted random graph per seed."""
 
+import _env  # noqa: F401  -- pins BLAS threads; must precede numpy
 import os
 import pickle
 from dataclasses import dataclass
@@ -11,7 +12,7 @@ from kmeanssa_ng import generate_random_sbm
 from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 import baselines as B
 from calibration import potential_matrix, critical_depth
-from multistart import annealings, methods_from_raw, summarize
+from multistart import annealings, methods_from_raw, summarize, run_seeds
 
 PKL = "results/sbm_multi.pkl"
 
@@ -74,14 +75,13 @@ def run_seed(space, seed, n_runs, track):
     return methods_from_raw(raw, space.true_labels), convergence
 
 
-def run(seeds=(42, 43, 44, 45, 46), n_runs=50):
-    per_seed, convergence = {}, None
-    for i, seed in enumerate(seeds):
+def run(seeds=(42, 43, 44, 45, 46), n_runs=50, n_jobs=1):
+    def fn(i, seed):
         space = build_space(seed)
         methods, conv = run_seed(space, seed, n_runs, track=(i == 0))
-        per_seed[seed] = {"methods": methods}
-        convergence = conv or convergence
-        print(f"[sbm] seed {seed} done", flush=True)
+        return {"methods": methods}, conv
+
+    per_seed, convergence = run_seeds(seeds, fn, n_jobs=n_jobs, tag="sbm")
 
     store = {
         "name": "sbm",

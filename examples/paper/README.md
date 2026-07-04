@@ -15,35 +15,41 @@ against baseline methods (weighted k-medoids, spectral clustering, CLVQ):
 ## Layout
 
 ```
+_env.py          pins BLAS to one thread (imported first, before numpy)
 calibration.py   temperature calibration: the critical depth c*
-multistart.py    the seeded multi-start SA loop, shared by every experiment
+multistart.py    the seeded multi-start SA loop + parallel seed driver
 baselines.py     k-medoids, spectral, CLVQ
 grid.py          grid experiment    -> results/grid_multi.pkl
 sbm.py           SBM experiment     -> results/sbm_multi.pkl
 sphere.py        sphere experiment  -> results/sphere_multi.pkl
 make_tables.py   results/*.pkl -> results/table_{performance,comparison}.csv
-make_figures.py  results/*.pkl -> figures/figure_{1,2,3}.pdf
+make_figures.py  results/*.pkl -> figures/figure_{1,2,3,5,6}.pdf
 reproduce.py     run everything end to end
+data/            frozen sphere epsilon-net definition (committed, ~1 MB)
+cache/           its 191 MB pairwise-distance matrix (rebuilt on demand, gitignored)
 ```
 
 Raw per-run results are cached as pickles so tables and figures can be rebuilt
-without re-running the (slow) experiments.
+without re-running the (slow) experiments. The sphere epsilon-net is frozen under
+`data/`: it is built once (~3 min) and reloaded in ~0.2 s thereafter.
 
 ## Running
 
 ```bash
 pip install "kmeanssa-ng>=0.8.0" scikit-learn matplotlib
 python reproduce.py            # experiments + tables + figures
+python reproduce.py --jobs -1  # same, seeds fanned over every core
 # or step by step:
 python grid.py
 python sbm.py
-python sphere.py               # ~20 min
+python sphere.py               # ~20 min (first run also builds the net)
 python make_tables.py
 python make_figures.py
 ```
 
 Every experiment is seeded (`seeds = 42..46` by default), so results are
-reproducible across machines.
+reproducible across machines -- and, because BLAS is pinned to one thread, they
+are identical whether the seeds run sequentially or in parallel (`--jobs`).
 
 ## Typesetting the tables
 

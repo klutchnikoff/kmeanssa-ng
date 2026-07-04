@@ -7,6 +7,7 @@ pickled to results/sphere_multi.pkl so tables and figures rebuild without the
 so the graph is built once and reused across seeds.
 """
 
+import _env  # noqa: F401  -- pins BLAS threads; must precede numpy
 import os
 import time
 import pickle
@@ -25,7 +26,7 @@ from kmeanssa_ng import (
 from kmeanssa_ng.core.metrics import compute_labels, adjusted_rand_index
 
 import baselines as B
-from multistart import annealings, methods_from_raw, summarize
+from multistart import annealings, methods_from_raw, summarize, run_seeds
 
 MODES = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 KAPPA = 10.0
@@ -244,18 +245,43 @@ def eval_seed(
     }
 
 
+_NET = {}
+
+
+def _cached_net(n_net):
+    """Load the frozen net once per process and reuse it across seeds.
+
+    Parallel workers each call this and load the 191 MB distance matrix from the
+    on-disk cache (~0.2s) rather than receiving the huge graph by pickling.
+    """
+    if n_net not in _NET:
+        _NET[n_net] = build_graph(n_net)
+    return _NET[n_net]
+
+
 def run(
-    seeds=(42, 43, 44, 45, 46), n_net=5000, n_data=2000, n_obs=2000, b=0.2, n_runs=20
+    seeds=(42, 43, 44, 45, 46),
+    n_net=5000,
+    n_data=2000,
+    n_obs=2000,
+    b=0.2,
+    n_runs=20,
+    n_jobs=1,
 ):
-    qg, V, nbr, node_list, eps, l_eps = build_graph(n_net)
-    per_seed, convergence = {}, None
-    for i, sd in enumerate(seeds):
+    # Warm (and, if absent, build+freeze) the net in the parent so every worker
+    # then just reloads it from the cache.
+    _, V, _, _, eps, l_eps = _cached_net(n_net)
+
+    def fn(i, sd):
+        qg, V_, nbr, node_list, _, _ = _cached_net(n_net)
         result = eval_seed(
-            qg, V, nbr, node_list, sd, n_data, n_obs, b, n_runs, track=(i == 0)
+            qg, V_, nbr, node_list, sd, n_data, n_obs, b, n_runs, track=(i == 0)
         )
-        convergence = result.pop("convergence") or convergence
-        per_seed[sd] = result
-        print(f"seed {sd} done", flush=True)
+        conv = result.pop("convergence")
+        return result, conv
+
+    per_seed, convergence = run_seeds(seeds, fn, n_jobs=n_jobs, tag="sphere")
+
     store = {
         "config": {
             "n_net": n_net,
