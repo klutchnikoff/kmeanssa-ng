@@ -260,19 +260,23 @@ def eval_seed(
 
 
 def summarize_timings(store):
-    """Print each method's wall time: mean per seed and total over all seeds."""
+    """Print each method's per-seed wall time as mean +/- std, plus the total."""
     timings = [s["timings"] for s in store["per_seed"].values() if "timings" in s]
     if not timings:
         return
     n = len(timings)
-    print(f"\nper-method wall time over {n} seed(s):")
-    print(f"{'method':12s}  mean/seed     total")
-    grand = 0.0
+    ddof = 1 if n > 1 else 0  # sample std when we have >1 seed
+    print(f"\nper-method wall time over {n} seed(s) (mean +/- std, seconds):")
+    print(f"{'method':12s}  {'mean':>8}  {'std':>7}  {'total':>9}")
+    total = np.zeros(n)
     for m in timings[0]:
-        ts = [t[m] for t in timings]
-        grand += sum(ts)
-        print(f"{m:12s}  {sum(ts) / n:8.1f}s  {sum(ts):8.1f}s")
-    print(f"{'all':12s}  {grand / n:8.1f}s  {grand:8.1f}s", flush=True)
+        ts = np.array([t[m] for t in timings])
+        total += ts
+        print(f"{m:12s}  {ts.mean():8.1f}  {ts.std(ddof=ddof):7.1f}  {ts.sum():9.1f}")
+    print(
+        f"{'all':12s}  {total.mean():8.1f}  {total.std(ddof=ddof):7.1f}  {total.sum():9.1f}",
+        flush=True,
+    )
 
 
 _NET = {}
