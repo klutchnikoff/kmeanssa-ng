@@ -213,25 +213,38 @@ def eval_seed(
     nu /= nu.sum()
     nu_row = nu[node_list]
 
+    # Wall time of each method, so a run doubles as a per-method profile.
+    timings = {}
+
+    t = time.perf_counter()
     graph_labels, graph_energies, centroids, convergence = _sa_graph_runs(
         qg, V, nbr, node_list, nu_row, proj, n_data, n_obs, b, n_runs, seed, track
     )
+    timings["SA-graph"] = time.perf_counter() - t
     if track:
         _print_diag(seed, graph_labels, graph_energies, dtrue)
+
+    t = time.perf_counter()
     sphere_labels, sphere_energies = _sa_sphere_runs(
         data, n_data, n_obs, b, n_runs, seed
     )
+    timings["SA-sphere"] = time.perf_counter() - t
 
     raw = {
         "SA-graph": (graph_labels, graph_energies),
         "SA-sphere": (sphere_labels, sphere_energies),
     }
+    t = time.perf_counter()
     labc, enc = B.clvq_sphere(data, k=3, n_runs=n_runs, base_seed=seed + 300)
+    timings["CLVQ"] = time.perf_counter() - t
     raw["CLVQ"] = (labc, np.array(enc))
+
+    t = time.perf_counter()
     geodesic = np.arccos(np.clip(data @ data.T, -1, 1))
     labm, enm = B.weighted_kmedoids(
         geodesic, np.ones(n_data) / n_data, k=3, n_runs=n_runs, base_seed=seed + 300
     )
+    timings["k-medoids"] = time.perf_counter() - t
     raw["k-medoids"] = (labm, np.array(enm))
 
     methods = methods_from_raw(raw, dtrue)
@@ -241,8 +254,25 @@ def eval_seed(
         "dtrue": dtrue,
         "proj": proj,
         "methods": methods,
+        "timings": timings,
         "convergence": convergence,
     }
+
+
+def summarize_timings(store):
+    """Print each method's wall time: mean per seed and total over all seeds."""
+    timings = [s["timings"] for s in store["per_seed"].values() if "timings" in s]
+    if not timings:
+        return
+    n = len(timings)
+    print(f"\nper-method wall time over {n} seed(s):")
+    print(f"{'method':12s}  mean/seed     total")
+    grand = 0.0
+    for m in timings[0]:
+        ts = [t[m] for t in timings]
+        grand += sum(ts)
+        print(f"{m:12s}  {sum(ts) / n:8.1f}s  {sum(ts):8.1f}s")
+    print(f"{'all':12s}  {grand / n:8.1f}s  {grand:8.1f}s", flush=True)
 
 
 _NET = {}
@@ -304,6 +334,7 @@ def run(
         pickle.dump(store, f)
     print(f"\nsaved raw data to {PKL}\n", flush=True)
     summarize(store)
+    summarize_timings(store)
     return store
 
 
