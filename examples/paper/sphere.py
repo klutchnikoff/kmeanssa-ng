@@ -90,6 +90,8 @@ def _sa_graph_runs(
     qg, V, nbr, node_list, nu_row, proj, n_data, n_obs, b, n_runs, seed, track
 ):
     """SA on the graph; return (data_labels, energies, centroids, convergence)."""
+    for node, w in zip(node_list, nu_row):
+        qg.nodes[node]["nb_obs"] = float(w)
 
     def observations_for(rng):
         on = proj[rng.integers(0, n_data, size=n_obs)]

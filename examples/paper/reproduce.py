@@ -36,6 +36,7 @@ def main(quick=False, paper=False):
     make_figures.figure_sphere()
     make_figures.figure_convergence()
     make_figures.figure_rate()
+    make_figures.figure_memory()
 
 
 if __name__ == "__main__":

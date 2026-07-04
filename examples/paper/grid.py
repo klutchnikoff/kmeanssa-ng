@@ -62,6 +62,8 @@ def sample_data(seed, densities, n_nodes, n_data, n_obs):
 def run_seed(space, seed, comps, data_nodes, obs_idx, n_runs, track):
     """Multi-start SA plus baselines for one seed; return (methods, convergence)."""
     graph, nu = space.graph, space.nu
+    for node, w in zip(space.nodes, nu):
+        graph.nodes[node]["nb_obs"] = float(w)
     obs = [
         QGPoint(graph, (space.nodes[v], space.neighbour[space.nodes[v]]), 0)
         for v in obs_idx
