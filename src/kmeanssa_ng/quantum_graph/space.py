@@ -419,10 +419,18 @@ class QuantumGraph(nx.Graph, Space):
         Returns:
             Shortest path length using 'length' edge attribute.
         """
+        # Prefer the precomputed array (O(1)); it may be present without the dict
+        # form (e.g. loaded from a cache). Fall back to the dict, then to a live
+        # Dijkstra when nothing is precomputed.
+        if self._pairwise_nodes_distance_array is not None and self._node_to_index:
+            return float(
+                self._pairwise_nodes_distance_array[
+                    self._node_to_index[n1], self._node_to_index[n2]
+                ]
+            )
         if self._pairwise_nodes_distance is not None:
             return self._pairwise_nodes_distance[n1][n2]
-        else:
-            return nx.shortest_path_length(self, n1, n2, weight="length")
+        return nx.shortest_path_length(self, n1, n2, weight="length")
 
     def get_edge_length(self, n1: int, n2: int) -> float:
         """Get the length of an edge.

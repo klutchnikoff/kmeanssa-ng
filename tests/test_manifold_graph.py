@@ -1,7 +1,6 @@
 """Tests for approximating a manifold by an epsilon-net quantum graph."""
 
 import networkx as nx
-import numpy as np
 import pytest
 
 from kmeanssa_ng import (

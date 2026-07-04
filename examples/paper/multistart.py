@@ -64,6 +64,33 @@ def annealings(observations_for, k, beta0, n_runs, seed_base, track_first=False)
         yield r, centers, sa
 
 
+def run_seeds(seeds, fn, n_jobs=1, tag=""):
+    """Run ``fn(i, seed) -> (per_seed_value, convergence)`` over all seeds.
+
+    Seeds are independent, so they run in parallel when ``n_jobs != 1`` (joblib's
+    loky backend: each worker gets its own copy of the space, so per-node ``nb_obs``
+    mutations never race). The result is order-independent -- all randomness flows
+    through explicit seed-derived generators -- so the merged output is identical
+    whatever ``n_jobs`` is. ``convergence`` is the diagnostic recorded by the one
+    tracked seed (``i == 0``); the others return ``None``.
+    """
+    from joblib import Parallel, delayed
+
+    def one(i, seed):
+        value, conv = fn(i, seed)
+        print(f"[{tag}] seed {seed} done", flush=True)
+        return seed, value, conv
+
+    results = Parallel(n_jobs=n_jobs)(
+        delayed(one)(i, seed) for i, seed in enumerate(seeds)
+    )
+    per_seed, convergence = {}, None
+    for seed, value, conv in results:
+        per_seed[seed] = value
+        convergence = conv or convergence
+    return per_seed, convergence
+
+
 def methods_from_raw(raw, true_labels):
     """Turn ``{method: (labels_per_run, energies)}`` into ARI/energy/label records."""
     methods = {}

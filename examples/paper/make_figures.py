@@ -209,8 +209,118 @@ def figure_convergence():
     print("figure_4 (convergence) done")
 
 
+def figure_rate():
+    """Two panels on the toy: exceedance rate (log-log) and energy trajectories."""
+    store = pickle.load(open("results/rate.pkl", "rb"))
+    grid, stacked = store["grid"], store["stacked"]
+    ustar, cstar, b = store["ustar"], store["cstar"], store["b"]
+    excess = stacked - ustar
+
+    fig, (axA, axB) = plt.subplots(1, 2, figsize=(12, 4.6))
+
+    # (a) log-log exceedance with fitted slope vs predicted rate exponent.
+    win = grid > grid[-1] / 10
+    for mult in (1, 2, 4, 6):
+        eta = mult * ustar
+        p = (excess > eta).mean(axis=0)
+        (line,) = axA.plot(grid[1:], p[1:], lw=1.6, label=rf"$\eta={mult}U^\downarrow$")
+        ok = win & (p > 0)
+        slope = np.polyfit(np.log(grid[ok]), np.log(p[ok]), 1)[0]
+        pred = min(b * eta, 0.5 * (1 - b * cstar))
+        axA.text(
+            grid[-1] * 1.03,
+            p[win][-1],
+            rf"$\hat\rho={-slope:.2f}$" + "\n" + rf"$(\rho<{pred:.2f})$",
+            fontsize=7,
+            color=line.get_color(),
+            va="center",
+        )
+    axA.set_xscale("log")
+    axA.set_yscale("log")
+    axA.set_xlabel("annealing time $t$")
+    axA.set_ylabel(r"$\hat{\mathbb{P}}(U(X_t) - U^\downarrow > \eta)$")
+    axA.set_title(f"(a) Exceedance rate ($b={b}$, $c^\\star={cstar:.2f}$)", fontsize=12)
+    axA.legend(fontsize=8, loc="lower left")
+
+    # (b) a few energy trajectories with quantile bands concentrating on U*.
+    sample = np.random.default_rng(0).choice(
+        stacked.shape[0], size=min(5, stacked.shape[0]), replace=False
+    )
+    for r in sample:
+        axB.plot(grid[1:], stacked[r, 1:], color="0.5", lw=0.4, alpha=0.22)
+    q05, q25, med, q75, q95 = np.percentile(stacked, [5, 25, 50, 75, 95], axis=0)
+    axB.fill_between(grid[1:], q05[1:], q95[1:], color="C0", alpha=0.20, label="5-95%")
+    axB.fill_between(grid[1:], q25[1:], q75[1:], color="C0", alpha=0.40, label="25-75%")
+    axB.plot(grid[1:], med[1:], color="C3", lw=2, label="median")
+    axB.axhline(ustar, ls="--", color="k", lw=1, label=r"$U^\downarrow$")
+    axB.set_xscale("log")
+    axB.set_yscale("log")
+    axB.set_xlabel("annealing time $t$")
+    axB.set_ylabel(r"energy $U(X_t)$")
+    axB.set_title("(b) Energy trajectories: escape and concentration", fontsize=12)
+    axB.legend(fontsize=8, loc="upper left")
+
+    fig.tight_layout()
+    for ext in ("pdf", "png"):
+        fig.savefig(f"figures/figure_5.{ext}", bbox_inches="tight", dpi=200)
+    plt.close(fig)
+    print("figure_5 (rate) done")
+
+
+def figure_memory():
+    """Energy of the memory-augmented estimator: partial (1%) and full memory."""
+    store = pickle.load(open("results/rate.pkl", "rb"))
+    grid, stacked = store["grid"], store["stacked"]
+    ustar = store["ustar"]
+
+    # The time grid is linearly spaced, so a memory window of the last p of the
+    # physical annealing time is exactly the last p of the indices up to t.
+    n_grid = len(grid)
+    stacked_10 = np.minimum.accumulate(stacked, axis=1)
+
+    stacked_01 = np.empty_like(stacked)
+    win_01 = max(1, int(0.01 * n_grid))
+    for i in range(n_grid):
+        start = max(0, i - win_01 + 1)
+        stacked_01[:, i] = np.min(stacked[:, start : i + 1], axis=1)
+
+    fig, (axA, axB) = plt.subplots(1, 2, figsize=(12, 4.6))
+
+    def plot_memory(ax, data, title):
+        q05, q25, med, q75, q95 = np.percentile(data, [5, 25, 50, 75, 95], axis=0)
+        ax.fill_between(
+            grid[1:], q05[1:], q95[1:], color="C0", alpha=0.20, label="5-95%"
+        )
+        ax.fill_between(
+            grid[1:], q25[1:], q75[1:], color="C0", alpha=0.40, label="25-75%"
+        )
+        ax.plot(grid[1:], med[1:], color="C3", lw=2, label="median")
+        ax.axhline(ustar, ls="--", color="k", lw=1, label=r"$U^\downarrow$")
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        # Share figure_5's vertical range so the two panels compare directly.
+        ymin = ustar * 0.99 if ustar > 0 else 0.1
+        ymax = np.max(stacked[:, 1:]) * 1.05
+        ax.set_ylim([ymin, ymax])
+        ax.set_xlabel("annealing time $t$")
+        ax.set_ylabel(r"memory energy $V^p_{\mathcal{G}}(t)$")
+        ax.set_title(title, fontsize=12)
+        ax.legend(fontsize=8, loc="upper right")
+
+    plot_memory(axA, stacked_01, r"(a) Partial memory ($p = 0.01$)")
+    plot_memory(axB, stacked_10, r"(b) Full memory ($p = 1.0$)")
+
+    fig.tight_layout()
+    for ext in ("pdf", "png"):
+        fig.savefig(f"figures/figure_6.{ext}", bbox_inches="tight", dpi=200)
+    plt.close(fig)
+    print("figure_6 (memory) done")
+
+
 if __name__ == "__main__":
     figure_grid()
     figure_sbm()
     figure_sphere()
     figure_convergence()
+    figure_rate()
+    figure_memory()

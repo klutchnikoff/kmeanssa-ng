@@ -1,6 +1,7 @@
 """Tests for sampling strategies."""
 
 import networkx as nx
+import numpy as np
 import pytest
 
 from kmeanssa_ng.core.strategies.sampling import SamplingStrategy
@@ -219,6 +220,28 @@ class TestUniformManifoldSampling:
         assert len(points2) == 50
         # Points should be different (with very high probability)
         assert points1[0].coordinates[0] != points2[0].coordinates[0]
+
+    def test_uniform_manifold_sampling_reproducible(self):
+        """random_state makes sphere sampling reproducible, independent of global RNG.
+
+        Sampling must go through the strategy's generator, not geomstats' global
+        RNG: a given random_state yields the same points even when the global
+        numpy RNG is perturbed between calls.
+        """
+        sphere = create_sphere(dim=2)
+
+        def coords(seed):
+            pts = sphere.sample_points(
+                50, strategy=UniformManifoldSampling(random_state=seed)
+            )
+            return np.array([p.coordinates for p in pts])
+
+        np.random.seed(1)
+        first = coords(7)
+        np.random.seed(123_456)  # perturb the global RNG between the two draws
+        second = coords(7)
+
+        np.testing.assert_array_equal(first, second)
 
 
 class TestStrategyRequired:

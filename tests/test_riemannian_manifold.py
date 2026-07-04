@@ -268,6 +268,30 @@ class TestRiemannianCenter:
         norm = np.linalg.norm(center.coordinates)
         np.testing.assert_allclose(norm, 1.0, rtol=1e-5)
 
+    def test_brownian_motion_reproducible_across_global_rng(self):
+        """Brownian motion depends only on the center's generator, not global RNG.
+
+        The random tangent direction must be drawn from ``center._rng`` so that a
+        given ``random_state`` reproduces the same walk regardless of the global
+        numpy RNG state (which geomstats' ``random_tangent_vec`` would otherwise use).
+        """
+        sphere = Hypersphere(dim=2)
+        space = RiemannianManifold(sphere)
+        point = RiemannianPoint(space, np.array([1.0, 0.0, 0.0]))
+
+        def walk(seed):
+            center = RiemannianCenter(point, rng=np.random.default_rng(seed))
+            for _ in range(5):
+                center.brownian_motion(time_to_travel=0.1)
+            return center.coordinates.copy()
+
+        np.random.seed(1)
+        first = walk(42)
+        np.random.seed(999_999)  # perturb the global RNG between the two walks
+        second = walk(42)
+
+        np.testing.assert_array_equal(first, second)
+
     def test_brownian_motion_zero_time(self):
         """Test Brownian motion with zero time."""
         sphere = Hypersphere(dim=2)

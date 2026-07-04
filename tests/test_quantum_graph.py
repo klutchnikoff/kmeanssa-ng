@@ -49,6 +49,32 @@ class TestQuantumGraph:
         dist = graph.node_distance(0, 2)
         assert dist == 3.0
 
+    def test_node_distance_from_array_without_dict(self, monkeypatch):
+        """node_distance must use the precomputed array even if the dict form is
+        absent (e.g. a graph rebuilt from a cached distance matrix). Otherwise it
+        silently falls back to a full Dijkstra on every call -- correct but ~1000x
+        slower on large graphs.
+        """
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 2, length=2.0)
+        graph.precomputing()
+        # Keep the array, drop the dict form (mimics loading from a cache).
+        graph._pairwise_nodes_distance = None
+
+        # Guard the fast path: any fall-back to a live Dijkstra must blow up.
+        import kmeanssa_ng.quantum_graph.space as space_mod
+
+        def _no_dijkstra(*args, **kwargs):
+            raise AssertionError("node_distance fell back to networkx Dijkstra")
+
+        monkeypatch.setattr(space_mod.nx, "shortest_path_length", _no_dijkstra)
+
+        assert graph._pairwise_nodes_distance_array is not None
+        assert graph.node_distance(0, 2) == 3.0
+        assert graph.node_distance(2, 0) == 3.0
+        assert graph.node_distance(1, 1) == 0.0
+
     def test_get_edge_length(self):
         """Test getting edge length."""
         graph = QuantumGraph()

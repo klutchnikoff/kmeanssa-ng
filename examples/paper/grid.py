@@ -1,5 +1,6 @@
 """Grid 10x10 experiment: a two-component generative density; ARI at the data level."""
 
+import _env  # noqa: F401  -- pins BLAS threads; must precede numpy
 import os
 import pickle
 from dataclasses import dataclass
@@ -10,7 +11,7 @@ import networkx as nx
 from kmeanssa_ng import as_quantum_graph, QGPoint
 import baselines as B
 from calibration import potential_matrix, critical_depth
-from multistart import annealings, methods_from_raw, summarize
+from multistart import annealings, methods_from_raw, summarize, run_seeds
 
 MODES = [(1, 1), (8, 8)]
 SIGMA = 2.0
@@ -62,6 +63,8 @@ def sample_data(seed, densities, n_nodes, n_data, n_obs):
 def run_seed(space, seed, comps, data_nodes, obs_idx, n_runs, track):
     """Multi-start SA plus baselines for one seed; return (methods, convergence)."""
     graph, nu = space.graph, space.nu
+    for node, w in zip(space.nodes, nu):
+        graph.nodes[node]["nb_obs"] = float(w)
     obs = [
         QGPoint(graph, (space.nodes[v], space.neighbour[space.nodes[v]]), 0)
         for v in obs_idx
@@ -87,20 +90,20 @@ def run_seed(space, seed, comps, data_nodes, obs_idx, n_runs, track):
     return methods_from_raw(raw, comps), convergence
 
 
-def run(seeds=(42, 43, 44, 45, 46), n_runs=30, n_data=1000, n_obs=1000):
+def run(seeds=(42, 43, 44, 45, 46), n_runs=30, n_data=1000, n_obs=1000, n_jobs=1):
     space = build_space()
     print(f"[grid] b={space.b:.4f}", flush=True)
-    per_seed, convergence = {}, None
-    for i, seed in enumerate(seeds):
+
+    def fn(i, seed):
         comps, data_nodes, obs_idx = sample_data(
             seed, space.densities, len(space.nodes), n_data, n_obs
         )
         methods, conv = run_seed(
             space, seed, comps, data_nodes, obs_idx, n_runs, track=(i == 0)
         )
-        per_seed[seed] = {"methods": methods}
-        convergence = conv or convergence
-        print(f"[grid] seed {seed} done", flush=True)
+        return {"methods": methods}, conv
+
+    per_seed, convergence = run_seeds(seeds, fn, n_jobs=n_jobs, tag="grid")
 
     store = {
         "name": "grid",

@@ -7,6 +7,7 @@ pickled to results/sphere_multi.pkl so tables and figures rebuild without the
 so the graph is built once and reused across seeds.
 """
 
+import _env  # noqa: F401  -- pins BLAS threads; must precede numpy
 import os
 import time
 import pickle
@@ -15,6 +16,7 @@ import numpy as np
 
 from kmeanssa_ng import (
     QGPoint,
+    QuantumGraph,
     create_sphere,
     RiemannianPoint,
     FibonacciNet,
@@ -24,11 +26,13 @@ from kmeanssa_ng import (
 from kmeanssa_ng.core.metrics import compute_labels, adjusted_rand_index
 
 import baselines as B
-from multistart import annealings, methods_from_raw, summarize
+from multistart import annealings, methods_from_raw, summarize, run_seeds
 
 MODES = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 KAPPA = 10.0
 PKL = "results/sphere_multi.pkl"
+NET_DEF = "data/sphere_net_{n}.npz"  # frozen graph definition, committed (~2 MB)
+NET_DIST = "cache/sphere_dist_{n}.npy"  # pairwise distances, local cache (~200 MB)
 
 
 def sample_vmf(mu, kappa, n_samples, rng):
@@ -56,8 +60,13 @@ def sample_vmf(mu, kappa, n_samples, rng):
     return canonical @ rotation.T
 
 
-def build_graph(n_net):
-    """Fibonacci epsilon-net on S^2, connected within l(eps) = sqrt(eps)."""
+def _construct_net(n_net):
+    """Deterministic Fibonacci epsilon-net graph, connected within l(eps)=sqrt(eps).
+
+    This is the reference construction. It is deterministic in ``n_net`` (the
+    Fibonacci lattice carries no randomness and the covering radius is estimated
+    with a fixed seed), so its output can be frozen and reused.
+    """
     sphere = create_sphere(2)
     V = FibonacciNet().build(sphere, n_net)
     eps = estimate_covering_radius(sphere, V, random_state=0)
@@ -68,9 +77,67 @@ def build_graph(n_net):
         f"edges={qg.number_of_edges()} build={time.time() - t:.0f}s",
         flush=True,
     )
+    return qg, V, eps
+
+
+def _save_net(n_net, qg, V, eps):
+    """Freeze the graph definition (committed) and its distances (local cache)."""
+    edges = np.array(
+        [(u, v, d["length"]) for u, v, d in qg.edges(data=True)], dtype=float
+    )
+    def_path, dist_path = NET_DEF.format(n=n_net), NET_DIST.format(n=n_net)
+    os.makedirs(os.path.dirname(def_path), exist_ok=True)
+    np.savez_compressed(
+        def_path, V=V, edges=edges, n_net=n_net, eps=eps, l_eps=float(np.sqrt(eps))
+    )
+    os.makedirs(os.path.dirname(dist_path), exist_ok=True)
+    np.save(dist_path, qg._pairwise_nodes_distance_array)
+
+
+def _load_net(n_net):
+    """Reconstruct the frozen graph, injecting cached distances if present.
+
+    Nodes are the integers ``0..n_net-1`` in order (as in
+    ``build_epsilon_net_graph``), so ``list(qg.nodes())`` matches the row/column
+    order of the cached distance matrix. Only the numpy distance array and
+    ``_node_to_index`` are needed on the hot path; the dict form is left unset
+    (``node_distance`` then falls back to networkx, which the experiment never hits).
+    """
+    d = np.load(NET_DEF.format(n=n_net))
+    V, edges = d["V"], d["edges"]
+    eps, l_eps = float(d["eps"]), float(d["l_eps"])
+    qg = QuantumGraph()
+    qg.add_nodes_from(range(int(n_net)))
+    for u, v, length in edges:
+        qg.add_edge(int(u), int(v), length=float(length))
+
+    dist_path = NET_DIST.format(n=n_net)
+    if os.path.exists(dist_path):
+        qg._pairwise_nodes_distance_array = np.load(dist_path)
+        qg._node_to_index = {node: i for i, node in enumerate(qg.nodes())}
+    else:
+        qg.precomputing()
+        os.makedirs(os.path.dirname(dist_path), exist_ok=True)
+        np.save(dist_path, qg._pairwise_nodes_distance_array)
+    return qg, V, eps, l_eps
+
+
+def build_graph(n_net):
+    """Frozen Fibonacci epsilon-net on S^2, built once then reloaded identically.
+
+    The graph is deterministic in ``n_net``. The first call builds it and freezes
+    the definition under ``data/`` (committed) together with its pairwise distances
+    under ``cache/`` (local, gitignored); later calls reload the same graph.
+    """
+    if os.path.exists(NET_DEF.format(n=n_net)):
+        qg, V, eps, l_eps = _load_net(n_net)
+    else:
+        qg, V, eps = _construct_net(n_net)
+        _save_net(n_net, qg, V, eps)
+        l_eps = float(np.sqrt(eps))
     nbr = {v: next(iter(qg.neighbors(v))) for v in qg.nodes}
     node_list = np.array(list(qg.nodes()))
-    return qg, V, nbr, node_list, eps, float(np.sqrt(eps))
+    return qg, V, nbr, node_list, eps, l_eps
 
 
 def make_data(seed, n_data):
@@ -90,6 +157,8 @@ def _sa_graph_runs(
     qg, V, nbr, node_list, nu_row, proj, n_data, n_obs, b, n_runs, seed, track
 ):
     """SA on the graph; return (data_labels, energies, centroids, convergence)."""
+    for node, w in zip(node_list, nu_row):
+        qg.nodes[node]["nb_obs"] = float(w)
 
     def observations_for(rng):
         on = proj[rng.integers(0, n_data, size=n_obs)]
@@ -144,25 +213,38 @@ def eval_seed(
     nu /= nu.sum()
     nu_row = nu[node_list]
 
+    # Wall time of each method, so a run doubles as a per-method profile.
+    timings = {}
+
+    t = time.perf_counter()
     graph_labels, graph_energies, centroids, convergence = _sa_graph_runs(
         qg, V, nbr, node_list, nu_row, proj, n_data, n_obs, b, n_runs, seed, track
     )
+    timings["SA-graph"] = time.perf_counter() - t
     if track:
         _print_diag(seed, graph_labels, graph_energies, dtrue)
+
+    t = time.perf_counter()
     sphere_labels, sphere_energies = _sa_sphere_runs(
         data, n_data, n_obs, b, n_runs, seed
     )
+    timings["SA-sphere"] = time.perf_counter() - t
 
     raw = {
         "SA-graph": (graph_labels, graph_energies),
         "SA-sphere": (sphere_labels, sphere_energies),
     }
+    t = time.perf_counter()
     labc, enc = B.clvq_sphere(data, k=3, n_runs=n_runs, base_seed=seed + 300)
+    timings["CLVQ"] = time.perf_counter() - t
     raw["CLVQ"] = (labc, np.array(enc))
+
+    t = time.perf_counter()
     geodesic = np.arccos(np.clip(data @ data.T, -1, 1))
     labm, enm = B.weighted_kmedoids(
         geodesic, np.ones(n_data) / n_data, k=3, n_runs=n_runs, base_seed=seed + 300
     )
+    timings["k-medoids"] = time.perf_counter() - t
     raw["k-medoids"] = (labm, np.array(enm))
 
     methods = methods_from_raw(raw, dtrue)
@@ -172,22 +254,68 @@ def eval_seed(
         "dtrue": dtrue,
         "proj": proj,
         "methods": methods,
+        "timings": timings,
         "convergence": convergence,
     }
 
 
+def summarize_timings(store):
+    """Print each method's per-seed wall time as mean +/- std, plus the total."""
+    timings = [s["timings"] for s in store["per_seed"].values() if "timings" in s]
+    if not timings:
+        return
+    n = len(timings)
+    ddof = 1 if n > 1 else 0  # sample std when we have >1 seed
+    print(f"\nper-method wall time over {n} seed(s) (mean +/- std, seconds):")
+    print(f"{'method':12s}  {'mean':>8}  {'std':>7}  {'total':>9}")
+    total = np.zeros(n)
+    for m in timings[0]:
+        ts = np.array([t[m] for t in timings])
+        total += ts
+        print(f"{m:12s}  {ts.mean():8.1f}  {ts.std(ddof=ddof):7.1f}  {ts.sum():9.1f}")
+    print(
+        f"{'all':12s}  {total.mean():8.1f}  {total.std(ddof=ddof):7.1f}  {total.sum():9.1f}",
+        flush=True,
+    )
+
+
+_NET = {}
+
+
+def _cached_net(n_net):
+    """Load the frozen net once per process and reuse it across seeds.
+
+    Parallel workers each call this and load the 191 MB distance matrix from the
+    on-disk cache (~0.2s) rather than receiving the huge graph by pickling.
+    """
+    if n_net not in _NET:
+        _NET[n_net] = build_graph(n_net)
+    return _NET[n_net]
+
+
 def run(
-    seeds=(42, 43, 44, 45, 46), n_net=5000, n_data=2000, n_obs=2000, b=0.2, n_runs=20
+    seeds=(42, 43, 44, 45, 46),
+    n_net=5000,
+    n_data=2000,
+    n_obs=2000,
+    b=0.2,
+    n_runs=20,
+    n_jobs=1,
 ):
-    qg, V, nbr, node_list, eps, l_eps = build_graph(n_net)
-    per_seed, convergence = {}, None
-    for i, sd in enumerate(seeds):
+    # Warm (and, if absent, build+freeze) the net in the parent so every worker
+    # then just reloads it from the cache.
+    _, V, _, _, eps, l_eps = _cached_net(n_net)
+
+    def fn(i, sd):
+        qg, V_, nbr, node_list, _, _ = _cached_net(n_net)
         result = eval_seed(
-            qg, V, nbr, node_list, sd, n_data, n_obs, b, n_runs, track=(i == 0)
+            qg, V_, nbr, node_list, sd, n_data, n_obs, b, n_runs, track=(i == 0)
         )
-        convergence = result.pop("convergence") or convergence
-        per_seed[sd] = result
-        print(f"seed {sd} done", flush=True)
+        conv = result.pop("convergence")
+        return result, conv
+
+    per_seed, convergence = run_seeds(seeds, fn, n_jobs=n_jobs, tag="sphere")
+
     store = {
         "config": {
             "n_net": n_net,
@@ -210,6 +338,7 @@ def run(
         pickle.dump(store, f)
     print(f"\nsaved raw data to {PKL}\n", flush=True)
     summarize(store)
+    summarize_timings(store)
     return store
 
 
