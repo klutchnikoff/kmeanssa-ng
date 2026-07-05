@@ -29,6 +29,20 @@ class TestCoveringRadius:
         assert a > 0
         assert a == b
 
+    def test_intrinsic_matches_extrinsic_on_sphere(self):
+        # On an isometrically embedded manifold the chordal and geodesic nearest
+        # net points coincide, so the intrinsic (exhaustive) covering radius equals
+        # the extrinsic (KD-tree) one exactly.
+        sphere = create_sphere(2)
+        points = FibonacciNet().build(sphere, 200)
+        extrinsic = estimate_covering_radius(
+            sphere, points, n_test=3000, random_state=0
+        )
+        intrinsic = estimate_covering_radius(
+            sphere, points, n_test=3000, random_state=0, intrinsic=True
+        )
+        assert abs(extrinsic - intrinsic) < 1e-9
+
     def test_shrinks_with_more_points(self):
         sphere = create_sphere(2)
         coarse = estimate_covering_radius(

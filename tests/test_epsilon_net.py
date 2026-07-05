@@ -4,7 +4,12 @@ import numpy as np
 import pytest
 
 from kmeanssa_ng import create_sphere, create_hyperbolic_space
-from kmeanssa_ng.riemannian_manifold import UniformNet, RepulsionNet, FibonacciNet
+from kmeanssa_ng.riemannian_manifold import (
+    UniformNet,
+    RepulsionNet,
+    RepulsionNetExtrinsicSpeedup,
+    FibonacciNet,
+)
 
 
 def _min_max_nn_ratio(points):
@@ -70,3 +75,36 @@ class TestRepulsionNet:
         repelled = RepulsionNet(n_iter=200, random_state=2).build(sphere, n)
         assert _min_max_nn_ratio(repelled) > _min_max_nn_ratio(uniform)
         assert _min_max_nn_ratio(repelled) > 0.4
+
+
+class TestRepulsionNetExtrinsicSpeedup:
+    def test_shape_and_on_manifold(self):
+        pts = RepulsionNetExtrinsicSpeedup(n_iter=50, random_state=0).build(
+            create_sphere(2), 100
+        )
+        assert pts.shape == (100, 3)
+        assert _on_sphere(pts)
+
+    def test_reproducible(self):
+        a = RepulsionNetExtrinsicSpeedup(n_iter=50, random_state=1).build(
+            create_sphere(2), 80
+        )
+        b = RepulsionNetExtrinsicSpeedup(n_iter=50, random_state=1).build(
+            create_sphere(2), 80
+        )
+        np.testing.assert_array_equal(a, b)
+
+    def test_equivalent_to_intrinsic_on_sphere(self):
+        # On S^2 the embedding is isometric and chordal order == geodesic order,
+        # so the extrinsic KD-tree and the intrinsic search select the same
+        # neighbours: the two strategies must reach nets of equivalent regularity.
+        sphere = create_sphere(2)
+        n = 200
+        intrinsic = RepulsionNet(n_iter=150, random_state=3).build(sphere, n)
+        extrinsic = RepulsionNetExtrinsicSpeedup(n_iter=150, random_state=3).build(
+            sphere, n
+        )
+        r_int = _min_max_nn_ratio(intrinsic)
+        r_ext = _min_max_nn_ratio(extrinsic)
+        assert r_int > 0.4 and r_ext > 0.4
+        assert abs(r_int - r_ext) < 0.1

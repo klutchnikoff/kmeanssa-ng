@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from geomstats.geometry.hypersphere import Hypersphere
 
+from .bolza import BolzaSurface
 from .space import RiemannianManifold, Sphere
 
 
@@ -80,3 +81,26 @@ def create_hyperbolic_space(dim: int = 2, **kwargs) -> RiemannianManifold:
     # Geomstats handles validation
     hyperbolic_manifold = Hyperboloid(dim=dim, **kwargs)
     return RiemannianManifold(hyperbolic_manifold)
+
+
+def create_bolza_surface() -> BolzaSurface:
+    """Create the Bolza surface, a compact genus-2 hyperbolic space.
+
+    The Bolza surface is the quotient of the Poincaré disk by the Fuchsian group
+    gluing opposite sides of a regular hyperbolic octagon (interior angle pi/4).
+    It has constant curvature -1 and is the most symmetric closed genus-2 surface
+    -- a negatively curved counterpart to the sphere. Unlike the other factories
+    it carries no geomstats backend: its geodesic operations are closed-form and
+    quotient-aware, so it plugs into the intrinsic epsilon-net strategies.
+
+    Returns:
+        A :class:`BolzaSurface`. Points are ``(2,)`` real ``(Re, Im)`` coordinates
+        in the fundamental octagon.
+
+    Example:
+        ```python
+        surface = create_bolza_surface()
+        net = surface.random_uniform(500, random_state=0)
+        ```
+    """
+    return BolzaSurface()
