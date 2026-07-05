@@ -5,6 +5,7 @@ from .epsilon_net import (
     EpsilonNetStrategy,
     FibonacciNet,
     RepulsionNet,
+    RepulsionNetExtrinsicSpeedup,
     UniformNet,
 )
 from .generators import create_hyperbolic_space, create_sphere
@@ -28,6 +29,7 @@ __all__ = [
     "EpsilonNetStrategy",
     "UniformNet",
     "RepulsionNet",
+    "RepulsionNetExtrinsicSpeedup",
     "FibonacciNet",
     "approximate_geodesic_space",
     "build_epsilon_net_graph",
