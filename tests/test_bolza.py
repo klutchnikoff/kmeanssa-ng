@@ -176,3 +176,18 @@ class TestIntrinsicNetOnBolza:
         surface = create_bolza_surface()
         with pytest.raises(NotImplementedError):
             RepulsionNetExtrinsicSpeedup(n_iter=1, random_state=1).build(surface, 20)
+
+    def test_intrinsic_graph_is_connected_quotient(self):
+        # The whole pipeline: intrinsic net -> intrinsic epsilon-net graph. The
+        # extrinsic builder is unavailable (embed raises); the intrinsic one builds
+        # a connected quantum graph whose edges follow the quotient metric.
+        import networkx as nx
+        from kmeanssa_ng.riemannian_manifold import build_epsilon_net_graph
+
+        surface = create_bolza_surface()
+        n = 120
+        pts = RepulsionNet(n_iter=30, random_state=0).build(surface, n)
+        qg = build_epsilon_net_graph(surface, pts, ell=0.6, intrinsic=True)
+        assert qg.number_of_nodes() == n
+        assert qg.number_of_edges() > 0
+        assert nx.is_connected(qg)
