@@ -20,44 +20,50 @@ import sphere
 import rate
 import make_tables
 import make_figures
+import make_timing
 import timing_comparison
 
 PAPER_SEEDS = tuple(range(42, 142))  # the 100 seeds behind the article's numbers
 
 
 def main(quick=False, n_jobs=1, n_seeds=None):
-    """Regenerate every figure and table of the article.
+    """Regenerate every figure and table of the article, in the paper's three parts.
 
     With no arguments this is exactly the article's configuration: 100 seeds for
     grid/sbm/sphere and the full-resolution rate toy. ``--quick`` is a seconds-long
     smoke test; ``--jobs N`` (or -1) fans the seeds over cores with identical
     results; ``--seeds N`` overrides the seed count.
     """
+    seeds = PAPER_SEEDS if n_seeds is None else tuple(range(42, 42 + n_seeds))
+
+    # ── Part 1 — rate-theorem toy graph → figures 5 and 6 ──
+    rate.run(n_runs=20, n_obs=3000) if quick else rate.run(n_runs=700, n_obs=250000)
+    make_figures.figure_rate()  # figure_5
+    make_figures.figure_memory()  # figure_6
+
+    # ── Part 2 — main experiments (grid, SBM, sphere): our method vs baselines ──
     if quick:
         grid.run(seeds=(42, 43), n_runs=3, n_data=200, n_obs=200, n_jobs=n_jobs)
         sbm.run(seeds=(42, 43), n_runs=3, n_jobs=n_jobs)
         sphere.run(
             seeds=(42, 43), n_net=400, n_data=200, n_obs=200, n_runs=3, n_jobs=n_jobs
         )
-        rate.run(n_runs=20, n_obs=3000)
     else:
-        seeds = PAPER_SEEDS if n_seeds is None else tuple(range(42, 42 + n_seeds))
         grid.run(seeds=seeds, n_jobs=n_jobs)
         sbm.run(seeds=seeds, n_jobs=n_jobs)
         sphere.run(seeds=seeds, n_jobs=n_jobs)
-        rate.run(n_runs=700, n_obs=250000)  # full paper resolution
-
-    make_tables.main()  # -> results/table_{performance,comparison}.csv
+    make_tables.main()  # ARI: results/table_{performance,comparison}.csv
     make_figures.figure_grid()  # figure_1
     make_figures.figure_sbm()  # figure_2
     make_figures.figure_sphere()  # figure_3
-    make_figures.figure_convergence()  # figure_4
-    make_figures.figure_rate()  # figure_5
-    make_figures.figure_memory()  # figure_6
+    make_figures.figure_convergence()  # figure_4 (auxiliary convergence diagnostic)
+    make_timing.main(measure_net=not quick)  # time: results/table_timing.csv
+
+    # ── Part 3 — closed-form vs geomstats geometry → results/timing_comparison.csv ──
     if quick:
         timing_comparison.main(n_data=200, n_obs=200, n_net=400, n_runs=1)
     else:
-        timing_comparison.main()  # -> results/timing_comparison.csv
+        timing_comparison.main()
 
 
 def _parse_int(argv, name, default):

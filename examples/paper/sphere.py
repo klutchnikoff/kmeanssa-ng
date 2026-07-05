@@ -8,7 +8,6 @@ so the graph is built once and reused across seeds.
 """
 
 import _env  # noqa: F401  -- pins BLAS threads; must precede numpy
-import csv
 import os
 import time
 import pickle
@@ -241,7 +240,9 @@ def eval_seed(
     raw["CLVQ"] = (labc, np.array(enc))
 
     t = time.perf_counter()
-    geodesic = np.arccos(np.clip(data @ data.T, -1, 1))
+    geodesic = np.arccos(np.clip(data @ data.T, -1, 1))  # k-medoids input, per seed
+    timings["k-medoids matrix"] = time.perf_counter() - t
+    t = time.perf_counter()
     labm, enm = B.weighted_kmedoids(
         geodesic, np.ones(n_data) / n_data, k=3, n_runs=n_runs, base_seed=seed + 300
     )
@@ -260,12 +261,11 @@ def eval_seed(
     }
 
 
-def summarize_timings(store, csv_path="results/sphere_timing.csv"):
-    """Print and save each method's per-seed wall time (mean +/- std, total).
+def summarize_timings(store):
+    """Print each method's per-seed wall time (mean +/- std, total).
 
-    Written to ``csv_path`` so the paper's timing table is a reproducible artifact.
-    Timings are clean only from a sequential run (``n_jobs=1``); under parallelism
-    they include worker contention.
+    The reproducible per-method table across all experiments is written by
+    ``make_timing`` (results/table_timing.csv); this is only a console summary.
     """
     timings = [s["timings"] for s in store["per_seed"].values() if "timings" in s]
     if not timings:
@@ -273,26 +273,16 @@ def summarize_timings(store, csv_path="results/sphere_timing.csv"):
     n = len(timings)
     ddof = 1 if n > 1 else 0  # sample std when we have >1 seed
     print(f"\nper-method wall time over {n} seed(s) (mean +/- std, seconds):")
-    print(f"{'method':12s}  {'mean':>8}  {'std':>7}  {'total':>9}")
-    rows, total = [], np.zeros(n)
+    print(f"{'method':16s}  {'mean':>8}  {'std':>7}  {'total':>9}")
+    total = np.zeros(n)
     for m in timings[0]:
         ts = np.array([t[m] for t in timings])
         total += ts
-        rows.append((m, ts.mean(), ts.std(ddof=ddof), ts.sum()))
-        print(f"{m:12s}  {ts.mean():8.1f}  {ts.std(ddof=ddof):7.1f}  {ts.sum():9.1f}")
+        print(f"{m:16s}  {ts.mean():8.1f}  {ts.std(ddof=ddof):7.1f}  {ts.sum():9.1f}")
     print(
-        f"{'all':12s}  {total.mean():8.1f}  {total.std(ddof=ddof):7.1f}  {total.sum():9.1f}",
+        f"{'all':16s}  {total.mean():8.1f}  {total.std(ddof=ddof):7.1f}  {total.sum():9.1f}",
         flush=True,
     )
-    os.makedirs(os.path.dirname(csv_path), exist_ok=True)
-    with open(csv_path, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(
-            ["method", "n_seeds", "time_mean_s", "time_std_s", "time_total_s"]
-        )
-        for m, mean, std, tot in rows:
-            writer.writerow([m, n, f"{mean:.3f}", f"{std:.3f}", f"{tot:.3f}"])
-    print(f"wrote {csv_path}", flush=True)
 
 
 _NET = {}
@@ -346,6 +336,7 @@ def run(
         "V": V,
         "eps": eps,
         "l_eps": l_eps,
+        "n_jobs": n_jobs,
         "per_seed": per_seed,
         "convergence": convergence,
     }
