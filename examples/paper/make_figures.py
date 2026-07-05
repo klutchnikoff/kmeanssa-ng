@@ -211,7 +211,7 @@ def figure_convergence():
 
 def figure_rate():
     """Two panels on the toy: exceedance rate (log-log) and energy trajectories."""
-    store = pickle.load(open("results/rate.pkl", "rb"))
+    store = pickle.load(open("results/rate_toy.pkl", "rb"))
     grid, stacked = store["grid"], store["stacked"]
     ustar, cstar, b = store["ustar"], store["cstar"], store["b"]
     excess = stacked - ustar
@@ -269,7 +269,7 @@ def figure_rate():
 
 def figure_memory():
     """Energy of the memory-augmented estimator: partial (1%) and full memory."""
-    store = pickle.load(open("results/rate.pkl", "rb"))
+    store = pickle.load(open("results/rate_toy.pkl", "rb"))
     grid, stacked = store["grid"], store["stacked"]
     ustar = store["ustar"]
 

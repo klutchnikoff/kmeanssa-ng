@@ -32,7 +32,7 @@ Figures land in `figures/`, tables in `results/`:
 | `table_performance.csv` | `make_tables` | per-experiment energy/ARI summary |
 | `table_comparison.csv` | `make_tables` | ARI vs baselines (mean$\pm\sigma$, best) |
 | `table_timing.csv` | `make_timing` | per-method per-seed wall time on every experiment (mean$\pm\sigma$) + setup costs ($\varepsilon$-net build, k-medoids distance matrices) |
-| `timing_comparison.csv` | `timing_comparison` | per-method time with vs without closed-form geometry (justifies the $\varepsilon$-net) |
+| `geomstats_overhead.csv` | `geomstats_overhead` | per-method time with vs without closed-form geometry (justifies the $\varepsilon$-net) |
 
 ## Layout
 
@@ -42,11 +42,11 @@ calibration.py    temperature calibration: the critical depth c*
 multistart.py     the seeded multi-start SA loop + parallel seed driver
 baselines.py      k-medoids, spectral, CLVQ
 grid.py sbm.py sphere.py   the three benchmarks -> results/*_multi.pkl
-rate.py           rate-theorem toy               -> results/rate.pkl
+rate_toy.py                rate-theorem toy               -> results/rate.pkl
 make_tables.py    results/*.pkl -> results/table_{performance,comparison}.csv (ARI)
 make_timing.py    results/*.pkl -> results/table_timing.csv (per-method wall time)
 make_figures.py   results/*.pkl -> figures/figure_{1..6}.pdf
-timing_comparison.py  closed-form vs geomstats benchmark -> results/timing_comparison.csv
+geomstats_overhead.py  closed-form vs geomstats benchmark -> results/geomstats_overhead.csv
 reproduce.py      regenerate everything in the article (3 parts, see below)
 data/             frozen sphere epsilon-net definition (committed, ~1 MB)
 cache/            its 191 MB pairwise-distance matrix (rebuilt on demand, gitignored)
@@ -70,7 +70,7 @@ python reproduce.py --seeds 20 # a lighter run (20 seeds instead of 100)
 With no flags, `reproduce.py` runs the article's configuration in its three parts:
 **(1)** the rate-theorem toy → figures 5, 6; **(2)** the grid/SBM/sphere benchmarks
 (our method vs baselines) → figures 1--4, the ARI tables and `table_timing.csv`;
-**(3)** the closed-form vs geomstats comparison → `timing_comparison.csv`. It uses
+**(3)** the closed-form vs geomstats comparison → `geomstats_overhead.csv`. It uses
 **100 seeds** (42..141) and the full-resolution rate toy (700 runs); the sphere
 experiment dominates the runtime (a few hours sequential), and `--jobs -1` runs
 the independent seeds in parallel for the same results. Individual scripts

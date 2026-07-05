@@ -17,11 +17,11 @@ import sys
 import grid
 import sbm
 import sphere
-import rate
+import rate_toy
 import make_tables
 import make_figures
 import make_timing
-import timing_comparison
+import geomstats_overhead
 
 PAPER_SEEDS = tuple(range(42, 142))  # the 100 seeds behind the article's numbers
 
@@ -37,7 +37,9 @@ def main(quick=False, n_jobs=1, n_seeds=None):
     seeds = PAPER_SEEDS if n_seeds is None else tuple(range(42, 42 + n_seeds))
 
     # ── Part 1 — rate-theorem toy graph → figures 5 and 6 ──
-    rate.run(n_runs=20, n_obs=3000) if quick else rate.run(n_runs=700, n_obs=250000)
+    rate_toy.run(n_runs=20, n_obs=3000) if quick else rate_toy.run(
+        n_runs=700, n_obs=250000
+    )
     make_figures.figure_rate()  # figure_5
     make_figures.figure_memory()  # figure_6
 
@@ -59,11 +61,11 @@ def main(quick=False, n_jobs=1, n_seeds=None):
     make_figures.figure_convergence()  # figure_4 (auxiliary convergence diagnostic)
     make_timing.main(measure_net=not quick)  # time: results/table_timing.csv
 
-    # ── Part 3 — closed-form vs geomstats geometry → results/timing_comparison.csv ──
+    # ── Part 3 — closed-form vs geomstats geometry → results/geomstats_overhead.csv ──
     if quick:
-        timing_comparison.main(n_data=200, n_obs=200, n_net=400, n_runs=1)
+        geomstats_overhead.main(n_data=200, n_obs=200, n_net=400, n_runs=1)
     else:
-        timing_comparison.main()
+        geomstats_overhead.main()
 
 
 def _parse_int(argv, name, default):
