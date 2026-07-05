@@ -1,18 +1,14 @@
 """Run every experiment, then build the tables and figures.
 
-    python reproduce.py                    # publication numbers
-    python reproduce.py --quick            # seconds-long smoke run of the pipeline
-    python reproduce.py --paper            # full-resolution rate figure (~70 min extra)
-    python reproduce.py --jobs -1          # fan the seed loops over every core
-    python reproduce.py --seeds 100        # use 100 seeds (42..141) instead of each run's own
-    python reproduce.py --no-rate          # skip the rate toy (rate.py) and its figures
+    python reproduce.py           # EXACTLY the article (100 seeds, full rate) -- hours
+    python reproduce.py --quick   # seconds-long smoke test of the whole pipeline
+    python reproduce.py --jobs -1 # same as no flags, seeds fanned over every core
+    python reproduce.py --seeds 20  # a lighter run (20 seeds instead of 100)
 
-The sphere experiment dominates the runtime (~20 min); grid and SBM take a
-couple of minutes. The rate toy runs at a light setting (~15 min) by default;
-``--paper`` reruns it at the resolution used for figure_5 in the article.
-
-Seeds are independent, so ``--jobs N`` (or ``-1`` for all cores) runs them in
-parallel; the results are identical to the sequential run whatever ``N`` is.
+With no flags this regenerates every figure and table of the article. It is slow
+(the sphere experiment at 100 seeds dominates, then the full-resolution rate toy);
+``--jobs -1`` gives byte-identical results faster by running the independent seeds
+in parallel. Outputs land in figures/ and results/.
 """
 
 import _env  # noqa: F401  -- pins BLAS threads; must precede numpy
@@ -24,35 +20,44 @@ import sphere
 import rate
 import make_tables
 import make_figures
+import timing_comparison
+
+PAPER_SEEDS = tuple(range(42, 142))  # the 100 seeds behind the article's numbers
 
 
-def main(quick=False, paper=False, n_jobs=1, n_seeds=None, with_rate=True):
-    # Seeds are independent; n_jobs>1 fans them out (n_jobs=-1 uses every core).
-    # Results are identical whatever n_jobs is (see multistart.run_seeds).
+def main(quick=False, n_jobs=1, n_seeds=None):
+    """Regenerate every figure and table of the article.
+
+    With no arguments this is exactly the article's configuration: 100 seeds for
+    grid/sbm/sphere and the full-resolution rate toy. ``--quick`` is a seconds-long
+    smoke test; ``--jobs N`` (or -1) fans the seeds over cores with identical
+    results; ``--seeds N`` overrides the seed count.
+    """
     if quick:
         grid.run(seeds=(42, 43), n_runs=3, n_data=200, n_obs=200, n_jobs=n_jobs)
         sbm.run(seeds=(42, 43), n_runs=3, n_jobs=n_jobs)
         sphere.run(
             seeds=(42, 43), n_net=400, n_data=200, n_obs=200, n_runs=3, n_jobs=n_jobs
         )
+        rate.run(n_runs=20, n_obs=3000)
     else:
-        # --seeds N uses the N consecutive seeds 42..42+N-1 (default: each run's own).
-        seed_kw = {} if n_seeds is None else {"seeds": tuple(range(42, 42 + n_seeds))}
-        grid.run(n_jobs=n_jobs, **seed_kw)
-        sbm.run(n_jobs=n_jobs, **seed_kw)
-        sphere.run(n_jobs=n_jobs, **seed_kw)
-    if with_rate:
-        rate.run(n_runs=20, n_obs=3000) if quick else (
-            rate.run(n_runs=700, n_obs=250000) if paper else rate.run()
-        )
-    make_tables.main()
-    make_figures.figure_grid()
-    make_figures.figure_sbm()
-    make_figures.figure_sphere()
-    make_figures.figure_convergence()
-    if with_rate:
-        make_figures.figure_rate()
-        make_figures.figure_memory()
+        seeds = PAPER_SEEDS if n_seeds is None else tuple(range(42, 42 + n_seeds))
+        grid.run(seeds=seeds, n_jobs=n_jobs)
+        sbm.run(seeds=seeds, n_jobs=n_jobs)
+        sphere.run(seeds=seeds, n_jobs=n_jobs)
+        rate.run(n_runs=700, n_obs=250000)  # full paper resolution
+
+    make_tables.main()  # -> results/table_{performance,comparison}.csv
+    make_figures.figure_grid()  # figure_1
+    make_figures.figure_sbm()  # figure_2
+    make_figures.figure_sphere()  # figure_3
+    make_figures.figure_convergence()  # figure_4
+    make_figures.figure_rate()  # figure_5
+    make_figures.figure_memory()  # figure_6
+    if quick:
+        timing_comparison.main(n_data=200, n_obs=200, n_net=400, n_runs=1)
+    else:
+        timing_comparison.main()  # -> results/timing_comparison.csv
 
 
 def _parse_int(argv, name, default):
@@ -68,8 +73,6 @@ def _parse_int(argv, name, default):
 if __name__ == "__main__":
     main(
         quick="--quick" in sys.argv,
-        paper="--paper" in sys.argv,
         n_jobs=_parse_int(sys.argv, "--jobs", 1),
         n_seeds=_parse_int(sys.argv, "--seeds", None),
-        with_rate="--no-rate" not in sys.argv,
     )
