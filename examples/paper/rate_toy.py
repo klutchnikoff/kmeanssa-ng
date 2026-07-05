@@ -12,7 +12,7 @@ the three nodes, so the "uniform" energy mode records the true potential U(X_t).
 
 ``run()`` performs ``n_runs`` independent annealings, interpolates each energy
 trajectory onto a common annealing-time grid, and caches the ensemble to
-``results/rate.pkl``; ``make_figures.figure_rate()`` turns it into figure_5.
+``results/rate_toy.pkl``; ``make_figures.figure_rate()`` turns it into figure_5.
 """
 
 import os
@@ -31,7 +31,7 @@ from kmeanssa_ng import (
 from kmeanssa_ng.quantum_graph.generators import UniformDistribution
 from calibration import potential_matrix, critical_depth
 
-PKL = "results/rate.pkl"
+PKL = "results/rate_toy.pkl"
 
 
 def build_toy(l_ab=1.0, l_bc=2.0):

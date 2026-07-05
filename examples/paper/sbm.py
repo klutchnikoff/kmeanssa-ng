@@ -3,6 +3,7 @@
 import _env  # noqa: F401  -- pins BLAS threads; must precede numpy
 import os
 import pickle
+import time
 from dataclasses import dataclass
 
 import numpy as np
@@ -25,6 +26,7 @@ class Space:
     distances: np.ndarray
     nu: np.ndarray
     b: float
+    dist_build_s: float = 0.0  # time to build the k-medoids distance matrix
 
 
 def build_space(seed):
@@ -40,16 +42,20 @@ def build_space(seed):
     nodes = list(graph.nodes())
     index = {node: i for i, node in enumerate(nodes)}
     true_labels = np.array([graph.nodes[n].get("block", 0) for n in nodes])
+    t = time.perf_counter()  # the node distance matrix is the k-medoids input
     lengths = dict(nx.all_pairs_dijkstra_path_length(graph, weight="length"))
     distances = np.array([[lengths[u][v] for v in nodes] for u in nodes], float)
+    dist_build_s = time.perf_counter() - t
     nu = np.ones(len(nodes)) / len(nodes)
     b = 0.3 / critical_depth(potential_matrix(distances, nu), graph, nodes, index)
-    return Space(graph, nodes, true_labels, distances, nu, b)
+    return Space(graph, nodes, true_labels, distances, nu, b, dist_build_s)
 
 
 def run_seed(space, seed, n_runs, track):
-    """Multi-start SA plus baselines for one seed; return (methods, convergence)."""
+    """Multi-start SA plus baselines for one seed; return (methods, timings, conv)."""
     graph = space.graph
+    timings = {"k-medoids matrix": space.dist_build_s}  # built per seed in build_space
+    t = time.perf_counter()
     labels, energies, convergence = [], [], None
     for r, centers, sa in annealings(
         lambda rng: graph.sample_points(
@@ -65,21 +71,26 @@ def run_seed(space, seed, n_runs, track):
             convergence = {"time": sa.time_history, "energy": sa.energy_history}
         labels.append(np.argmin(graph.node_center_distances(centers), axis=1))
         energies.append(sa.calculate_energy(centers))
+    timings["SA"] = time.perf_counter() - t
     raw = {"SA": (labels, np.array(energies))}
 
+    t = time.perf_counter()
     lk, ek = B.weighted_kmedoids(space.distances, space.nu, 2, n_runs, seed + 2000)
+    timings["k-medoids"] = time.perf_counter() - t
     raw["k-medoids"] = (lk, ek)
+    t = time.perf_counter()
     adjacency = nx.to_numpy_array(graph, nodelist=space.nodes, weight=None)
     ls, _ = B.spectral_baseline(adjacency, 2, 20, seed + 2000)
+    timings["spectral"] = time.perf_counter() - t
     raw["spectral"] = (ls, None)
-    return methods_from_raw(raw, space.true_labels), convergence
+    return methods_from_raw(raw, space.true_labels), timings, convergence
 
 
 def run(seeds=(42, 43, 44, 45, 46), n_runs=50, n_jobs=1):
     def fn(i, seed):
         space = build_space(seed)
-        methods, conv = run_seed(space, seed, n_runs, track=(i == 0))
-        return {"methods": methods}, conv
+        methods, timings, conv = run_seed(space, seed, n_runs, track=(i == 0))
+        return {"methods": methods, "timings": timings}, conv
 
     per_seed, convergence = run_seeds(seeds, fn, n_jobs=n_jobs, tag="sbm")
 
@@ -87,6 +98,7 @@ def run(seeds=(42, 43, 44, 45, 46), n_runs=50, n_jobs=1):
         "name": "sbm",
         "n_runs": n_runs,
         "seeds": list(seeds),
+        "n_jobs": n_jobs,
         "per_seed": per_seed,
         "convergence": convergence,
     }

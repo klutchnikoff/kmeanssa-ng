@@ -1,16 +1,14 @@
 """Run every experiment, then build the tables and figures.
 
-    python reproduce.py            # publication numbers (sphere ~20 min)
-    python reproduce.py --quick    # seconds-long smoke run of the whole pipeline
-    python reproduce.py --paper    # full-resolution rate figure (~70 min extra)
-    python reproduce.py --jobs -1  # fan the seed loops over every core
+    python reproduce.py           # EXACTLY the article (100 seeds, full rate) -- hours
+    python reproduce.py --quick   # seconds-long smoke test of the whole pipeline
+    python reproduce.py --jobs -1 # same as no flags, seeds fanned over every core
+    python reproduce.py --seeds 20  # a lighter run (20 seeds instead of 100)
 
-The sphere experiment dominates the runtime (~20 min); grid and SBM take a
-couple of minutes. The rate toy runs at a light setting (~15 min) by default;
-``--paper`` reruns it at the resolution used for figure_5 in the article.
-
-Seeds are independent, so ``--jobs N`` (or ``-1`` for all cores) runs them in
-parallel; the results are identical to the sequential run whatever ``N`` is.
+With no flags this regenerates every figure and table of the article. It is slow
+(the sphere experiment at 100 seeds dominates, then the full-resolution rate toy);
+``--jobs -1`` gives byte-identical results faster by running the independent seeds
+in parallel. Outputs land in figures/ and results/.
 """
 
 import _env  # noqa: F401  -- pins BLAS threads; must precede numpy
@@ -19,48 +17,70 @@ import sys
 import grid
 import sbm
 import sphere
-import rate
+import rate_toy
 import make_tables
 import make_figures
+import make_timing
+import geomstats_overhead
+
+PAPER_SEEDS = tuple(range(42, 142))  # the 100 seeds behind the article's numbers
 
 
-def main(quick=False, paper=False, n_jobs=1):
-    # Seeds are independent; n_jobs>1 fans them out (n_jobs=-1 uses every core).
-    # Results are identical whatever n_jobs is (see multistart.run_seeds).
+def main(quick=False, n_jobs=1, n_seeds=None):
+    """Regenerate every figure and table of the article, in the paper's three parts.
+
+    With no arguments this is exactly the article's configuration: 100 seeds for
+    grid/sbm/sphere and the full-resolution rate toy. ``--quick`` is a seconds-long
+    smoke test; ``--jobs N`` (or -1) fans the seeds over cores with identical
+    results; ``--seeds N`` overrides the seed count.
+    """
+    seeds = PAPER_SEEDS if n_seeds is None else tuple(range(42, 42 + n_seeds))
+
+    # ── Part 1 — rate-theorem toy graph → figures 5 and 6 ──
+    rate_toy.run(n_runs=20, n_obs=3000) if quick else rate_toy.run(
+        n_runs=700, n_obs=250000
+    )
+    make_figures.figure_rate()  # figure_5
+    make_figures.figure_memory()  # figure_6
+
+    # ── Part 2 — main experiments (grid, SBM, sphere): our method vs baselines ──
     if quick:
         grid.run(seeds=(42, 43), n_runs=3, n_data=200, n_obs=200, n_jobs=n_jobs)
         sbm.run(seeds=(42, 43), n_runs=3, n_jobs=n_jobs)
         sphere.run(
             seeds=(42, 43), n_net=400, n_data=200, n_obs=200, n_runs=3, n_jobs=n_jobs
         )
-        rate.run(n_runs=20, n_obs=3000)
     else:
-        grid.run(n_jobs=n_jobs)
-        sbm.run(n_jobs=n_jobs)
-        sphere.run(n_jobs=n_jobs)
-        rate.run(n_runs=700, n_obs=250000) if paper else rate.run()
-    make_tables.main()
-    make_figures.figure_grid()
-    make_figures.figure_sbm()
-    make_figures.figure_sphere()
-    make_figures.figure_convergence()
-    make_figures.figure_rate()
-    make_figures.figure_memory()
+        grid.run(seeds=seeds, n_jobs=n_jobs)
+        sbm.run(seeds=seeds, n_jobs=n_jobs)
+        sphere.run(seeds=seeds, n_jobs=n_jobs)
+    make_tables.main()  # ARI: results/table_{performance,comparison}.csv
+    make_figures.figure_grid()  # figure_1
+    make_figures.figure_sbm()  # figure_2
+    make_figures.figure_sphere()  # figure_3
+    make_figures.figure_convergence()  # figure_4 (auxiliary convergence diagnostic)
+    make_timing.main(measure_net=not quick)  # time: results/table_timing.csv
+
+    # ── Part 3 — closed-form vs geomstats geometry → results/geomstats_overhead.csv ──
+    if quick:
+        geomstats_overhead.main(n_data=200, n_obs=200, n_net=400, n_runs=1)
+    else:
+        geomstats_overhead.main()
 
 
-def _parse_jobs(argv):
-    """Read ``--jobs N`` / ``--jobs=N`` (default 1; -1 uses every core)."""
+def _parse_int(argv, name, default):
+    """Read ``--name N`` / ``--name=N`` from argv, else ``default``."""
     for i, a in enumerate(argv):
-        if a == "--jobs" and i + 1 < len(argv):
+        if a == name and i + 1 < len(argv):
             return int(argv[i + 1])
-        if a.startswith("--jobs="):
+        if a.startswith(name + "="):
             return int(a.split("=", 1)[1])
-    return 1
+    return default
 
 
 if __name__ == "__main__":
     main(
         quick="--quick" in sys.argv,
-        paper="--paper" in sys.argv,
-        n_jobs=_parse_jobs(sys.argv),
+        n_jobs=_parse_int(sys.argv, "--jobs", 1),
+        n_seeds=_parse_int(sys.argv, "--seeds", None),
     )

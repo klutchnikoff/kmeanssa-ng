@@ -16,7 +16,7 @@ Timed on one seed at publication settings, ``n_runs`` restarts each:
   CLVQ-naive   streaming CLVQ, geomstats geometry         (no closed forms)
   k-medoids    weighted k-medoids on the geodesic matrix  (baseline)
 
-    python timing_comparison.py
+    python geomstats_overhead.py
 """
 
 import _env  # noqa: F401  -- pins BLAS threads; must precede numpy
@@ -169,12 +169,12 @@ def main(seed=42, n_data=2000, n_obs=2000, n_net=5000, n_runs=3, b=0.2):
     order = ["SA-graph", "SA-sphere", "SA-naive", "CLVQ", "CLVQ-naive", "k-medoids"]
     base = t["SA-graph"]
     os.makedirs("results", exist_ok=True)
-    with open("results/timing_comparison.csv", "w", newline="") as f:
+    with open("results/geomstats_overhead.csv", "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["method", "time_s", "best_ari", "ratio_vs_sa_graph"])
         for m in order:
             writer.writerow([m, f"{t[m]:.3f}", f"{a[m]:.4f}", f"{t[m] / base:.3f}"])
-    print("\nsaved results/timing_comparison.csv")
+    print("\nsaved results/geomstats_overhead.csv")
 
 
 if __name__ == "__main__":

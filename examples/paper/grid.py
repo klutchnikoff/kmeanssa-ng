@@ -3,6 +3,7 @@
 import _env  # noqa: F401  -- pins BLAS threads; must precede numpy
 import os
 import pickle
+import time
 from dataclasses import dataclass
 
 import numpy as np
@@ -61,7 +62,7 @@ def sample_data(seed, densities, n_nodes, n_data, n_obs):
 
 
 def run_seed(space, seed, comps, data_nodes, obs_idx, n_runs, track):
-    """Multi-start SA plus baselines for one seed; return (methods, convergence)."""
+    """Multi-start SA plus baselines for one seed; return (methods, timings, conv)."""
     graph, nu = space.graph, space.nu
     for node, w in zip(space.nodes, nu):
         graph.nodes[node]["nb_obs"] = float(w)
@@ -70,6 +71,8 @@ def run_seed(space, seed, comps, data_nodes, obs_idx, n_runs, track):
         for v in obs_idx
     ]
 
+    timings = {}
+    t = time.perf_counter()
     labels, energies, convergence = [], [], None
     for r, centers, sa in annealings(
         lambda _rng: obs, 2, space.b, n_runs, seed + 100, track_first=track
@@ -79,29 +82,38 @@ def run_seed(space, seed, comps, data_nodes, obs_idx, n_runs, track):
         node_label = np.argmin(graph.node_center_distances(centers), axis=1)
         labels.append(node_label[data_nodes])
         energies.append(graph.node_energy(centers, weights=nu))
+    timings["SA"] = time.perf_counter() - t
     raw = {"SA": (labels, np.array(energies))}
 
-    # Baselines run on the nodes (weighted by nu), read out on the data.
+    # Baselines run on the nodes (weighted by nu), read out on the data. The node
+    # distance matrix (space.distances) is the k-medoids input; it is built once
+    # in build_space (see the store's setup timing).
     dist = space.distances
+    t = time.perf_counter()
     lk, ek = B.weighted_kmedoids(dist, nu, 2, n_runs, seed + 1000)
+    timings["k-medoids"] = time.perf_counter() - t
     raw["k-medoids"] = ([lbl[data_nodes] for lbl in lk], ek)
+    t = time.perf_counter()
     ls, _ = B.spectral_baseline(B.rbf_affinity(dist), 2, 20, seed + 1000)
+    timings["spectral"] = time.perf_counter() - t
     raw["spectral"] = ([lbl[data_nodes] for lbl in ls], None)
-    return methods_from_raw(raw, comps), convergence
+    return methods_from_raw(raw, comps), timings, convergence
 
 
 def run(seeds=(42, 43, 44, 45, 46), n_runs=30, n_data=1000, n_obs=1000, n_jobs=1):
-    space = build_space()
+    t0 = time.perf_counter()
+    space = build_space()  # one-time; builds the k-medoids node distance matrix
+    build_s = time.perf_counter() - t0
     print(f"[grid] b={space.b:.4f}", flush=True)
 
     def fn(i, seed):
         comps, data_nodes, obs_idx = sample_data(
             seed, space.densities, len(space.nodes), n_data, n_obs
         )
-        methods, conv = run_seed(
+        methods, timings, conv = run_seed(
             space, seed, comps, data_nodes, obs_idx, n_runs, track=(i == 0)
         )
-        return {"methods": methods}, conv
+        return {"methods": methods, "timings": timings}, conv
 
     per_seed, convergence = run_seeds(seeds, fn, n_jobs=n_jobs, tag="grid")
 
@@ -109,6 +121,8 @@ def run(seeds=(42, 43, 44, 45, 46), n_runs=30, n_data=1000, n_obs=1000, n_jobs=1
         "name": "grid",
         "n_runs": n_runs,
         "seeds": list(seeds),
+        "n_jobs": n_jobs,
+        "setup": {"k-medoids matrix": build_s},  # one-time (fixed graph)
         "per_seed": per_seed,
         "convergence": convergence,
     }

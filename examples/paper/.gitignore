@@ -6,3 +6,7 @@ figures/*
 
 # Heavy pairwise-distance cache of the frozen net; rebuilt on demand from data/.
 cache/
+
+# Only the 5000-node frozen net is committed; smaller ones are test artifacts.
+data/sphere_net_*.npz
+!data/sphere_net_5000.npz
