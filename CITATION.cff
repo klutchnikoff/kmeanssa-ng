@@ -4,15 +4,18 @@ authors:
   - family-names: "Klutchnikoff"
     given-names: "Nicolas"
     email: "nicolas.klutchnikoff@univ-rennes2.fr"
-    affiliation: "Université Rennes 2"
+    affiliation: "Univ Rennes, CNRS, IRMAR (Institut de Recherche Mathématique de Rennes) - UMR 6625, F-35000 Rennes, France"
+    orcid: "https://orcid.org/0000-0001-9349-0771"
   - family-names: "Gavra"
     given-names: "Ioana"
     email: "ioana.gavra@univ-rennes2.fr"
-    affiliation: "Université Rennes 2"
+    affiliation: "Univ Rennes, CNRS, IRMAR (Institut de Recherche Mathématique de Rennes) - UMR 6625, F-35000 Rennes, France"
+    # orcid: "https://orcid.org/..."     # TODO: add if available
 title: "kmeanssa-ng: K-means clustering on quantum graphs and metric spaces using simulated annealing"
-version: "0.7.0"
-date-released: "2026-06-30"
+version: "0.8.0"          # TODO: keep in sync with pyproject at the release tag
+date-released: "2026-06-30"  # TODO: set to the 0.8.0 release date
 url: "https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng"
+repository-code: "https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng"
 license: "MIT"
 keywords:
   - "clustering"
@@ -20,3 +23,18 @@ keywords:
   - "metric-spaces"
   - "quantum-graphs"
   - "simulated-annealing"
+# The companion theoretical paper. Fill in the identifier once the preprint is
+# online (arXiv / HAL); until then this is a placeholder.
+preferred-citation:
+  type: article
+  title: "Online k-means Clustering on Metric Graphs and Geodesic Spaces"
+  authors:
+    - family-names: "Brécheteau"
+      given-names: "Claire"
+    - family-names: "Gavra"
+      given-names: "Ioana"
+    - family-names: "Klutchnikoff"
+      given-names: "Nicolas"
+  year: 2026
+  # url: "https://arxiv.org/abs/..."   # TODO
+  # doi: "..."                          # TODO (HAL / arXiv)
