@@ -75,6 +75,7 @@ from .riemannian_manifold import (
     RiemannianCenter,
     create_sphere,
     create_hyperbolic_space,
+    create_bolza_surface,
     FrechetMeanUpdate,
     EpsilonNetStrategy,
     UniformNet,
@@ -126,6 +127,7 @@ __all__ = [
     "RiemannianCenter",
     "create_sphere",
     "create_hyperbolic_space",
+    "create_bolza_surface",
     # Epsilon-net construction (manifold -> quantum graph)
     "EpsilonNetStrategy",
     "UniformNet",
