@@ -34,6 +34,7 @@ class Space:
     densities: list
     nu: np.ndarray
     b: float
+    dist_build_s: float = 0.0  # time to build the k-medoids distance matrix
 
 
 def build_space():
@@ -42,9 +43,11 @@ def build_space():
     graph.precomputing()
     nodes = list(graph.nodes())
     index = {node: i for i, node in enumerate(nodes)}
+    t = time.perf_counter()  # the node distance matrix is the k-medoids input
     distances = np.array(
         [[nx.shortest_path_length(graph, u, v) for v in nodes] for u in nodes], float
     )
+    dist_build_s = time.perf_counter() - t
     neighbour = {node: next(iter(graph.neighbors(node))) for node in nodes}
     densities = [np.exp(-distances[:, index[m]] / SIGMA) for m in MODES]
     densities = [d / d.sum() for d in densities]
@@ -52,7 +55,7 @@ def build_space():
     for i, node in enumerate(nodes):
         graph.nodes[node]["weight"] = float(nu[i])
     b = 0.3 / critical_depth(potential_matrix(distances, nu), graph, nodes, index)
-    return Space(graph, nodes, neighbour, distances, densities, nu, b)
+    return Space(graph, nodes, neighbour, distances, densities, nu, b, dist_build_s)
 
 
 def sample_data(seed, densities, n_nodes, n_data, n_obs):
@@ -80,6 +83,7 @@ def run_seed(space, seed, comps, data_nodes, obs_idx, n_runs, track):
     timings = {}
     t = time.perf_counter()
     labels, energies, convergence = [], [], None
+    node_labels, centroids = [], []
     for r, centers, sa in annealings(
         lambda _rng: obs, 2, space.b, n_runs, "grid", seed, track_first=track
     ):
@@ -88,6 +92,10 @@ def run_seed(space, seed, comps, data_nodes, obs_idx, n_runs, track):
         node_label = np.argmin(graph.node_center_distances(centers), axis=1)
         labels.append(node_label[data_nodes])
         energies.append(graph.node_energy(centers, weights=nu))
+        # Node-level partition and centroid nodes, so the partition figure is
+        # rebuilt from this pickle instead of re-running the annealer.
+        node_labels.append(node_label)
+        centroids.append([c.closest_node() for c in centers])
     timings["SA"] = time.perf_counter() - t
     raw = {"SA": (labels, np.array(energies))}
 
@@ -103,18 +111,20 @@ def run_seed(space, seed, comps, data_nodes, obs_idx, n_runs, track):
     raw["k-medoids"] = ([lbl[data_nodes] for lbl in lk], ek)
     t = time.perf_counter()
     ls, _ = B.spectral_baseline(
-        B.rbf_affinity(dist), 2, 20, method_entropy("grid", seed, "spectral")
+        B.rbf_affinity(dist), 2, n_runs, method_entropy("grid", seed, "spectral")
     )
     timings["spectral"] = time.perf_counter() - t
     raw["spectral"] = ([lbl[data_nodes] for lbl in ls], None)
-    return methods_from_raw(raw, comps), timings, convergence
+    methods = methods_from_raw(raw, comps)
+    methods["SA"]["node_labels"] = node_labels
+    methods["SA"]["centroids"] = centroids
+    return methods, timings, convergence
 
 
 def run(seeds=(42, 43, 44, 45, 46), n_runs=30, n_data=1000, n_obs=1000, n_jobs=1):
-    t0 = time.perf_counter()
     space = build_space()  # one-time; builds the k-medoids node distance matrix
-    build_s = time.perf_counter() - t0
     print(f"[grid] b={space.b:.4f}", flush=True)
+    config = {"n_runs": n_runs, "n_data": n_data, "n_obs": n_obs}
 
     def fn(i, seed):
         comps, data_nodes, obs_idx = sample_data(
@@ -125,14 +135,22 @@ def run(seeds=(42, 43, 44, 45, 46), n_runs=30, n_data=1000, n_obs=1000, n_jobs=1
         )
         return {"methods": methods, "timings": timings}, conv
 
-    per_seed, convergence = run_seeds(seeds, fn, n_jobs=n_jobs, tag="grid")
+    per_seed, convergence = run_seeds(
+        seeds,
+        fn,
+        n_jobs=n_jobs,
+        tag="grid",
+        checkpoint_dir="results/checkpoints/grid",
+        config=config,
+    )
 
     store = {
         "name": "grid",
+        "config": config,
         "n_runs": n_runs,
         "seeds": list(seeds),
         "n_jobs": n_jobs,
-        "setup": {"k-medoids matrix": build_s},  # one-time (fixed graph)
+        "setup": {"k-medoids matrix": space.dist_build_s},  # one-time (fixed graph)
         "per_seed": per_seed,
         "convergence": convergence,
     }

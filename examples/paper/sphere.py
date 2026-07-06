@@ -325,6 +325,15 @@ def run(
     # Warm (and, if absent, build+freeze) the net in the parent so every worker
     # then just reloads it from the cache.
     _, V, _, _, eps, l_eps = _cached_net(n_net)
+    config = {
+        "n_net": n_net,
+        "n_data": n_data,
+        "n_obs": n_obs,
+        "b": b,
+        "n_runs": n_runs,
+        "kappa": KAPPA,
+        "modes": MODES,
+    }
 
     def fn(i, sd):
         qg, V_, nbr, node_list, _, _ = _cached_net(n_net)
@@ -334,19 +343,17 @@ def run(
         conv = result.pop("convergence")
         return result, conv
 
-    per_seed, convergence = run_seeds(seeds, fn, n_jobs=n_jobs, tag="sphere")
+    per_seed, convergence = run_seeds(
+        seeds,
+        fn,
+        n_jobs=n_jobs,
+        tag="sphere",
+        checkpoint_dir="results/checkpoints/sphere",
+        config=config,
+    )
 
     store = {
-        "config": {
-            "n_net": n_net,
-            "n_data": n_data,
-            "n_obs": n_obs,
-            "b": b,
-            "n_runs": n_runs,
-            "seeds": list(seeds),
-            "kappa": KAPPA,
-            "modes": MODES,
-        },
+        "config": {**config, "seeds": list(seeds)},
         "V": V,
         "eps": eps,
         "l_eps": l_eps,
