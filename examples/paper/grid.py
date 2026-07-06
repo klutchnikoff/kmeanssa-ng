@@ -12,7 +12,13 @@ import networkx as nx
 from kmeanssa_ng import as_quantum_graph, QGPoint
 import baselines as B
 from calibration import potential_matrix, critical_depth
-from multistart import annealings, methods_from_raw, summarize, run_seeds
+from multistart import (
+    annealings,
+    method_entropy,
+    methods_from_raw,
+    summarize,
+    run_seeds,
+)
 
 MODES = [(1, 1), (8, 8)]
 SIGMA = 2.0
@@ -75,7 +81,7 @@ def run_seed(space, seed, comps, data_nodes, obs_idx, n_runs, track):
     t = time.perf_counter()
     labels, energies, convergence = [], [], None
     for r, centers, sa in annealings(
-        lambda _rng: obs, 2, space.b, n_runs, seed + 100, track_first=track
+        lambda _rng: obs, 2, space.b, n_runs, "grid", seed, track_first=track
     ):
         if track and r == 0:
             convergence = {"time": sa.time_history, "energy": sa.energy_history}
@@ -90,11 +96,15 @@ def run_seed(space, seed, comps, data_nodes, obs_idx, n_runs, track):
     # in build_space (see the store's setup timing).
     dist = space.distances
     t = time.perf_counter()
-    lk, ek = B.weighted_kmedoids(dist, nu, 2, n_runs, seed + 1000)
+    lk, ek = B.weighted_kmedoids(
+        dist, nu, 2, n_runs, method_entropy("grid", seed, "k-medoids")
+    )
     timings["k-medoids"] = time.perf_counter() - t
     raw["k-medoids"] = ([lbl[data_nodes] for lbl in lk], ek)
     t = time.perf_counter()
-    ls, _ = B.spectral_baseline(B.rbf_affinity(dist), 2, 20, seed + 1000)
+    ls, _ = B.spectral_baseline(
+        B.rbf_affinity(dist), 2, 20, method_entropy("grid", seed, "spectral")
+    )
     timings["spectral"] = time.perf_counter() - t
     raw["spectral"] = ([lbl[data_nodes] for lbl in ls], None)
     return methods_from_raw(raw, comps), timings, convergence

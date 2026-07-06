@@ -27,10 +27,10 @@ SEED = 42
 CMAP = plt.cm.coolwarm
 
 
-def _lowest_energy_run(graph, observations_for, b, n_runs, seed, energy_of):
+def _lowest_energy_run(graph, observations_for, b, n_runs, experiment, seed, energy_of):
     """Return (node_labels, centroid_nodes) of the lowest-energy run over n_runs."""
     best_energy, best = np.inf, None
-    for _, centers, sa in annealings(observations_for, 2, b, n_runs, seed + 100):
+    for _, centers, sa in annealings(observations_for, 2, b, n_runs, experiment, seed):
         energy = energy_of(sa, centers)
         if energy < best_energy:
             best_energy = energy
@@ -87,6 +87,7 @@ def figure_grid():
         lambda _rng: obs,
         space.b,
         30,
+        "grid",
         SEED,
         energy_of=lambda sa, centers: graph.node_energy(centers, weights=nu),
     )
@@ -118,6 +119,7 @@ def figure_sbm():
         ),
         space.b,
         50,
+        "sbm",
         SEED,
         energy_of=lambda sa, centers: sa.calculate_energy(centers),
     )

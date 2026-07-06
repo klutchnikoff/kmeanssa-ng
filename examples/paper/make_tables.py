@@ -70,6 +70,27 @@ def _config(store, field):
     return store.get(field, store.get("config", {}).get(field))
 
 
+def _check_same_campaign(stores):
+    """Refuse to mix experiment pickles coming from different campaigns.
+
+    The experiment scripts overwrite the same result files whatever their
+    arguments, so a stray standalone run (e.g. the 5-seed default) would
+    silently replace one experiment of a 100-seed campaign. Seed sets are the
+    campaign signature: they must match across the three pickles.
+    """
+    seed_sets = {key: list(_config(store, "seeds")) for key, store in stores.items()}
+    reference = next(iter(seed_sets.values()))
+    mismatched = {k: v for k, v in seed_sets.items() if v != reference}
+    if mismatched:
+        detail = ", ".join(
+            f"{k}: {len(v)} seeds {v[:3]}..." for k, v in seed_sets.items()
+        )
+        raise SystemExit(
+            f"experiment pickles come from different campaigns ({detail}); "
+            "re-run the missing experiments (see reproduce.py) before writing tables"
+        )
+
+
 def performance_rows(stores):
     """One row per experiment: SA final energy and ARI statistics."""
     rows = []
@@ -129,6 +150,7 @@ def main():
         "sbm": load("sbm_multi"),
         "sphere": load("sphere_multi"),
     }
+    _check_same_campaign(stores)
     write_csv(f"{RESULTS}/table_performance.csv", performance_rows(stores))
     write_csv(f"{RESULTS}/table_comparison.csv", comparison_rows(stores))
     print(f"wrote {RESULTS}/table_performance.csv and {RESULTS}/table_comparison.csv")

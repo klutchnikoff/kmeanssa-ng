@@ -11,6 +11,32 @@ import networkx as nx
 from kmeanssa_ng import SimulatedAnnealing, KMeansPlusPlus, MinimizeEnergy
 from kmeanssa_ng.core.metrics import adjusted_rand_index
 
+# Structured entropy for every random stream of the pipeline. Seeding by
+# arithmetic (seed + r) makes streams collide as soon as s + r = s' + r'
+# (run 1 of seed 42 is run 0 of seed 43); SeedSequence entropy lists have no
+# such collisions, and distinct experiments and methods get distinct streams.
+_EXPERIMENT_IDS = {
+    "grid": 1,
+    "sbm": 2,
+    "sphere": 3,
+    "rate": 4,
+    "bolza": 5,
+    "overhead": 6,
+}
+_METHOD_IDS = {"sa": 0, "sa-manifold": 1, "k-medoids": 2, "spectral": 3, "clvq": 4}
+
+
+def method_entropy(experiment, seed, method="sa"):
+    """Root ``SeedSequence`` for one (experiment, seed, method) family of runs.
+
+    Spawn one child per run: children of a ``SeedSequence`` are mutually
+    independent, so every (experiment, seed, method, run) tuple gets its own
+    stream.
+    """
+    return np.random.SeedSequence(
+        [_EXPERIMENT_IDS[experiment], seed, _METHOD_IDS[method]]
+    )
+
 
 def _register_obs_counts(observations):
     """Populate the graph's per-node ``nb_obs`` from these observations.
@@ -30,7 +56,9 @@ def _register_obs_counts(observations):
     nx.set_node_attributes(graph, counts, "nb_obs")
 
 
-def annealings(observations_for, k, beta0, n_runs, seed_base, track_first=False):
+def annealings(
+    observations_for, k, beta0, n_runs, experiment, seed, method="sa", track_first=False
+):
     """Yield (run_index, centers, sa) for ``n_runs`` independently-seeded SA runs.
 
     Args:
@@ -38,11 +66,12 @@ def annealings(observations_for, k, beta0, n_runs, seed_base, track_first=False)
             a dedicated Generator, kept separate from the annealing stream.
         k, beta0: number of clusters and drift strength.
         n_runs: number of restarts.
-        seed_base: run ``r`` is seeded from ``seed_base + r``.
+        experiment, seed, method: entropy of the run streams (``method_entropy``).
         track_first: record the energy history of the first run (``sa.energy_history``).
     """
+    run_entropy = method_entropy(experiment, seed, method).spawn(n_runs)
     for r in range(n_runs):
-        obs_seed, sa_seed = np.random.SeedSequence(seed_base + r).spawn(2)
+        obs_seed, sa_seed = run_entropy[r].spawn(2)
         observations = observations_for(np.random.default_rng(obs_seed))
         if track_first and r == 0:
             _register_obs_counts(observations)

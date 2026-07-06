@@ -26,7 +26,13 @@ from kmeanssa_ng import (
 from kmeanssa_ng.core.metrics import compute_labels, adjusted_rand_index
 
 import baselines as B
-from multistart import annealings, methods_from_raw, summarize, run_seeds
+from multistart import (
+    annealings,
+    method_entropy,
+    methods_from_raw,
+    summarize,
+    run_seeds,
+)
 
 MODES = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 KAPPA = 10.0
@@ -167,7 +173,7 @@ def _sa_graph_runs(
     node_label = np.empty(len(V), dtype=int)
     labels, energies, centroids, convergence = [], [], [], None
     for r, centers, sa in annealings(
-        observations_for, 3, b, n_runs, seed + 300, track_first=track
+        observations_for, 3, b, n_runs, "sphere", seed, track_first=track
     ):
         if track and r == 0:
             convergence = {"time": sa.time_history, "energy": sa.energy_history}
@@ -188,7 +194,9 @@ def _sa_sphere_runs(data, n_data, n_obs, b, n_runs, seed):
         return [RiemannianPoint(sphere, data[i]) for i in idx]
 
     labels, energies = [], []
-    for _, centers, sa in annealings(observations_for, 3, b, n_runs, seed + 300):
+    for _, centers, sa in annealings(
+        observations_for, 3, b, n_runs, "sphere", seed, method="sa-manifold"
+    ):
         labels.append(np.array(compute_labels(sphere, all_points, centers)))
         energies.append(sa.calculate_energy(centers))
     return labels, np.array(energies)
@@ -235,7 +243,9 @@ def eval_seed(
         "SA-sphere": (sphere_labels, sphere_energies),
     }
     t = time.perf_counter()
-    labc, enc = B.clvq_sphere(data, k=3, n_runs=n_runs, base_seed=seed + 300)
+    labc, enc = B.clvq_sphere(
+        data, k=3, n_runs=n_runs, entropy=method_entropy("sphere", seed, "clvq")
+    )
     timings["CLVQ"] = time.perf_counter() - t
     raw["CLVQ"] = (labc, np.array(enc))
 
@@ -244,7 +254,11 @@ def eval_seed(
     timings["k-medoids matrix"] = time.perf_counter() - t
     t = time.perf_counter()
     labm, enm = B.weighted_kmedoids(
-        geodesic, np.ones(n_data) / n_data, k=3, n_runs=n_runs, base_seed=seed + 300
+        geodesic,
+        np.ones(n_data) / n_data,
+        k=3,
+        n_runs=n_runs,
+        entropy=method_entropy("sphere", seed, "k-medoids"),
     )
     timings["k-medoids"] = time.perf_counter() - t
     raw["k-medoids"] = (labm, np.array(enm))

@@ -30,6 +30,7 @@ from kmeanssa_ng import (
 )
 from kmeanssa_ng.quantum_graph.generators import UniformDistribution
 from calibration import potential_matrix, critical_depth
+from multistart import method_entropy
 
 PKL = "results/rate_toy.pkl"
 
@@ -71,7 +72,8 @@ def run(n_runs=300, n_obs=100000, b=0.3, l_ab=1.0, l_bc=2.0, seed=7, n_grid=800)
     """Multi-start annealing on the toy; cache interpolated energy trajectories.
 
     Defaults are the light pipeline setting (~15 min). The paper figure uses
-    ``n_runs=700, n_obs=250000`` (~70 min); see ``reproduce.py --paper``.
+    ``n_runs=700, n_obs=250000`` (~70 min), which is what ``reproduce.py``
+    runs without ``--quick``.
     """
     qg, nodes, index, distances, nu = build_toy(l_ab, l_bc)
     cstar = critical_depth(potential_matrix(distances, nu), qg, nodes, index)
@@ -79,8 +81,9 @@ def run(n_runs=300, n_obs=100000, b=0.3, l_ab=1.0, l_bc=2.0, seed=7, n_grid=800)
     neigh = {n: next(iter(qg.neighbors(n))) for n in nodes}
     grid = np.linspace(0.0, 0.95 * np.sqrt(n_obs), n_grid)  # t_max ~ sqrt(n_obs)
     stacked = np.empty((n_runs, n_grid))
+    run_entropy = method_entropy("rate", seed).spawn(n_runs)
     for r in range(n_runs):
-        obs_seed, sa_seed = np.random.SeedSequence(seed + r).spawn(2)
+        obs_seed, sa_seed = run_entropy[r].spawn(2)
         idx = np.random.default_rng(obs_seed).integers(0, len(nodes), n_obs)
         obs = [QGPoint(qg, (nodes[i], neigh[nodes[i]]), 0) for i in idx]
         sa = SimulatedAnnealing(

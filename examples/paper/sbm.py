@@ -13,7 +13,13 @@ from kmeanssa_ng import generate_random_sbm
 from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 import baselines as B
 from calibration import potential_matrix, critical_depth
-from multistart import annealings, methods_from_raw, summarize, run_seeds
+from multistart import (
+    annealings,
+    method_entropy,
+    methods_from_raw,
+    summarize,
+    run_seeds,
+)
 
 PKL = "results/sbm_multi.pkl"
 
@@ -64,7 +70,8 @@ def run_seed(space, seed, n_runs, track):
         2,
         space.b,
         n_runs,
-        seed + 100,
+        "sbm",
+        seed,
         track_first=track,
     ):
         if track and r == 0:
@@ -75,12 +82,16 @@ def run_seed(space, seed, n_runs, track):
     raw = {"SA": (labels, np.array(energies))}
 
     t = time.perf_counter()
-    lk, ek = B.weighted_kmedoids(space.distances, space.nu, 2, n_runs, seed + 2000)
+    lk, ek = B.weighted_kmedoids(
+        space.distances, space.nu, 2, n_runs, method_entropy("sbm", seed, "k-medoids")
+    )
     timings["k-medoids"] = time.perf_counter() - t
     raw["k-medoids"] = (lk, ek)
     t = time.perf_counter()
     adjacency = nx.to_numpy_array(graph, nodelist=space.nodes, weight=None)
-    ls, _ = B.spectral_baseline(adjacency, 2, 20, seed + 2000)
+    ls, _ = B.spectral_baseline(
+        adjacency, 2, 20, method_entropy("sbm", seed, "spectral")
+    )
     timings["spectral"] = time.perf_counter() - t
     raw["spectral"] = (ls, None)
     return methods_from_raw(raw, space.true_labels), timings, convergence
