@@ -117,12 +117,24 @@ class QGCenter(QGPoint, Center):
 
     def _drift_on_same_edge(self, target_point: QGPoint, dist_to_travel: float) -> None:
         """Handle drift when center and target are on the same physical edge."""
+        edge_length = self.space.get_edge_length(*self.edge)
+
+        if self.edge[0] == self.edge[1]:
+            # Self-loop: move along the shorter arc, wrapping at the vertex.
+            delta = target_point.position - self.position
+            if delta > edge_length / 2:
+                delta -= edge_length
+            elif delta < -edge_length / 2:
+                delta += edge_length
+            step = dist_to_travel if delta >= 0 else -dist_to_travel
+            self.position = (self.position + step) % edge_length
+            return
+
         if self.edge == target_point.edge:
             target_position = target_point.position
         else:
             # Same physical edge, opposite parametrization: in this center's
             # frame the target sits at (edge length - target position).
-            edge_length = self.space.get_edge_length(*self.edge)
             target_position = edge_length - target_point.position
 
         if self.position < target_position:
@@ -139,10 +151,22 @@ class QGCenter(QGPoint, Center):
         """Handle drift when center and target are on different edges."""
         next_node, target_node = path
 
-        # Orient edges correctly
-        if self.edge[0] == next_node:
+        # Orient edges so the traversal exits forward and enters at position 0.
+        if self.edge[0] == self.edge[1]:
+            # Self-loop: both directions reach the vertex; the geodesic always
+            # exits via the shorter arc.
+            edge_length = self.space.get_edge_length(*self.edge)
+            if self.position < edge_length - self.position:
+                self.reverse()
+        elif self.edge[0] == next_node:
             self.reverse()
-        if target_point.edge[1] == target_node:
+
+        if target_point.edge[0] == target_point.edge[1]:
+            # Self-loop target: the geodesic enters via its shorter arc.
+            target_length = self.space.get_edge_length(*target_point.edge)
+            if target_point.position > target_length - target_point.position:
+                target_point.reverse()
+        elif target_point.edge[1] == target_node:
             target_point.reverse()
 
         remaining_dist = dist_to_travel
