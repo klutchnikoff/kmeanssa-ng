@@ -203,7 +203,7 @@ def _calculate_energy_obs_numba(
     n_points = len(point_positions)
     k = len(center_positions)
     total_energy = 0.0
-    total_obs = 0
+    total_obs = 0.0
 
     for p_idx in range(n_points):
         nb_obs = point_nb_obs[p_idx]
@@ -864,9 +864,14 @@ class QuantumGraph(nx.Graph, Space):
                 self._pairwise_nodes_distance_array,
             )
         else:  # how == "obs"
+            # nb_obs is a measure weight, not an integer count: node samplers
+            # set integer counts, but the paper experiments set the fractional
+            # population measure nu. Casting to int here truncated every
+            # fractional weight to zero, so the whole obs-energy collapsed to
+            # 0.0 -- silently, since 0 is a valid energy. Keep it float.
             point_nb_obs = np.array(
                 [data.get("nb_obs", 0) for _, data in self.nodes(data=True)],
-                dtype=np.int32,
+                dtype=np.float64,
             )
             return _calculate_energy_obs_numba(
                 center_edges_0,

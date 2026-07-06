@@ -127,6 +127,31 @@ class TestQuantumGraph:
         counts = [graph.nodes[n].get("nb_obs", 0) for n in graph.nodes]
         assert sum(counts) == 1
 
+    def test_obs_energy_with_fractional_measure(self):
+        """Fractional nb_obs weights (a population measure) are not truncated.
+
+        Regression: the numba obs kernel built its weights as int32, so a
+        measure like the paper's population density nu (all weights < 1) was
+        truncated to 0, collapsing the whole obs-energy to 0.0 -- which in turn
+        made the energy-minimizing robustification a no-op (0.0 < 0.0 is never
+        true), silently returning the initial centers instead of the annealed
+        ones.
+        """
+        graph = QuantumGraph()
+        for u, v in [(0, 1), (1, 2), (2, 3), (3, 0)]:
+            graph.add_edge(u, v, length=1.0)
+        graph.precomputing()
+
+        # A genuine fractional measure: weights sum to 1, each strictly below 1
+        weights = {0: 0.4, 1: 0.3, 2: 0.2, 3: 0.1}
+        nx.set_node_attributes(graph, weights, "nb_obs")
+        centers = [QGCenter(QGPoint(graph, (0, 1), 0.2))]
+
+        numba = graph.calculate_energy(centers, how="obs")
+        python = graph._calculate_energy_python(centers, "obs")
+        assert numba > 0
+        assert numba == pytest.approx(python, abs=1e-12)
+
     def test_invalid_energy_mode_raises(self):
         """A typo in the energy mode fails instead of silently meaning 'obs'."""
         graph = QuantumGraph()
