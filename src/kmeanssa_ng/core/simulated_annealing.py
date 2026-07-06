@@ -308,7 +308,7 @@ class SimulatedAnnealing:
         T = np.zeros(n + 1)
         poiss_sum = 0.0
         for i in range(n):
-            poiss_sum += -1 / self._lambda * np.log(self._rng.random())
+            poiss_sum += self._rng.exponential(1.0 / self._lambda)
             T[i + 1] = np.sqrt(poiss_sum + 1) - 1
         return T
 
@@ -393,7 +393,9 @@ class SimulatedAnnealing:
             self._time_history = [time]
 
         for i, point in enumerate(self._observations):
-            T = times[i]
+            # times[0] is the origin of the clock: observation i is processed
+            # over the interval (times[i], times[i + 1]].
+            T = times[i + 1]
 
             if i % progress_interval == 0 and i > 0:
                 progress = 100 * i / self.n
@@ -406,8 +408,8 @@ class SimulatedAnnealing:
 
             logger.debug("Processing observation %d, target time T=%.4f", i, T)
 
-            while time <= T - self._step_size:
-                h = min(time + self._step_size, T) - time
+            while time < T:
+                h = min(self._step_size, T - time)
                 prop = min(h * self._beta * np.log(1 + time), 1)
                 logger.debug(
                     "Time step: time=%.4f, h=%.4f, drift_prop=%.4f", time, h, prop

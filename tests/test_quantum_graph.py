@@ -500,22 +500,19 @@ class TestQGCenter:
         center = QGCenter(center_point)
         initial_pos = center.position
 
-        # This should trigger the "different parametrization" branch
+        # Target sits at 0.8 in the center's frame: drift must move forward
         center.drift(target_point, 0.1)
+        assert center.position > initial_pos
 
-        # Position should have changed
-        assert center.position != initial_pos
-
-        # Test the other condition: center.position > target.position (line 135)
+        # Center at 0.7, target at 0.8 in the center's frame: still forward
         center_point2 = QGPoint(graph, edge=(0, 1), position=0.7)
         target_point2 = QGPoint(graph, edge=(1, 0), position=0.2)  # Reversed edge
 
         center2 = QGCenter(center_point2)
         initial_pos2 = center2.position
 
-        # This should trigger line 135
         center2.drift(target_point2, 0.1)
-        assert center2.position != initial_pos2
+        assert center2.position > initial_pos2
 
         # Test line 131: center.position > target.position on same orientation
         center_point3 = QGPoint(graph, edge=(0, 1), position=0.8)
@@ -527,6 +524,132 @@ class TestQGCenter:
         # This should trigger line 131
         center3.drift(target_point3, 0.1)
         assert center3.position < initial_pos3  # Should move backward
+
+
+class _ForcedNormalRng:
+    """Generator stand-in with a fixed normal draw and seeded vertex routing."""
+
+    def __init__(self, normal_value: float, seed: int = 0):
+        self._normal_value = normal_value
+        self._rng = np.random.default_rng(seed)
+
+    def standard_normal(self) -> float:
+        return self._normal_value
+
+    def integers(self, high: int) -> int:
+        return self._rng.integers(high)
+
+
+class TestQGCenterDynamicsRegression:
+    """Regression tests for the elementary center moves (brownian + drift).
+
+    They pin down two former bugs: a backward brownian step through a vertex
+    left the center at a negative position, and a drift between opposite
+    parametrizations of the same edge moved away from the target.
+    """
+
+    @staticmethod
+    def _star_graph():
+        graph = QuantumGraph()
+        for node in ("b", "c", "d"):
+            graph.add_edge("a", node, length=1.0)
+        graph.precomputing()
+        return graph
+
+    def test_brownian_backward_through_vertex_lands_forward(self):
+        """A backward step crossing a vertex continues forward on the new edge."""
+        graph = self._star_graph()
+        center = QGCenter(
+            QGPoint(graph, edge=("a", "b"), position=0.2),
+            rng=_ForcedNormalRng(-0.5),
+        )
+
+        center.brownian_motion(1.0)  # signed step of -0.5: crosses "a", 0.3 left
+
+        assert center.edge[0] == "a"
+        assert center.position == pytest.approx(0.3)
+
+    def test_brownian_forward_through_vertex_lands_forward(self):
+        """A forward step crossing a vertex continues forward on the new edge."""
+        graph = self._star_graph()
+        center = QGCenter(
+            QGPoint(graph, edge=("b", "a"), position=0.8),
+            rng=_ForcedNormalRng(0.5),
+        )
+
+        center.brownian_motion(1.0)  # signed step of +0.5: crosses "a", 0.3 left
+
+        assert center.edge[0] == "a"
+        assert center.position == pytest.approx(0.3)
+
+    def test_drift_opposite_parametrization_reaches_target(self):
+        """Full drift between opposite parametrizations lands on the target."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=10.0)
+        graph.precomputing()
+
+        center = QGCenter(QGPoint(graph, edge=(0, 1), position=1.0))
+        target = QGPoint(graph, edge=(1, 0), position=2.0)  # = (0, 1) at 8.0
+
+        center.drift(target, 1.0)
+
+        assert center.position == pytest.approx(8.0)
+        assert graph.distance(center, target) == pytest.approx(0.0)
+
+    def test_drift_opposite_parametrization_backward_case(self):
+        """Drift moves backward when the target is behind in the center's frame."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=10.0)
+        graph.precomputing()
+
+        center = QGCenter(QGPoint(graph, edge=(0, 1), position=9.0))
+        target = QGPoint(graph, edge=(1, 0), position=3.0)  # = (0, 1) at 7.0
+
+        center.drift(target, 1.0)
+
+        assert center.position == pytest.approx(7.0)
+        assert graph.distance(center, target) == pytest.approx(0.0)
+
+    def test_drift_opposite_parametrization_partial_moves_closer(self):
+        """Partial drifts shrink the distance by exactly the travelled fraction."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=10.0)
+        graph.precomputing()
+
+        target = QGPoint(graph, edge=(1, 0), position=2.0)
+        for prop in (0.25, 0.5, 0.75):
+            center = QGCenter(QGPoint(graph, edge=(0, 1), position=1.0))
+            initial_dist = graph.distance(center, target)
+            center.drift(target, prop)
+            assert graph.distance(center, target) == pytest.approx(
+                (1 - prop) * initial_dist
+            )
+
+    def test_position_stays_within_edge_after_many_moves(self):
+        """Invariant 0 <= position <= edge length after every brownian/drift move."""
+        graph = QuantumGraph()
+        lengths = {(0, 1): 1.0, (1, 2): 2.0, (2, 3): 0.5, (3, 0): 1.5, (0, 2): 0.8}
+        for (u, v), length in lengths.items():
+            graph.add_edge(u, v, length=length)
+        graph.precomputing()
+
+        rng = np.random.default_rng(0)
+        center = QGCenter(QGPoint(graph, edge=(0, 1), position=0.5), rng=rng)
+        targets = [
+            QGPoint(graph, edge=edge, position=pos * graph.get_edge_length(*edge))
+            for edge in [(0, 1), (1, 0), (2, 3), (0, 2), (3, 0)]
+            for pos in (0.0, 0.3, 0.9)
+        ]
+
+        for step in range(3000):
+            center.brownian_motion(0.01)
+            length = graph.get_edge_length(*center.edge)
+            assert 0.0 <= center.position <= length, f"brownian step {step}"
+            if step % 3 == 0:
+                target = targets[rng.integers(len(targets))]
+                center.drift(target, rng.uniform())
+                length = graph.get_edge_length(*center.edge)
+                assert 0.0 <= center.position <= length, f"drift step {step}"
 
 
 class TestGenerators:
