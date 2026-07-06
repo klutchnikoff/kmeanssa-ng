@@ -39,9 +39,7 @@ from .core import (
 )
 from .core.metrics import (
     adjusted_rand_index,
-    calinski_harabasz,
     compute_labels,
-    davies_bouldin,
     evaluate_clustering,
     normalized_mutual_info,
     silhouette,
@@ -99,9 +97,7 @@ __all__ = [
     "run_parallel_with_callback",
     # Metrics
     "adjusted_rand_index",
-    "calinski_harabasz",
     "compute_labels",
-    "davies_bouldin",
     "evaluate_clustering",
     "normalized_mutual_info",
     "silhouette",

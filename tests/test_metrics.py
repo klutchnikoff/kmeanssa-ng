@@ -8,10 +8,8 @@ from kmeanssa_ng.core.strategies.initialization import RandomInit
 from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 from kmeanssa_ng.core.metrics import (
     adjusted_rand_index,
-    calinski_harabasz,
     compute_distance_matrix,
     compute_labels,
-    davies_bouldin,
     normalized_mutual_info,
     silhouette,
 )
@@ -300,119 +298,6 @@ class TestAdjustedRandIndex:
         assert np.isclose(ari, 1.0)
 
 
-class TestCalinskiHarabasz:
-    """Test calinski_harabasz function."""
-
-    def test_basic_score(self, simple_graph, points_at_nodes):
-        """Test basic CH score computation."""
-        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
-        points_for_centers = simple_graph.sample_points(
-            2, strategy=UniformNodeSampling()
-        )
-        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
-        labels = compute_labels(simple_graph, points, centers)
-
-        # Only test if we have at least 2 clusters
-        if len(np.unique(labels)) >= 2:
-            score = calinski_harabasz(simple_graph, points, centers)
-            assert score > 0  # CH score is always positive
-        else:
-            pytest.skip("All points in single cluster")
-
-    def test_with_precomputed_labels(self, simple_graph, points_at_nodes):
-        """Test CH with pre-computed labels."""
-        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
-        points_for_centers = simple_graph.sample_points(
-            2, strategy=UniformNodeSampling()
-        )
-        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
-        labels = compute_labels(simple_graph, points, centers)
-
-        # Only test if we have at least 2 clusters
-        if len(np.unique(labels)) >= 2:
-            score1 = calinski_harabasz(simple_graph, points, centers)
-            score2 = calinski_harabasz(simple_graph, points, centers, labels=labels)
-            assert np.isclose(score1, score2)
-        else:
-            pytest.skip("All points in single cluster")
-
-    def test_higher_for_better_clustering(self, simple_graph):
-        """Test CH score increases with better separation."""
-        # Create well-separated points
-        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
-        points_for_centers = simple_graph.sample_points(
-            2, strategy=UniformNodeSampling()
-        )
-        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
-        labels = compute_labels(simple_graph, points, centers)
-
-        # Only test if we have at least 2 clusters
-        if len(np.unique(labels)) >= 2:
-            score = calinski_harabasz(simple_graph, points, centers)
-            assert score > 0
-        else:
-            pytest.skip("All points in single cluster")
-
-
-class TestDaviesBouldin:
-    """Test davies_bouldin function."""
-
-    def test_basic_score(self, simple_graph, points_at_nodes):
-        """Test basic DB score computation."""
-        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
-        points_for_centers = simple_graph.sample_points(
-            2, strategy=UniformNodeSampling()
-        )
-        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
-        labels = compute_labels(simple_graph, points, centers)
-
-        # Only test if we have at least 2 clusters
-        if len(np.unique(labels)) >= 2:
-            score = davies_bouldin(simple_graph, points, centers)
-            assert score >= 0  # DB score is always non-negative
-        else:
-            pytest.skip("All points in single cluster")
-
-    def test_with_precomputed_labels(self, simple_graph, points_at_nodes):
-        """Test DB with pre-computed labels."""
-        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
-        points_for_centers = simple_graph.sample_points(
-            2, strategy=UniformNodeSampling()
-        )
-        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
-        labels = compute_labels(simple_graph, points, centers)
-
-        # Only test if we have at least 2 clusters
-        if len(np.unique(labels)) >= 2:
-            score1 = davies_bouldin(simple_graph, points, centers)
-            score2 = davies_bouldin(simple_graph, points, centers, labels=labels)
-            assert np.isclose(score1, score2)
-        else:
-            pytest.skip("All points in single cluster")
-
-    def test_lower_for_better_clustering(self, simple_graph):
-        """Test DB score is lower for better clustering."""
-        points = [
-            QGPoint(quantum_graph=simple_graph, edge=(0, 1), position=0.0),
-            QGPoint(quantum_graph=simple_graph, edge=(0, 1), position=1.0),
-            QGPoint(quantum_graph=simple_graph, edge=(3, 4), position=8.0),
-            QGPoint(quantum_graph=simple_graph, edge=(3, 4), position=9.0),
-        ]
-
-        points_for_centers = simple_graph.sample_points(
-            2, strategy=UniformNodeSampling()
-        )
-        centers = [simple_graph.center_from_point(p) for p in points_for_centers]
-        labels = compute_labels(simple_graph, points, centers)
-
-        # Only test if we have at least 2 clusters
-        if len(np.unique(labels)) >= 2:
-            score = davies_bouldin(simple_graph, points, centers)
-            assert score >= 0
-        else:
-            pytest.skip("All points in single cluster")
-
-
 class TestNormalizedMutualInfo:
     """Test normalized_mutual_info function."""
 
@@ -451,27 +336,6 @@ class TestNormalizedMutualInfo:
 
 class TestMetricHelpers:
     """Tests for metric helper functions."""
-
-    def test_points_to_features_raises_for_unknown_type(self, simple_graph):
-        """Test that _points_to_features raises for unknown point types."""
-
-        class MockPoint:
-            pass
-
-        points = [MockPoint(), MockPoint()]
-        # Provide pre-computed labels to avoid calling compute_labels, which fails on MockPoint
-        labels = np.array([0, 1])
-
-        # davies_bouldin and calinski_harabasz internally call _points_to_features
-        with pytest.raises(
-            NotImplementedError, match="Feature extraction not implemented"
-        ):
-            davies_bouldin(simple_graph, points, [], labels=labels)
-
-        with pytest.raises(
-            NotImplementedError, match="Feature extraction not implemented"
-        ):
-            calinski_harabasz(simple_graph, points, [], labels=labels)
 
     def test_evaluate_clustering_with_true_labels(self, simple_graph):
         """Test that evaluate_clustering includes ARI and NMI with true_labels."""
