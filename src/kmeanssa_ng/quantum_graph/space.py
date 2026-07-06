@@ -52,15 +52,25 @@ def _pair_distance_numba(
     d_min = min(d0, d1, d2, d3)
 
     # Same physical edge cases
-    if c_edge_0 == p_edge_1 and c_edge_1 == p_edge_0:
-        d_same_rev = abs(c_length - c_pos - p_pos)
-        if d_same_rev < d_min:
-            d_min = d_same_rev
+    if c_edge_0 == c_edge_1:
+        # Self-loop: both points on the same loop reach each other along the
+        # direct arc or the complementary one (the 4-path candidates already
+        # cover every route through the vertex).
+        if p_edge_0 == c_edge_0 and p_edge_1 == c_edge_0:
+            arc = abs(c_pos - p_pos)
+            d_direct = min(arc, c_length - arc)
+            if d_direct < d_min:
+                d_min = d_direct
+    else:
+        if c_edge_0 == p_edge_1 and c_edge_1 == p_edge_0:
+            d_same_rev = abs(c_length - c_pos - p_pos)
+            if d_same_rev < d_min:
+                d_min = d_same_rev
 
-    if c_edge_0 == p_edge_0 and c_edge_1 == p_edge_1:
-        d_same = abs(c_pos - p_pos)
-        if d_same < d_min:
-            d_min = d_same
+        if c_edge_0 == p_edge_0 and c_edge_1 == p_edge_1:
+            d_same = abs(c_pos - p_pos)
+            if d_same < d_min:
+                d_min = d_same
 
     return d_min
 
@@ -458,6 +468,12 @@ class QuantumGraph(nx.Graph, Space):
         length1 = self.get_edge_length(*edge1)
         length2 = self.get_edge_length(*edge2)
 
+        # Both points on the same self-loop: the geodesic stays on the loop
+        # (direct arc or the complementary one, possibly through the vertex).
+        if edge1[0] == edge1[1] and edge2[0] == edge2[1] and edge1[0] == edge2[0]:
+            arc = abs(pos1 - pos2)
+            return {"distance": min(arc, length1 - arc), "path": None}
+
         # Compute distances for all 4 possible paths
         d0 = self.node_distance(edge1[0], edge2[0]) + pos1 + pos2
         d1 = self.node_distance(edge1[0], edge2[1]) + pos1 + (length2 - pos2)
@@ -472,15 +488,16 @@ class QuantumGraph(nx.Graph, Space):
         idx = all_idx[0]
         d_min = distances[idx]
 
-        # Check if points are on the same edge
+        # Check if points are on the same (non-loop) physical edge
         if (
-            edge1[0] == edge2[1]
+            edge1[0] != edge1[1]
+            and edge1[0] == edge2[1]
             and edge1[1] == edge2[0]
             and d_min > abs(length1 - pos1 - pos2)
         ):
             return {"distance": abs(length1 - pos1 - pos2), "path": None}
 
-        if edge1 == edge2 and abs(pos1 - pos2) < d_min:
+        if edge1[0] != edge1[1] and edge1 == edge2 and abs(pos1 - pos2) < d_min:
             return {"distance": abs(pos1 - pos2), "path": None}
 
         # Determine path nodes

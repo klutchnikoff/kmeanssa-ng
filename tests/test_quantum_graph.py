@@ -652,6 +652,156 @@ class TestQGCenterDynamicsRegression:
                 assert 0.0 <= center.position <= length, f"drift step {step}"
 
 
+class TestSelfLoopDistances:
+    """Regression tests for distances and drift on self-loop edges.
+
+    They pin down a former bug: for two points on the same loop, the
+    reversed-edge shortcut ``|L - p1 - p2|`` (only valid between opposite
+    parametrizations of a regular edge) matched spuriously and could return
+    a distance of 0 for distinct points.
+    """
+
+    @staticmethod
+    def _rose_graph():
+        """Two loops at node 0 plus a pendant edge, all of unit-ish lengths."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 0, length=1.0)
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 1, length=2.0)
+        graph.precomputing()
+        return graph
+
+    def test_two_points_on_loop_direct_arc(self):
+        graph = self._rose_graph()
+        p1 = QGPoint(graph, edge=(0, 0), position=0.4)
+        p2 = QGPoint(graph, edge=(0, 0), position=0.6)
+        assert graph.distance(p1, p2) == pytest.approx(0.2)
+
+    def test_two_points_on_loop_wrap_around_arc(self):
+        graph = self._rose_graph()
+        p1 = QGPoint(graph, edge=(0, 0), position=0.1)
+        p2 = QGPoint(graph, edge=(0, 0), position=0.9)
+        assert graph.distance(p1, p2) == pytest.approx(0.2)
+
+    def test_loop_to_other_edge_goes_through_vertex(self):
+        graph = self._rose_graph()
+        on_loop = QGPoint(graph, edge=(0, 0), position=0.2)
+        on_edge = QGPoint(graph, edge=(0, 1), position=0.5)
+        on_other_loop = QGPoint(graph, edge=(1, 1), position=0.3)
+        assert graph.distance(on_loop, on_edge) == pytest.approx(0.2 + 0.5)
+        assert graph.distance(on_loop, on_other_loop) == pytest.approx(0.2 + 1.0 + 0.3)
+
+    def test_numba_kernels_match_quantum_path_with_loops(self):
+        """The Numba kernels and quantum_path implement the same metric."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 0, length=1.5)
+        graph.add_edge(0, 1, length=1.2)
+        graph.add_edge(1, 2, length=0.7)
+        graph.add_edge(2, 0, length=2.0)
+        graph.add_edge(2, 2, length=0.9)
+        graph.precomputing()
+
+        rng = np.random.default_rng(3)
+        edges = [(0, 0), (0, 1), (1, 0), (1, 2), (2, 0), (2, 2)]
+
+        def random_point():
+            edge = edges[rng.integers(len(edges))]
+            position = rng.uniform(0, graph.get_edge_length(*edge))
+            return QGPoint(graph, edge=edge, position=position)
+
+        for _ in range(50):
+            center = QGCenter(random_point())
+            target = random_point()
+            batch = graph.distances_from_centers([center], target)[0]
+            reference = graph.distance(center, target)
+            assert batch == pytest.approx(reference, abs=1e-12)
+            # The metric is symmetric
+            assert graph.distance(target, center) == pytest.approx(reference, abs=1e-12)
+
+    def test_energy_numba_matches_python_with_loops(self):
+        graph = QuantumGraph()
+        graph.add_edge(0, 0, length=1.5)
+        graph.add_edge(0, 1, length=1.2)
+        graph.add_edge(1, 2, length=0.7)
+        graph.add_edge(2, 2, length=0.9)
+        graph.precomputing()
+        for i, node in enumerate(graph.nodes()):
+            graph.nodes[node]["nb_obs"] = i + 1
+
+        centers = [
+            QGCenter(QGPoint(graph, edge=(0, 0), position=1.1)),
+            QGCenter(QGPoint(graph, edge=(1, 2), position=0.3)),
+        ]
+        for how in ("uniform", "obs"):
+            assert graph.calculate_energy_numba(centers, how=how) == pytest.approx(
+                graph.calculate_energy(centers, how=how), abs=1e-12
+            )
+
+    def test_drift_on_loop_direct_arc(self):
+        graph = self._rose_graph()
+        center = QGCenter(QGPoint(graph, edge=(0, 0), position=0.2))
+        target = QGPoint(graph, edge=(0, 0), position=0.5)
+
+        center.drift(target, 1.0)
+
+        assert center.edge == (0, 0)
+        assert center.position == pytest.approx(0.5)
+
+    def test_drift_on_loop_wraps_through_vertex(self):
+        graph = self._rose_graph()
+        center = QGCenter(QGPoint(graph, edge=(0, 0), position=0.1))
+        target = QGPoint(graph, edge=(0, 0), position=0.9)
+
+        center.drift(target, 1.0)
+        assert graph.distance(center, target) == pytest.approx(0.0)
+
+        # Partial drift moves backward through the vertex, never off-edge
+        center2 = QGCenter(QGPoint(graph, edge=(0, 0), position=0.1))
+        center2.drift(target, 0.5)
+        assert graph.distance(center2, target) == pytest.approx(0.1)
+        assert 0.0 <= center2.position <= 1.0
+
+    def test_drift_from_loop_to_edge(self):
+        graph = self._rose_graph()
+        target = QGPoint(graph, edge=(0, 1), position=0.5)
+        # From both sides of the loop: the geodesic exits via the shorter arc
+        for start in (0.2, 0.8):
+            center = QGCenter(QGPoint(graph, edge=(0, 0), position=start))
+            assert graph.distance(center, target) == pytest.approx(0.7)
+            center.drift(target, 1.0)
+            assert graph.distance(center, target) == pytest.approx(0.0)
+
+    def test_drift_from_edge_to_loop(self):
+        graph = self._rose_graph()
+        center = QGCenter(QGPoint(graph, edge=(1, 0), position=0.5))
+        target = QGPoint(graph, edge=(0, 0), position=0.9)
+
+        assert graph.distance(center, target) == pytest.approx(0.5 + 0.1)
+        center.drift(target, 1.0)
+        assert graph.distance(center, target) == pytest.approx(0.0)
+
+    def test_position_invariant_with_loops(self):
+        """0 <= position <= edge length holds through brownian and drift moves."""
+        graph = self._rose_graph()
+        rng = np.random.default_rng(1)
+        center = QGCenter(QGPoint(graph, edge=(0, 1), position=0.5), rng=rng)
+        targets = [
+            QGPoint(graph, edge=edge, position=pos * graph.get_edge_length(*edge))
+            for edge in [(0, 0), (0, 1), (1, 1)]
+            for pos in (0.05, 0.5, 0.95)
+        ]
+
+        for step in range(2000):
+            center.brownian_motion(0.01)
+            length = graph.get_edge_length(*center.edge)
+            assert 0.0 <= center.position <= length, f"brownian step {step}"
+            if step % 3 == 0:
+                target = targets[rng.integers(len(targets))]
+                center.drift(target, rng.uniform())
+                length = graph.get_edge_length(*center.edge)
+                assert 0.0 <= center.position <= length, f"drift step {step}"
+
+
 class TestGenerators:
     """Tests for graph generators."""
 
