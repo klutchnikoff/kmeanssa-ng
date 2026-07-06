@@ -116,19 +116,19 @@ class QGCenter(QGPoint, Center):
             self._drift_across_edges(target_point, path, dist_to_travel)
 
     def _drift_on_same_edge(self, target_point: QGPoint, dist_to_travel: float) -> None:
-        """Handle drift when center and target are on the same edge."""
+        """Handle drift when center and target are on the same physical edge."""
         if self.edge == target_point.edge:
-            # Same edge, same orientation
-            if self.position < target_point.position:
-                self.position += dist_to_travel
-            else:
-                self.position -= dist_to_travel
+            target_position = target_point.position
         else:
-            # Same physical edge, different parametrization
-            if self.position < target_point.position:
-                self.position -= dist_to_travel
-            else:
-                self.position += dist_to_travel
+            # Same physical edge, opposite parametrization: in this center's
+            # frame the target sits at (edge length - target position).
+            edge_length = self.space.get_edge_length(*self.edge)
+            target_position = edge_length - target_point.position
+
+        if self.position < target_position:
+            self.position += dist_to_travel
+        else:
+            self.position -= dist_to_travel
 
     def _drift_across_edges(
         self,
@@ -175,7 +175,9 @@ class QGCenter(QGPoint, Center):
         deepcopy as it doesn't duplicate the entire graph structure.
 
         Note: This creates a shallow copy of the center's state, bypassing
-        validation to handle intermediate states during brownian motion.
+        __init__ validation: the state comes from an existing center, so it
+        is already valid, and cloning happens on the hot path of the
+        annealing loop.
 
         Returns:
             A new QGCenter with the same location but independent state.
@@ -187,10 +189,6 @@ class QGCenter(QGPoint, Center):
             original.brownian_motion(0.1)  # Doesn't affect copy
             ```
         """
-        # Create new center without validation (like deepcopy does)
-        # This is needed because brownian_motion can leave centers in
-        # temporarily invalid states (e.g., negative positions before
-        # edge traversal is complete)
         new_center = object.__new__(QGCenter)
         new_center._quantum_graph = self._quantum_graph
         new_center._edge = self._edge
@@ -244,6 +242,10 @@ class QGCenter(QGPoint, Center):
             edge_length = self.space.get_edge_length(*self.edge)
             self.position = 0
             dist_to_next_node = edge_length
+            # Each traversed edge is oriented (cur_node, next_node), so the
+            # leftover motion continues toward next_node whatever the sign
+            # of the initial draw.
+            forward = True
 
         # Final position update
         self.position += remaining_dist if forward else -remaining_dist
