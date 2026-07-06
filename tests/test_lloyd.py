@@ -10,7 +10,7 @@ from kmeanssa_ng import (
     MostFrequentNodeUpdate,
     RiemannianManifold,
     RiemannianCenter,
-    FrechetMeanUpdate,
+    KarcherFrechetMean,
 )
 from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 from kmeanssa_ng.riemannian_manifold.sampling import UniformManifoldSampling
@@ -44,7 +44,7 @@ def test_lloyd_on_riemannian_manifold():
     space = RiemannianManifold(sphere)
     points = space.sample_points(100, strategy=UniformManifoldSampling(random_state=42))
 
-    lloyd = Lloyd(points, k=2, update_strategy=FrechetMeanUpdate(), random_state=42)
+    lloyd = Lloyd(points, k=2, update_strategy=KarcherFrechetMean(), random_state=42)
     centers = lloyd.run(initialization_strategy=RandomInit())
 
     assert len(centers) == 2

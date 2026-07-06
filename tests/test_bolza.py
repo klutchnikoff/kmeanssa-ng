@@ -191,3 +191,105 @@ class TestIntrinsicNetOnBolza:
         assert qg.number_of_nodes() == n
         assert qg.number_of_edges() > 0
         assert nx.is_connected(qg)
+
+
+class TestManifoldGuarantees:
+    """Regression tests: the manifold API guarantees hold on the quotient.
+
+    They pin down three former defects: the Brownian direction was an ambient
+    Gaussian (metric norm ~3x larger near the octagon boundary than at the
+    center), the Frechet mean crashed (geomstats estimator on the bare chart)
+    and would have ignored the quotient anyway, and off-manifold points were
+    accepted then folded into plausible-looking distances.
+    """
+
+    @staticmethod
+    def _boundary_point(margin=0.02):
+        """A domain point close to the middle of an octagon side."""
+        direction = np.exp(1j * np.pi / 8)
+        lo, hi = 0.0, 0.999
+        for _ in range(60):
+            mid = 0.5 * (lo + hi)
+            if bg.in_fundamental_domain(np.array([mid * direction]))[0]:
+                lo = mid
+            else:
+                hi = mid
+        return (lo - margin) * direction
+
+    def test_random_tangent_is_metric_isotropic(self):
+        """The Brownian direction has the same law everywhere on the surface."""
+        surface = create_bolza_surface()
+        rng = np.random.default_rng(0)
+        origin = np.zeros(2)
+        near_boundary = bg._to_real(np.array(0.8 * np.exp(1j * np.pi / 4)))
+
+        def mean_norm(base):
+            norms = [
+                float(surface.norm(base, surface.random_tangent(base, rng)))
+                for _ in range(2000)
+            ]
+            return np.mean(norms)
+
+        expected = np.sqrt(np.pi / 2)  # E||g|| for a 2D standard normal
+        assert mean_norm(origin) == pytest.approx(expected, rel=0.05)
+        assert mean_norm(near_boundary) == pytest.approx(expected, rel=0.05)
+
+    def test_frechet_mean_is_quotient_aware(self):
+        """The Karcher mean of two points glued across a side stays with them."""
+        from kmeanssa_ng import KarcherFrechetMean, RiemannianPoint
+
+        surface = create_bolza_surface()
+        p = bg._to_real(np.array(self._boundary_point()))
+        # Step across the identified boundary: exp folds back into the domain
+        outward = bg._to_real(
+            np.array(0.3 * np.exp(1j * np.pi / 8) / 2 * (1 - 0.77**2))
+        )
+        q = surface.exp(p, outward)
+
+        gap = surface.distance(RiemannianPoint(surface, p), RiemannianPoint(surface, q))
+        assert gap < 0.5  # close on the surface...
+        assert np.linalg.norm(p - q) > 1.0  # ...but far apart in the chart
+
+        mean = KarcherFrechetMean().update(
+            [RiemannianPoint(surface, p), RiemannianPoint(surface, q)], surface
+        )
+        d_p = surface.distance(mean, RiemannianPoint(surface, p))
+        d_q = surface.distance(mean, RiemannianPoint(surface, q))
+        # Geodesic midpoint on the surface; a chart-level mean would sit near
+        # the disk center, ~2 hyperbolic units away from both points.
+        assert d_p == pytest.approx(gap / 2, abs=1e-6)
+        assert d_q == pytest.approx(gap / 2, abs=1e-6)
+
+    def test_off_manifold_point_rejected(self):
+        """A point outside the disk raises instead of yielding fake distances."""
+        from kmeanssa_ng import RiemannianPoint
+
+        surface = create_bolza_surface()
+        with pytest.raises(ValueError, match="belong"):
+            RiemannianPoint(surface, np.array([5.0, 7.0]))
+
+    def test_sa_frechet_mean_runs_intrinsically(self):
+        """The generic SA-based Fréchet mean works unchanged on the quotient.
+
+        With ``n_samples`` oversampling (with replacement) a 2-point cluster,
+        the inner annealing gets a full schedule and must beat the trivial
+        strategy of parking on one of the observations.
+        """
+        from kmeanssa_ng import RiemannianPoint, SimulatedAnnealingFrechetMean
+
+        surface = create_bolza_surface()
+        p = bg._to_real(np.array(self._boundary_point()))
+        outward = bg._to_real(
+            np.array(0.3 * np.exp(1j * np.pi / 8) / 2 * (1 - 0.77**2))
+        )
+        q = surface.exp(p, outward)
+        P, Q = RiemannianPoint(surface, p), RiemannianPoint(surface, q)
+        gap = surface.distance(P, Q)
+
+        mean = SimulatedAnnealingFrechetMean(
+            n_samples=200, random_state=0, lambda0=0.5, beta0=3.0, step_size=0.02
+        ).update([P, Q], surface)
+
+        energy = (surface.distance(mean, P) ** 2 + surface.distance(mean, Q) ** 2) / 2
+        at_observation = gap**2 / 2  # energy of parking on p or q
+        assert energy < 0.95 * at_observation

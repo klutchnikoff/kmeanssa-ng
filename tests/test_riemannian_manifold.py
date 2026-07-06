@@ -559,11 +559,19 @@ class TestIntegration:
         assert new_energy != initial_energy
 
     def test_different_manifolds(self):
-        """Test that the same operations work on different manifolds."""
+        """Test that the same operations work on different sphere dimensions.
+
+        Hyperbolic space refuses uniform sampling: uniform-in-volume does not
+        exist on a non-compact manifold, and the previous geomstats fallback
+        drew from the global RNG (non-reproducible).
+        """
+        hyperbolic = create_hyperbolic_space(dim=2)
+        with pytest.raises(NotImplementedError):
+            hyperbolic.sample_points(5, strategy=UniformManifoldSampling())
+
         manifolds = [
             create_sphere(dim=2),
             create_sphere(dim=3),
-            create_hyperbolic_space(dim=2),
         ]
 
         for space in manifolds:
@@ -696,3 +704,48 @@ class TestSphere:
         moved = sph.exp(p, tangent + 0.5 * p)  # add a radial component
         np.testing.assert_allclose(np.linalg.norm(moved), 1.0, atol=1e-12)
         np.testing.assert_allclose(moved, sph.exp(p, tangent), atol=1e-12)
+
+
+class TestManifoldGuarantees:
+    """The advertised manifold guarantees hold (or refuse loudly)."""
+
+    def test_brownian_motion_refuses_on_hyperboloid(self):
+        """No metric-isotropic frame is known there: refuse, don't bias."""
+        space = create_hyperbolic_space(dim=2)
+        origin = np.array([1.0, 0.0, 0.0])  # hyperboloid base point
+        center = space.center_from_point(RiemannianPoint(space, origin))
+
+        with pytest.raises(NotImplementedError, match="random_tangent"):
+            center.brownian_motion(0.1)
+
+    def test_frechet_mean_update_exact_on_sphere(self):
+        """The Karcher mean of two symmetric points is their geodesic midpoint."""
+        from kmeanssa_ng import KarcherFrechetMean
+
+        space = RiemannianManifold(Hypersphere(dim=2))
+
+        def unit(v):
+            v = np.asarray(v, dtype=float)
+            return v / np.linalg.norm(v)
+
+        points = [
+            RiemannianPoint(space, unit([0.3, 0.0, 1.0])),
+            RiemannianPoint(space, unit([-0.3, 0.0, 1.0])),
+        ]
+        mean = KarcherFrechetMean().update(points, space)
+
+        north = RiemannianPoint(space, np.array([0.0, 0.0, 1.0]))
+        assert space.distance(mean, north) < 1e-8
+
+    def test_point_membership_is_validated(self):
+        """Off-manifold, non-finite or mis-shaped coordinates are rejected."""
+        space = RiemannianManifold(Hypersphere(dim=2))
+
+        with pytest.raises(ValueError, match="belong"):
+            RiemannianPoint(space, np.array([2.0, 0.0, 0.0]))  # off the sphere
+
+        with pytest.raises(ValueError, match="finite"):
+            RiemannianPoint(space, np.array([np.nan, 0.0, 1.0]))
+
+        with pytest.raises(ValueError, match="shape"):
+            RiemannianPoint(space, np.array([1.0, 0.0]))

@@ -76,11 +76,12 @@ class RiemannianCenter(RiemannianPoint, AbstractCenter):
             return  # No movement
 
         # Sample a random tangent vector and move along it, scaled by sqrt(time)
-        # for the Brownian-motion property. The direction is drawn from this
-        # center's own generator: geomstats' random_tangent_vec would draw from
-        # the global RNG, which cannot be seeded per run and breaks reproducibility.
-        ambient = self._rng.standard_normal(self.space.shape)
-        tangent_vec = self.space.to_tangent(self.coordinates, ambient)
+        # for the Brownian-motion property. The direction comes from the space
+        # (metric-isotropic frame; spaces without one refuse) and is drawn from
+        # this center's own generator: geomstats' random_tangent_vec would draw
+        # from the global RNG, which cannot be seeded per run and breaks
+        # reproducibility.
+        tangent_vec = self.space.random_tangent(self.coordinates, self._rng)
         step_size = np.sqrt(time_float) * self._rng.standard_normal()
 
         # Move along the exponential map (self.space dispatches to a closed form

@@ -64,20 +64,34 @@ class RiemannianPoint(AbstractPoint):
             coordinates: Coordinates on the manifold.
 
         Raises:
-            ValueError: If coordinates don't belong to the manifold.
+            ValueError: If the shape does not match the manifold, the
+                coordinates are not finite, or they do not belong to the
+                manifold.
         """
-        # For intrinsic coordinates, belongs() may not work reliably
-        # So we do a basic shape check instead
         manifold_shape = self._space.manifold.shape
         coords_shape = coordinates.shape if coordinates.ndim > 0 else ()
 
         if coords_shape != manifold_shape:
-            # Try belongs() for extrinsic coordinates
-            if not self._space.manifold.intrinsic and not self._space.manifold.belongs(
-                coordinates
-            ):
+            raise ValueError(
+                f"Coordinates shape {coords_shape} does not match the manifold "
+                f"shape {manifold_shape}"
+            )
+
+        if not np.all(np.isfinite(coordinates)):
+            raise ValueError(f"Coordinates must be finite, got {coordinates}")
+
+        # Membership check: an off-manifold point would not crash, it would
+        # silently produce plausible-looking geodesic distances.
+        belongs = getattr(self._space.manifold, "belongs", None)
+        if belongs is not None:
+            try:
+                on_manifold = bool(np.all(belongs(coordinates)))
+            except NotImplementedError:
+                on_manifold = True  # backend cannot decide; accept
+            if not on_manifold:
                 raise ValueError(
-                    f"Coordinates {coordinates} do not belong to the manifold {self._space.manifold}"
+                    f"Coordinates {coordinates} do not belong to the manifold "
+                    f"{type(self._space.manifold).__name__}"
                 )
 
         self.coordinates = coordinates
