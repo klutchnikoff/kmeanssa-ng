@@ -39,6 +39,13 @@ class UniformNodeSampling(SamplingStrategy):
         points = graph.sample_points(100, strategy=strategy)
         ```
 
+    Note:
+        Each call stamps the sampled counts on the nodes' ``nb_obs`` attribute
+        (the observation measure read by ``calculate_energy(how="obs")``),
+        **replacing** the counts of any previous sampling. To use the union of
+        several samples as observations, register it explicitly with
+        ``QuantumGraph.register_observations``.
+
     See Also:
         - UniformEdgeSampling: Continuous uniform sampling along edges
         - WeightedNodeSampling: Node sampling weighted by node weights
@@ -98,6 +105,12 @@ class UniformEdgeSampling(SamplingStrategy):
     Note:
         Requires edges to have 'length' attribute (standard for QuantumGraph).
         Points are distributed proportionally to edge lengths.
+
+        Edge-sampled points lie inside edges, so this strategy does **not**
+        set the nodes' ``nb_obs`` observation measure; to evaluate the "obs"
+        energy on such a sample, register it first with
+        ``QuantumGraph.register_observations`` (each point then counts at its
+        closest node).
 
     See Also:
         - UniformNodeSampling: Discrete uniform sampling at nodes
@@ -175,6 +188,9 @@ class WeightedNodeSampling(SamplingStrategy):
 
     Note:
         Requires nodes to have 'weight' attribute with positive values.
+
+        Each call stamps the sampled counts on the nodes' ``nb_obs`` attribute
+        (see ``UniformNodeSampling``), replacing any previous counts.
 
     See Also:
         - UniformNodeSampling: Unweighted discrete uniform sampling at nodes
