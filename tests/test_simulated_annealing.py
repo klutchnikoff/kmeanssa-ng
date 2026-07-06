@@ -614,3 +614,53 @@ class TestEnergyTracking:
         for a, b in zip(untracked, tracked):
             assert a.edge == b.edge
             assert abs(a.position - b.position) < 1e-12
+
+
+class TestPoissonTimes:
+    """Regression tests for the Poisson clock driving the annealing loop.
+
+    They pin down two former bugs: observation ``i`` was processed over the
+    interval ending at ``times[i]`` instead of ``times[i + 1]`` (so the first
+    observation drove no dynamics and the last interval was never consumed),
+    and the residual fraction of an interval shorter than ``step_size`` was
+    silently dropped.
+    """
+
+    def _sa(self, n_points=30):
+        graph = generate_simple_graph(n_a=3)
+        points = graph.sample_points(
+            n_points, strategy=UniformNodeSampling(random_state=1)
+        )
+        return SimulatedAnnealing(points, k=2, random_state=42)
+
+    def test_initialize_times_valid_clock(self):
+        sa = self._sa()
+        times = sa._initialize_times(50)
+        assert times.shape == (51,)
+        assert times[0] == 0.0
+        assert np.all(np.isfinite(times))
+        assert np.all(np.diff(times) > 0)
+
+    def test_every_observation_advances_time(self):
+        """Each observation, including the first, drives a positive time interval."""
+        sa = self._sa()
+        sa.run(
+            KMeansPlusPlus(),
+            MinimizeEnergy(),
+            robust_prop=0.1,
+            record_energy=True,
+        )
+        assert np.all(np.diff(sa.time_history) > 0)
+
+    def test_full_time_horizon_consumed(self):
+        """Intervals shorter than step_size are simulated down to their residual."""
+        sa = self._sa()
+        times = np.linspace(0.0, 0.05, sa.n + 1)  # every interval << step_size
+        sa._initialize_times = lambda n: times
+        sa.run(
+            KMeansPlusPlus(),
+            MinimizeEnergy(),
+            robust_prop=0.1,
+            record_energy=True,
+        )
+        np.testing.assert_allclose(sa.time_history, times, rtol=0, atol=1e-15)
