@@ -36,19 +36,34 @@ class LloydUpdateStrategy(ABC):
 class SimulatedAnnealingFrechetMean(LloydUpdateStrategy):
     """Approximates the Fréchet mean by running Simulated Annealing with k=1.
 
-    This strategy provides a powerful, general-purpose way to find the
-    center of a cluster in any metric space. It leverages the existing
-    SimulatedAnnealing algorithm to find the point that minimizes the
-    sum of squared distances to the points in the cluster.
+    This strategy provides a general-purpose way to find the center of a
+    cluster in **any** metric space of the package: it only uses the abstract
+    Space/Center contracts (Brownian motion, drift, distances), so it runs
+    unchanged on quantum graphs and on Riemannian manifolds — including
+    quotient surfaces such as Bolza, whose dynamics are quotient-aware.
+
+    Being a stochastic global optimizer, it can escape bad critical points of
+    the Fréchet functional, at the cost of one annealing run per cluster per
+    Lloyd iteration and of stochastic error. On manifolds with ``exp``/``log``
+    maps, the deterministic ``KarcherFrechetMean`` (Karcher iteration) is the
+    faster, locally-exact default.
 
     Args:
-        n_samples: The number of points to sample (with replacement) from the
-            cluster to use as observations for the inner SA run. If None, all
-            points in the cluster are used.
+        n_samples: Number of observations fed to the inner SA run, resampled
+            from the cluster **with replacement** (up or down). The annealing
+            horizon grows like sqrt(n_samples), so resampling a small cluster
+            up to n_samples gives it a full schedule while leaving the
+            empirical measure — hence the Fréchet functional — unchanged.
+            If None, the cluster points are used as they are (small clusters
+            then get almost no annealing time).
         sa_initialization_strategy: The initialization strategy to use for the
             inner SA run. Defaults to RandomInit.
-        **sa_kwargs: Additional keyword arguments to pass to the
-            SimulatedAnnealing `run` method (e.g., T_max, T_min, n_iter).
+        robust_prop: Memory window of the inner run: the returned center is
+            the lowest-energy state visited over the trailing ``robust_prop``
+            fraction of the trajectory. With 0.0 only the final (still hot)
+            state would be returned.
+        **sa_kwargs: Additional keyword arguments passed to the
+            SimulatedAnnealing constructor (e.g., lambda0, beta0, step_size).
     """
 
     def __init__(
@@ -56,11 +71,13 @@ class SimulatedAnnealingFrechetMean(LloydUpdateStrategy):
         n_samples: int | None = None,
         sa_initialization_strategy: "InitializationStrategy" | None = None,
         random_state: int | np.random.Generator | None = None,
+        robust_prop: float = 0.1,
         **sa_kwargs,
     ):
         self.n_samples = n_samples
         self.sa_kwargs = sa_kwargs
         self.random_state = random_state
+        self.robust_prop = robust_prop
 
         if sa_initialization_strategy is None:
             from .initialization import RandomInit
@@ -78,7 +95,10 @@ class SimulatedAnnealingFrechetMean(LloydUpdateStrategy):
         from ..simulated_annealing import SimulatedAnnealing
         import numpy as np
 
-        if self.n_samples is not None and len(points) > self.n_samples:
+        if self.n_samples is not None and len(points) != self.n_samples:
+            # Resample with replacement, up or down: the empirical measure is
+            # unchanged, but the inner annealing horizon (~ sqrt(#obs)) is
+            # decoupled from the cluster size.
             if isinstance(self.random_state, np.random.Generator):
                 rng = self.random_state
             else:
@@ -104,6 +124,7 @@ class SimulatedAnnealingFrechetMean(LloydUpdateStrategy):
         centers = sa.run(
             initialization_strategy=self.sa_initialization_strategy,
             robustification_strategy=MinimizeEnergy(),
+            robust_prop=self.robust_prop,
         )
 
         if not centers:

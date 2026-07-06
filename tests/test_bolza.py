@@ -267,3 +267,29 @@ class TestManifoldGuarantees:
         surface = create_bolza_surface()
         with pytest.raises(ValueError, match="belong"):
             RiemannianPoint(surface, np.array([5.0, 7.0]))
+
+    def test_sa_frechet_mean_runs_intrinsically(self):
+        """The generic SA-based Fréchet mean works unchanged on the quotient.
+
+        With ``n_samples`` oversampling (with replacement) a 2-point cluster,
+        the inner annealing gets a full schedule and must beat the trivial
+        strategy of parking on one of the observations.
+        """
+        from kmeanssa_ng import RiemannianPoint, SimulatedAnnealingFrechetMean
+
+        surface = create_bolza_surface()
+        p = bg._to_real(np.array(self._boundary_point()))
+        outward = bg._to_real(
+            np.array(0.3 * np.exp(1j * np.pi / 8) / 2 * (1 - 0.77**2))
+        )
+        q = surface.exp(p, outward)
+        P, Q = RiemannianPoint(surface, p), RiemannianPoint(surface, q)
+        gap = surface.distance(P, Q)
+
+        mean = SimulatedAnnealingFrechetMean(
+            n_samples=200, random_state=0, lambda0=0.5, beta0=3.0, step_size=0.02
+        ).update([P, Q], surface)
+
+        energy = (surface.distance(mean, P) ** 2 + surface.distance(mean, Q) ** 2) / 2
+        at_observation = gap**2 / 2  # energy of parking on p or q
+        assert energy < 0.95 * at_observation
