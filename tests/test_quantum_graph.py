@@ -116,8 +116,9 @@ class TestQuantumGraph:
 
         centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
 
-        # Calculate with pure Python
-        energy_python = graph.calculate_energy(centers, how="obs")
+        # Calculate with pure Python (calculate_energy itself dispatches to
+        # numba on a precomputed graph, so target the fallback directly)
+        energy_python = graph._calculate_energy_python(centers, how="obs")
 
         # Calculate with Numba
         energy_numba = graph.calculate_energy_numba(centers, how="obs")
@@ -734,7 +735,7 @@ class TestSelfLoopDistances:
         ]
         for how in ("uniform", "obs"):
             assert graph.calculate_energy_numba(centers, how=how) == pytest.approx(
-                graph.calculate_energy(centers, how=how), abs=1e-12
+                graph._calculate_energy_python(centers, how), abs=1e-12
             )
 
     def test_drift_on_loop_direct_arc(self):

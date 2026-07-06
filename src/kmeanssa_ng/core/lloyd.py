@@ -106,8 +106,11 @@ class Lloyd:
 
             centers = new_centers
 
-            # Check for convergence
-            current_energy = self.space.calculate_energy(centers)
+            # Check for convergence on this algorithm's own points (the space
+            # may be shared with other running algorithms).
+            current_energy = self.space.calculate_energy(
+                centers, observations=self.points
+            )
             if abs(last_energy - current_energy) < tolerance:
                 break
             last_energy = current_energy

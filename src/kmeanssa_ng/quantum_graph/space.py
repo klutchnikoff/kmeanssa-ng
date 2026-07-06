@@ -678,18 +678,37 @@ class QuantumGraph(nx.Graph, Space):
         self,
         centers: list[QGCenter],
         how: str = "uniform",
+        observations: list[QGPoint] | None = None,
     ) -> float:
         """Calculate k-means energy for given centers.
+
+        Dispatches to the Numba kernels when pairwise node distances are
+        precomputed (``precomputing()``), and falls back to pure-Python
+        distance computations otherwise — correct on any graph, just slower.
 
         Args:
             centers: List of cluster centers.
             how: Energy calculation mode:
-                - "uniform": Use uniform distribution over nodes
-                - "obs": Weight by observed point counts at nodes
+                - "uniform": average over nodes with equal weight
+                - "obs": average over nodes weighted by their ``nb_obs`` count
+            observations: Accepted for interface compatibility and ignored:
+                on a quantum graph the observation measure lives on the nodes
+                (``nb_obs``), set by the samplers or by the caller.
 
         Returns:
             Average squared distance to nearest center.
+
+        Raises:
+            ValueError: If ``how`` is not "uniform" or "obs".
         """
+        if how not in ("uniform", "obs"):
+            raise ValueError(f"how must be 'uniform' or 'obs', got {how!r}")
+        if self._pairwise_nodes_distance_array is not None:
+            return self.calculate_energy_numba(centers, how=how)
+        return self._calculate_energy_python(centers, how)
+
+    def _calculate_energy_python(self, centers: list[QGCenter], how: str) -> float:
+        """Pure-Python energy fallback (no precomputed distances needed)."""
         if how == "uniform":
             energy = 0.0
             for node in self.nodes:

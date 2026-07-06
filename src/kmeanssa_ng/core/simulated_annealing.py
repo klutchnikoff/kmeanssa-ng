@@ -186,10 +186,6 @@ class SimulatedAnnealing:
         self._step_size = float(step_size)
         self._energy_mode = energy_mode
 
-        # Set observations on the space if it has the attribute (for RiemannianManifold)
-        if hasattr(self.space, "observations"):
-            self.space.observations = self._observations
-
         # Shuffle through the instance Generator so ordering is reproducible
         # from random_state without touching global random state.
         self._rng.shuffle(self._observations)
@@ -312,32 +308,18 @@ class SimulatedAnnealing:
             T[i + 1] = np.sqrt(poiss_sum + 1) - 1
         return T
 
-    def calculate_energy_fallback(
-        self, centers: list[Center], points: list[Point]
-    ) -> float:
-        """Calculate k-means energy for given centers.
-
-        Args:
-            centers: List of cluster centers.
-            points: List of points.
-
-        Returns:
-            Average squared distance to nearest center.
-        """
-        energy = sum(
-            min(self.space.distance(center, point) ** 2 for center in centers)
-            for point in points
-        )
-        return energy / len(points)
-
     def calculate_energy(self, centers: list[Center]) -> float:
-        """Calculate k-means energy for given centers based on the energy mode."""
-        if (
-            hasattr(self.space, "calculate_energy_numba")
-            and self.space.calculate_energy_numba is not None
-        ):
-            return self.space.calculate_energy_numba(centers, how=self._energy_mode)
-        return self.space.calculate_energy(centers, how=self._energy_mode)
+        """Calculate k-means energy for given centers based on the energy mode.
+
+        Delegates to the space, passing the algorithm's own observations:
+        spaces without an internal reference measure (manifolds) average over
+        them, while spaces that carry one (a graph's per-node ``nb_obs``)
+        ignore them. Acceleration (e.g. the quantum graph's numba kernels) is
+        the space's concern, dispatched inside ``Space.calculate_energy``.
+        """
+        return self.space.calculate_energy(
+            centers, how=self._energy_mode, observations=self._observations
+        )
 
     def run(
         self,

@@ -19,7 +19,6 @@ class RiemannianManifold(Space):
 
     Attributes:
         manifold: The geomstats manifold object.
-        observations: List of sampled point coordinates for energy calculation.
 
     Note:
         On manifolds with non-unique geodesics (e.g., antipodal points on spheres),
@@ -33,9 +32,9 @@ class RiemannianManifold(Space):
         from geomstats.geometry.hypersphere import Hypersphere
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
-        points = space.sample_points(100)
-        centers = space.sample_kpp_centers(3)
-        energy = space.calculate_energy(centers)
+        points = space.sample_points(100, strategy=UniformManifoldSampling())
+        centers = [space.center_from_point(p) for p in points[:3]]
+        energy = space.calculate_energy(centers, observations=points)
         ```
     """
 
@@ -46,7 +45,6 @@ class RiemannianManifold(Space):
             manifold: A geomstats manifold object (e.g., Hypersphere, Hyperboloid).
         """
         self.manifold = manifold
-        self.observations = []  # Store sampled points for energy calculation
 
     def distance(self, point1: RiemannianPoint, point2: RiemannianPoint) -> float:
         """Compute the geodesic distance between two points.
@@ -165,34 +163,40 @@ class RiemannianManifold(Space):
         return distances
 
     def calculate_energy(
-        self, centers: list[RiemannianCenter], how: str = "obs"
+        self,
+        centers: list[RiemannianCenter],
+        how: str = "obs",
+        observations: list[RiemannianPoint] | None = None,
     ) -> float:
         """Calculate the k-means energy for the given centers.
 
-        The energy is the sum of squared distances from each observation
-        to its nearest center, divided by the number of observations.
+        The energy is the mean squared distance from each observation to its
+        nearest center. The observations must be passed explicitly: they
+        belong to the algorithm evaluating the energy, not to the manifold,
+        so several algorithms can share one space without interfering.
 
         Args:
             centers: List of cluster centers.
             how: Energy calculation mode. For Riemannian manifolds, only "obs"
-                mode is supported (uses sampled observations). The "uniform"
-                mode is not applicable as there's no natural notion of uniform
-                distribution over all points of a continuous manifold.
-                This parameter is kept for API compatibility but ignored.
+                mode is supported. The "uniform" mode is not applicable as
+                there is no uniform distribution over all points of a
+                continuous manifold. This parameter is kept for API
+                compatibility but ignored.
+            observations: The points to average over (``RiemannianPoint``
+                instances or coordinate arrays).
 
         Returns:
-            The k-means energy (average squared distance to nearest center).
+            The k-means energy (mean squared distance to nearest center).
 
         Raises:
-            ValueError: If no observations are available or centers list is empty.
-
-        Note:
-            Unlike discrete spaces (e.g., quantum graphs), continuous manifolds
-            don't support a "uniform" distribution over all possible points.
-            Energy is always computed using the sampled observations.
+            ValueError: If observations are missing or centers list is empty.
         """
-        if len(self.observations) == 0:
-            raise ValueError("No observations available for energy calculation")
+        if not observations:
+            raise ValueError(
+                "calculate_energy on a manifold requires the explicit "
+                "'observations' list (there is no reference measure on the "
+                "space itself)"
+            )
 
         if len(centers) == 0:
             raise ValueError("Centers list cannot be empty")
@@ -200,7 +204,7 @@ class RiemannianManifold(Space):
         total_energy = 0.0
 
         # For each observation, find squared distance to nearest center
-        for obs in self.observations:
+        for obs in observations:
             if isinstance(obs, RiemannianPoint):
                 obs_point = obs
             else:  # It's a numpy array (coordinates)
@@ -211,7 +215,7 @@ class RiemannianManifold(Space):
             )
             total_energy += min_dist_sq
 
-        return total_energy / len(self.observations)
+        return total_energy / len(observations)
 
     def get_point_type(self) -> type[RiemannianPoint]:
         """Return the type of points in this space."""

@@ -290,6 +290,12 @@ class TestWorkerFunction:
         with patch(
             "kmeanssa_ng.core.simulated_annealing.SimulatedAnnealing"
         ) as mock_sa:
+            # The final energy is computed on the returned centers, so the
+            # mocked run() must yield real ones.
+            mock_sa.return_value.run.return_value = [
+                simple_graph.node_as_center(node)
+                for node in list(simple_graph.nodes())[:2]
+            ]
             centers, energy, seed = _run_with_seed(
                 space=simple_graph,
                 n_points=10,

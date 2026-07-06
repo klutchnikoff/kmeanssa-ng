@@ -133,17 +133,35 @@ class Space(ABC):
         return labels
 
     @abstractmethod
-    def calculate_energy(self, centers: list[Center]) -> float:
+    def calculate_energy(
+        self,
+        centers: list[Center],
+        how: str = "uniform",
+        observations: list[Point] | None = None,
+    ) -> float:
         """Calculate the k-means energy (distortion) for given centers.
 
-        The energy is the sum of squared distances from each point
-        to its nearest center.
+        The energy is the **mean** squared distance to the nearest center,
+        taken under a reference measure — the same convention for every
+        space, so energies are comparable across modes and implementations.
 
         Args:
             centers: List of cluster centers.
+            how: Which reference measure to average under:
+                - "uniform": the space's own uniform measure (e.g. uniform
+                  over graph nodes). Spaces without one (continuous
+                  manifolds) may reject or ignore this mode.
+                - "obs": the observation measure. Spaces that carry it
+                  internally (e.g. a graph's per-node ``nb_obs`` counts) may
+                  ignore ``observations``; others average over the explicit
+                  ``observations`` list.
+            observations: The algorithm's observation points, for spaces that
+                do not carry an internal observation measure. Observations
+                belong to the algorithm, never to the space: passing them
+                explicitly keeps two algorithms sharing one space independent.
 
         Returns:
-            The total energy (sum of squared distances).
+            The mean squared distance to the nearest center.
         """
         raise NotImplementedError
 

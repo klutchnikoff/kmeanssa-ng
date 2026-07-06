@@ -27,7 +27,6 @@ class TestRiemannianManifold:
         space = RiemannianManifold(sphere)
 
         assert space.manifold == sphere
-        assert isinstance(space.observations, list)
 
     def test_distance(self):
         """Test distance computation between two points."""
@@ -58,7 +57,6 @@ class TestRiemannianManifold:
 
         assert len(points) == n
         assert all(isinstance(p, RiemannianPoint) for p in points)
-        assert len(space.observations) == n
 
         # Check that points belong to the manifold (on unit sphere)
         for point in points:
@@ -97,8 +95,8 @@ class TestRiemannianManifold:
         sa = SimulatedAnnealing(points, k=3)
         centers = RandomInit().initialize_centers(sa)
 
-        # Calculate energy
-        energy = space.calculate_energy(centers)
+        # Calculate energy on an explicit observation list
+        energy = space.calculate_energy(centers, observations=points)
 
         assert isinstance(energy, float)
         assert energy >= 0  # Energy is sum of squared distances, must be non-negative
@@ -113,20 +111,18 @@ class TestRiemannianManifold:
         sa = SimulatedAnnealing(dummy_points, k=3)
         centers = RandomInit().initialize_centers(sa)
 
-        # Now, for the actual test, ensure the space has no observations
-        space.observations = []
-
-        with pytest.raises(ValueError, match="No observations available"):
+        # Observations belong to the caller: omitting them must fail loudly
+        with pytest.raises(ValueError, match="observations"):
             space.calculate_energy(centers)
 
     def test_calculate_energy_no_centers(self):
         """Test energy calculation fails without centers."""
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
-        space.sample_points(10, strategy=UniformManifoldSampling())
+        points = space.sample_points(10, strategy=UniformManifoldSampling())
 
         with pytest.raises(ValueError, match="Centers list cannot be empty"):
-            space.calculate_energy([])
+            space.calculate_energy([], observations=points)
 
     def test_calculate_energy_with_how_parameter(self):
         """Test energy calculation accepts 'how' parameter for API compatibility."""
@@ -137,14 +133,33 @@ class TestRiemannianManifold:
         sa = SimulatedAnnealing(points, k=3)
         centers = RandomInit().initialize_centers(sa)
         # Both calls should give the same result since 'how' is ignored
-        energy_default = space.calculate_energy(centers)
-        energy_obs = space.calculate_energy(centers, how="obs")
-        energy_uniform = space.calculate_energy(centers, how="uniform")
+        energy_default = space.calculate_energy(centers, observations=points)
+        energy_obs = space.calculate_energy(centers, how="obs", observations=points)
+        energy_uniform = space.calculate_energy(
+            centers, how="uniform", observations=points
+        )
 
         assert energy_default == energy_obs
         assert energy_default == energy_uniform  # 'uniform' is ignored
         assert isinstance(energy_default, float)
         assert energy_default >= 0
+
+    def test_two_annealings_share_a_space_independently(self):
+        """Two SAs on one manifold evaluate energies on their own observations.
+
+        Regression: the space used to hold the observation list, so creating a
+        second annealer silently redefined the energy of the first one.
+        """
+        space = RiemannianManifold(Hypersphere(dim=2))
+        north = [RiemannianPoint(space, np.array([0.0, 0.0, 1.0])) for _ in range(5)]
+        south = [RiemannianPoint(space, np.array([0.0, 0.0, -1.0])) for _ in range(5)]
+
+        sa_north = SimulatedAnnealing(north, k=1, random_state=0)
+        sa_south = SimulatedAnnealing(south, k=1, random_state=0)
+
+        center = [space.center_from_point(north[0])]
+        assert sa_north.calculate_energy(center) == pytest.approx(0.0)
+        assert sa_south.calculate_energy(center) == pytest.approx(np.pi**2)
 
     def test_distances_from_centers(self):
         """Test computing distances from multiple centers to a target point."""
@@ -527,7 +542,7 @@ class TestIntegration:
         assert len(centers) == k
 
         # Calculate initial energy
-        initial_energy = sphere.calculate_energy(centers)
+        initial_energy = sphere.calculate_energy(centers, observations=points)
         assert initial_energy > 0
 
         # Perform some drift operations
@@ -537,7 +552,7 @@ class TestIntegration:
             center.drift(target, prop_to_travel=0.1)
 
         # Calculate new energy
-        new_energy = sphere.calculate_energy(centers)
+        new_energy = sphere.calculate_energy(centers, observations=points)
         assert new_energy > 0
 
         # Energy should have changed
@@ -557,7 +572,7 @@ class TestIntegration:
 
             sa = SimulatedAnnealing(points, k=3)
             centers = KMeansPlusPlus().initialize_centers(sa)
-            energy = space.calculate_energy(centers)
+            energy = space.calculate_energy(centers, observations=points)
 
             assert len(points) == 20
             assert len(centers) == 3
