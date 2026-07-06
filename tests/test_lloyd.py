@@ -63,3 +63,30 @@ def test_lloyd_invalid_k_raises():
     points = graph.sample_points(10, strategy=UniformNodeSampling())
     with pytest.raises(ValueError, match="Number of clusters k must be positive."):
         Lloyd(points, k=0, update_strategy=MostFrequentNodeUpdate())
+
+
+def test_lloyd_reseeds_empty_clusters():
+    """k never silently shrinks: an empty cluster is reseeded, not dropped.
+
+    Ten points on two far-apart nodes with k=4 force at least two empty
+    clusters at every assignment step.
+    """
+    graph = generate_sbm(sizes=[10, 10], p=[[0.9, 0.1], [0.1, 0.9]])
+    nodes = list(graph.nodes())
+    points = graph.sample_points(10, strategy=UniformNodeSampling(random_state=0))
+    # Pile every point onto two nodes only
+    for i, point in enumerate(points):
+        target = nodes[0] if i % 2 == 0 else nodes[-1]
+        neighbor = next(graph.neighbors(target))
+        point._edge = (target, neighbor)
+        point.position = 0.0
+
+    lloyd = Lloyd(
+        points,
+        k=4,
+        update_strategy=MostFrequentNodeUpdate(random_state=0),
+        random_state=0,
+    )
+    centers = lloyd.run(initialization_strategy=RandomInit(), max_iterations=5)
+
+    assert len(centers) == 4
