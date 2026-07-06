@@ -7,12 +7,16 @@ simulated-annealing k-means on the graph. The figure shows the fundamental
 octagon, the data coloured by true mode, and the net coloured by recovered cluster
 with the centroids.
 
-Run: ``python bolza.py`` (writes figures/figure_bolza.{pdf,png}). The net is cached
-in data/ since the intrinsic (quotient-aware) repulsion is the build's bottleneck.
+Run: ``python bolza.py`` (caches results/bolza.pkl, then writes
+figures/figure_bolza.{pdf,png}; ``reproduce.py`` runs it as its Part 4). The net
+is cached in data/ since the intrinsic (quotient-aware) repulsion is the build's
+bottleneck. The experiment is a qualitative illustration: one documented seed,
+with every random stream derived from the shared structured entropy.
 """
 
 import _env  # noqa: F401  -- pins BLAS threads; must precede numpy
 import os
+import pickle
 
 import numpy as np
 import matplotlib
@@ -21,13 +25,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.metrics import adjusted_rand_score
 
-from kmeanssa_ng import (
-    create_bolza_surface,
-    SimulatedAnnealing,
-    KMeansPlusPlus,
-    MinimizeEnergy,
-    QGPoint,
-)
+from kmeanssa_ng import create_bolza_surface, QGPoint
 from kmeanssa_ng.riemannian_manifold import (
     RepulsionNet,
     build_epsilon_net_graph,
@@ -35,15 +33,20 @@ from kmeanssa_ng.riemannian_manifold import (
 )
 from kmeanssa_ng.riemannian_manifold import bolza as bz
 
+from multistart import annealings
+
 N_NET = 400  # epsilon-net points
 N_ITER = 120  # repulsion relaxation steps
 K = 3  # clusters
 N_DATA = 900  # observations
+BETA0 = 0.5  # drift strength
+STEP_SIZE = 0.05  # SDE time-discretization step
 SIGMA = 0.22  # blob spread, as a hyperbolic-distance scale (surface diameter ~2.09)
 # Three well-separated modes inside the fundamental octagon.
 MODES = np.array([0.45 * np.exp(1j * (0.4 + t * 2 * np.pi / 3)) for t in range(K)])
 COLORS = np.array(["#e41a1c", "#377eb8", "#4daf4a", "#984ea3"])
 NET_CACHE = "data/bolza_net_{n}.npy"
+PKL = "results/bolza.pkl"
 
 
 # --------------------------------------------------------------------------- #
@@ -70,11 +73,11 @@ def nearest_node(points, targets):
 # --------------------------------------------------------------------------- #
 # Data: three hyperbolic-Gaussian blobs on the surface
 # --------------------------------------------------------------------------- #
-def generate_data(surface, rng):
+def generate_data(surface, rng, n_data):
     """Three isotropic hyperbolic-Gaussian blobs, one per mode."""
-    labels = rng.integers(0, K, N_DATA)
+    labels = rng.integers(0, K, n_data)
     base = MODES[labels]
-    g = rng.standard_normal(N_DATA) + 1j * rng.standard_normal(N_DATA)
+    g = rng.standard_normal(n_data) + 1j * rng.standard_normal(n_data)
     # Ambient tangent whose conformal (hyperbolic) norm is SIGMA*|g|: scaling by
     # (1 - |base|^2) / 2 measures the spread in hyperbolic distance, independent of
     # where the mode sits in the disk.
@@ -86,27 +89,29 @@ def generate_data(surface, rng):
 # --------------------------------------------------------------------------- #
 # Simulated annealing on the graph (multi-start, keep the lowest energy)
 # --------------------------------------------------------------------------- #
-def cluster(qg, data_nodes, n_runs, rng):
+def cluster(qg, data_nodes, n_runs, seed):
+    """Multi-start SA on the net graph; return the lowest-energy partition.
+
+    The reference measure is the empirical node measure of the observations
+    (set on ``nb_obs`` for the annealer, and used as the selection weights),
+    as in the sphere experiment.
+    """
+    nu = np.bincount(data_nodes, minlength=qg.number_of_nodes()).astype(float)
+    nu /= nu.sum()
+    for v, w in zip(qg.nodes(), nu):
+        qg.nodes[v]["nb_obs"] = float(w)
     nbr = {v: next(iter(qg.neighbors(v))) for v in qg.nodes()}
     obs = [QGPoint(qg, (int(v), nbr[int(v)]), 0) for v in data_nodes]
-    best_centers, best_energy = None, np.inf
-    for _ in range(n_runs):
-        sa = SimulatedAnnealing(
-            obs,
-            k=K,
-            lambda0=1.0,
-            beta0=0.5,
-            step_size=0.05,
-            energy_mode="obs",
-            random_state=int(rng.integers(1 << 30)),
-        )
-        centers = sa.run(KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1)
-        energy = sa.calculate_energy(centers)
-        if energy < best_energy:
-            best_centers, best_energy = centers, energy
-    node_label = np.argmin(qg.node_center_distances(best_centers), axis=1)
-    centroids = np.array([c.closest_node() for c in best_centers])
-    return node_label, centroids
+
+    node_labels, energies, centroids = [], [], []
+    for _, centers, _ in annealings(
+        lambda _rng: obs, K, BETA0, n_runs, "bolza", seed, step_size=STEP_SIZE
+    ):
+        node_labels.append(np.argmin(qg.node_center_distances(centers), axis=1))
+        energies.append(qg.node_energy(centers, weights=nu))
+        centroids.append(np.array([c.closest_node() for c in centers]))
+    best = int(np.argmin(energies))
+    return node_labels[best], centroids[best], np.array(energies)
 
 
 # --------------------------------------------------------------------------- #
@@ -233,8 +238,12 @@ def make_figure(net, data, true_labels, data_label, centroids, ari, stem):
     print(f"saved {stem}.{{pdf,png}}", flush=True)
 
 
-def main():
-    rng = np.random.default_rng(42)
+def run(seed=42, n_runs=8, n_data=N_DATA):
+    """Run the Bolza experiment and cache its raw results to ``results/bolza.pkl``.
+
+    The figure is rendered separately (``render``, called by
+    ``make_figures.figure_bolza``), so it is a pure view of these results.
+    """
     surface = create_bolza_surface()
 
     net = build_or_load_net(surface)
@@ -249,17 +258,53 @@ def main():
         flush=True,
     )
 
-    data, true_labels = generate_data(surface, rng)
+    data, true_labels = generate_data(surface, np.random.default_rng(seed), n_data)
     data_nodes = nearest_node(net, data)
-    node_label, centroids = cluster(qg, data_nodes, n_runs=8, rng=rng)
+    node_label, centroids, energies = cluster(qg, data_nodes, n_runs, seed)
     data_label = node_label[data_nodes]
     ari = adjusted_rand_score(true_labels, data_label)
     print(f"[bolza] ARI = {ari:.3f}", flush=True)
 
+    store = {
+        "name": "bolza",
+        "config": {
+            "seed": seed,
+            "n_runs": n_runs,
+            "n_data": n_data,
+            "n_net": N_NET,
+            "sigma": SIGMA,
+            "beta0": BETA0,
+            "step_size": STEP_SIZE,
+        },
+        "net": net,
+        "ell": ell,
+        "data": data,
+        "true_labels": true_labels,
+        "data_label": data_label,
+        "node_label": node_label,
+        "centroids": centroids,
+        "energies": energies,
+        "ari": ari,
+    }
+    os.makedirs("results", exist_ok=True)
+    with open(PKL, "wb") as f:
+        pickle.dump(store, f)
+    print(f"saved {PKL}", flush=True)
+    return store
+
+
+def render(store, stem="figures/figure_bolza"):
+    """Render the partition figure from a cached result store."""
     make_figure(
-        net, data, true_labels, data_label, centroids, ari, "figures/figure_bolza"
+        store["net"],
+        store["data"],
+        store["true_labels"],
+        store["data_label"],
+        store["centroids"],
+        store["ari"],
+        stem,
     )
 
 
 if __name__ == "__main__":
-    main()
+    render(run())

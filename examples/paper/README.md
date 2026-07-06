@@ -18,6 +18,7 @@ toy graph that makes the convergence-rate theorem visible:
 | Stochastic block model | weighted metric graph | k-medoids, spectral |
 | Sphere $\mathbb{S}^2$ | geodesic space via $\varepsilon$-net graph | k-medoids, CLVQ |
 | Rate toy (3-node path) | shallow metric graph | — |
+| Bolza surface (genus 2) | hyperbolic surface via intrinsic $\varepsilon$-net | — (qualitative) |
 
 Figures land in `figures/`, tables in `results/`:
 
@@ -29,6 +30,7 @@ Figures land in `figures/`, tables in `results/`:
 | `figure_4` | `figure_convergence` | energy along the annealing time (auxiliary diagnostic; not necessarily used in the article) |
 | `figure_5` | `figure_rate` | rate-theorem exceedance (log--log) + energy trajectories |
 | `figure_6` | `figure_memory` | memory-augmented estimator (partial / full memory) |
+| `figure_bolza` | `figure_bolza` | Bolza-surface partition (true vs recovered) |
 | `table_performance.csv` | `make_tables` | per-experiment energy/ARI summary |
 | `table_comparison.csv` | `make_tables` | ARI vs baselines (mean$\pm\sigma$, best) |
 | `table_timing.csv` | `make_timing` | per-method per-seed wall time on every experiment (mean$\pm\sigma$) + setup costs ($\varepsilon$-net build, k-medoids distance matrices) |
@@ -42,13 +44,14 @@ calibration.py    temperature calibration: the critical depth c*
 multistart.py     the seeded multi-start SA loop + parallel seed driver
 baselines.py      k-medoids, spectral, CLVQ
 grid.py sbm.py sphere.py   the three benchmarks -> results/*_multi.pkl
-rate_toy.py                rate-theorem toy               -> results/rate.pkl
+rate_toy.py                rate-theorem toy               -> results/rate_toy.pkl
+bolza.py                   Bolza-surface illustration     -> results/bolza.pkl
 make_tables.py    results/*.pkl -> results/table_{performance,comparison}.csv (ARI)
 make_timing.py    results/*.pkl -> results/table_timing.csv (per-method wall time)
-make_figures.py   results/*.pkl -> figures/figure_{1..6}.pdf
+make_figures.py   results/*.pkl -> figures/figure_{1..6,bolza}.pdf
 geomstats_overhead.py  closed-form vs geomstats benchmark -> results/geomstats_overhead.csv
-reproduce.py      regenerate everything in the article (3 parts, see below)
-data/             frozen sphere epsilon-net definition (committed, ~1 MB)
+reproduce.py      regenerate everything in the article (4 parts, see below)
+data/             frozen sphere and Bolza epsilon-net definitions (committed, ~1 MB)
 cache/            its 191 MB pairwise-distance matrix (rebuilt on demand, gitignored)
 ```
 
@@ -67,13 +70,14 @@ python reproduce.py --quick    # seconds-long smoke test of the whole pipeline
 python reproduce.py --seeds 20 # a lighter run (20 seeds instead of 100)
 ```
 
-With no flags, `reproduce.py` runs the article's configuration in its three parts:
+With no flags, `reproduce.py` runs the article's configuration in its four parts:
 **(1)** the rate-theorem toy → figures 5, 6; **(2)** the grid/SBM/sphere benchmarks
 (our method vs baselines) → figures 1--4, the ARI tables and `table_timing.csv`;
-**(3)** the closed-form vs geomstats comparison → `geomstats_overhead.csv`. It uses
-**100 seeds** (42..141) and the full-resolution rate toy (700 runs); the sphere
-experiment dominates the runtime (a few hours sequential), and `--jobs -1` runs
-the independent seeds in parallel for the same results. Individual scripts
+**(3)** the closed-form vs geomstats comparison → `geomstats_overhead.csv`;
+**(4)** the Bolza-surface illustration → `figure_bolza`. It uses **100 seeds**
+(42..141) and the full-resolution rate toy (700 runs); the sphere experiment
+dominates the runtime (a few hours sequential), and `--jobs -1` runs the
+independent seeds in parallel for the same results. Individual scripts
 (`python sphere.py`, etc.) can also be run on their own defaults.
 
 Reproducibility: every experiment is seeded, and BLAS is pinned to one thread, so
