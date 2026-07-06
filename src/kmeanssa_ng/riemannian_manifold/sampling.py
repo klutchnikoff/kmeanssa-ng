@@ -67,10 +67,6 @@ class UniformManifoldSampling(SamplingStrategy):
             else:
                 coords = space.manifold.random_point(n_samples=n)
 
-        # Store observations for energy calculation
-        if n > 0:
-            space.observations = coords if coords.ndim > 1 else coords.reshape(1, -1)
-
         # Create RiemannianPoint objects
         points = []
         for i in range(n):

@@ -91,18 +91,51 @@ class TestQuantumGraph:
         with pytest.raises(ValueError, match="does not exist in graph"):
             graph.get_edge_length(2, 3)
 
-    def test_calculate_energy_with_no_observations(self):
-        """Test energy calculation with how='obs' and no observations."""
-        # Create a minimal graph that has no 'nb_obs' attributes set
+    def test_calculate_energy_with_no_observations_raises(self):
+        """how='obs' without an observation measure fails loudly.
+
+        Regression: it used to return 0.0 for every configuration of centers,
+        silently disabling any energy-based selection.
+        """
         graph = QuantumGraph()
         graph.add_edge(0, 1, length=1.0)
         graph.precomputing()
 
         centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
 
-        # When how="obs" and no nodes have `nb_obs`, total_obs should be 0
+        with pytest.raises(ValueError, match="nb_obs"):
+            graph.calculate_energy(centers, how="obs")
+
+    def test_register_observations_enables_obs_energy(self):
+        """Edge-sampled points can be registered as the observation measure."""
+        from kmeanssa_ng.quantum_graph.sampling import UniformEdgeSampling
+
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 2, length=1.0)
+        graph.precomputing()
+
+        points = graph.sample_points(20, strategy=UniformEdgeSampling(random_state=0))
+        centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
+
+        graph.register_observations(points)
         energy = graph.calculate_energy(centers, how="obs")
-        assert energy == 0.0
+        assert energy > 0
+
+        # Registration replaces the previous measure entirely
+        graph.register_observations([QGPoint(graph, (0, 1), 0.0)])
+        counts = [graph.nodes[n].get("nb_obs", 0) for n in graph.nodes]
+        assert sum(counts) == 1
+
+    def test_invalid_energy_mode_raises(self):
+        """A typo in the energy mode fails instead of silently meaning 'obs'."""
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.precomputing()
+        centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
+
+        with pytest.raises(ValueError, match="uniform"):
+            graph.calculate_energy(centers, how="unifrom")
 
     def test_calculate_energy_numba_obs(self):
         """Test Numba-accelerated energy calculation with how='obs'."""
@@ -116,8 +149,9 @@ class TestQuantumGraph:
 
         centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
 
-        # Calculate with pure Python
-        energy_python = graph.calculate_energy(centers, how="obs")
+        # Calculate with pure Python (calculate_energy itself dispatches to
+        # numba on a precomputed graph, so target the fallback directly)
+        energy_python = graph._calculate_energy_python(centers, how="obs")
 
         # Calculate with Numba
         energy_numba = graph.calculate_energy_numba(centers, how="obs")
@@ -734,7 +768,7 @@ class TestSelfLoopDistances:
         ]
         for how in ("uniform", "obs"):
             assert graph.calculate_energy_numba(centers, how=how) == pytest.approx(
-                graph.calculate_energy(centers, how=how), abs=1e-12
+                graph._calculate_energy_python(centers, how), abs=1e-12
             )
 
     def test_drift_on_loop_direct_arc(self):
@@ -800,6 +834,50 @@ class TestSelfLoopDistances:
                 center.drift(target, rng.uniform())
                 length = graph.get_edge_length(*center.edge)
                 assert 0.0 <= center.position <= length, f"drift step {step}"
+
+
+class TestDistanceCacheInvalidation:
+    """Editing the graph must never leave stale precomputed distances."""
+
+    @staticmethod
+    def _path_graph():
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 2, length=1.0)
+        graph.precomputing()
+        return graph
+
+    def test_add_edge_invalidates_and_recompute_sees_it(self):
+        graph = self._path_graph()
+        assert graph.node_distance(0, 2) == 2.0
+
+        graph.add_edge(0, 2, length=0.5)  # shortcut
+        assert graph._pairwise_nodes_distance_array is None
+        graph.precomputing()
+        assert graph.node_distance(0, 2) == 0.5
+
+    def test_stale_fast_path_refuses_after_edit(self):
+        graph = self._path_graph()
+        center = QGCenter(QGPoint(graph, (0, 1), 0.5))
+        target = QGPoint(graph, (1, 2), 0.5)
+        graph.distances_from_centers([center], target)  # works when precomputed
+
+        graph.add_edge(0, 2, length=0.5)
+        with pytest.raises(ValueError, match="precomputing"):
+            graph.distances_from_centers([center], target)
+
+    def test_new_node_reachable_after_recompute(self):
+        graph = self._path_graph()
+        graph.add_edge(2, 3, length=1.0)
+        graph.precomputing()
+        assert graph.node_distance(0, 3) == 3.0
+
+    def test_diameter_refreshes_after_edit(self):
+        graph = self._path_graph()
+        assert graph.diameter == 2.0
+        graph.add_edge(0, 2, length=0.5)
+        graph.precomputing()
+        assert graph.diameter == 1.0  # the 0-2 shortcut shrinks the diameter
 
 
 class TestGenerators:

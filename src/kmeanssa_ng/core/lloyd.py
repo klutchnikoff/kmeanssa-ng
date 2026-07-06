@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 import numpy as np
 
@@ -9,6 +10,8 @@ if TYPE_CHECKING:
     from .abstract import Center, Point
     from .strategies.initialization import InitializationStrategy
     from .strategies.lloyd_update import LloydUpdateStrategy
+
+logger = logging.getLogger(__name__)
 
 
 class Lloyd:
@@ -88,28 +91,50 @@ class Lloyd:
             # 2. Assignment step
             labels = self.space.assign_clusters(self.points, centers)
 
-            # 3. Update step
+            # 3. Update step: always produce exactly k centers, reseeding any
+            # cluster that came out empty (or whose update failed), so k never
+            # silently shrinks.
             new_centers = []
             for cluster_idx in range(self.k):
                 cluster_points = [
                     p for j, p in enumerate(self.points) if labels[j] == cluster_idx
                 ]
-                if cluster_points:
-                    new_center = self.update_strategy.update(cluster_points, self.space)
-                    if new_center:
-                        new_centers.append(new_center)
-
-            if not new_centers:
-                # This can happen if all points are in one cluster and the update fails
-                # Or if all clusters are empty
-                break
+                new_center = (
+                    self.update_strategy.update(cluster_points, self.space)
+                    if cluster_points
+                    else None
+                )
+                if new_center is None:
+                    new_center = self._reseed_center(centers)
+                    logger.warning(
+                        "Cluster %d is empty; reseeding its center on the point "
+                        "farthest from the current centers.",
+                        cluster_idx,
+                    )
+                new_centers.append(new_center)
 
             centers = new_centers
 
-            # Check for convergence
-            current_energy = self.space.calculate_energy(centers)
+            # Check for convergence on this algorithm's own points (the space
+            # may be shared with other running algorithms).
+            current_energy = self.space.calculate_energy(
+                centers, observations=self.points
+            )
             if abs(last_energy - current_energy) < tolerance:
                 break
             last_energy = current_energy
 
         return centers
+
+    def _reseed_center(self, centers: list[Center]) -> Center:
+        """Center on the point farthest from the current centers.
+
+        The farthest point is the one worst served by the current
+        configuration, so seeding there maximally reduces the energy a lone
+        empty cluster can recover.
+        """
+        farthest = max(
+            self.points,
+            key=lambda p: min(self.space.distance(p, c) for c in centers),
+        )
+        return self.space.center_from_point(farthest)

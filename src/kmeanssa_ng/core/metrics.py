@@ -11,8 +11,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 from sklearn.metrics import (
     adjusted_rand_score,
-    calinski_harabasz_score,
-    davies_bouldin_score,
     normalized_mutual_info_score,
     silhouette_score,
 )
@@ -258,113 +256,6 @@ def normalized_mutual_info(
     return normalized_mutual_info_score(true_labels, predicted_labels)
 
 
-def davies_bouldin(
-    space: Space,
-    points: list[Point],
-    centers: list[Center],
-    labels: np.ndarray | None = None,
-) -> float:
-    """Calculate the Davies-Bouldin index for a clustering.
-
-    The Davies-Bouldin index evaluates cluster separation and compactness.
-    Lower values indicate better clustering (0 is best).
-
-    Args:
-        space: The metric space containing the points.
-        points: List of clustered points.
-        centers: List of cluster centers.
-        labels: Optional pre-computed cluster labels. If None, computed automatically.
-
-    Returns:
-        Davies-Bouldin index (lower is better).
-
-    Example:
-        ```python
-        from kmeanssa_ng.metrics import davies_bouldin
-
-        db = davies_bouldin(graph, points, centers)
-        print(f"Davies-Bouldin: {db:.3f}")
-        # Lower is better (min = 0)
-        ```
-    """
-    if labels is None:
-        labels = compute_labels(space, points, centers)
-
-    # Convert points to feature matrix for sklearn
-    # We use coordinates in embedding space (point positions)
-    # For quantum graphs, we can use edge ID + position as features
-    features = _points_to_features(points)
-
-    return davies_bouldin_score(features, labels)
-
-
-def calinski_harabasz(
-    space: Space,
-    points: list[Point],
-    centers: list[Center],
-    labels: np.ndarray | None = None,
-) -> float:
-    """Calculate the Calinski-Harabasz index (Variance Ratio Criterion).
-
-    This metric evaluates cluster separation. Higher values indicate
-    better-defined clusters.
-
-    Args:
-        space: The metric space containing the points.
-        points: List of clustered points.
-        centers: List of cluster centers.
-        labels: Optional pre-computed cluster labels. If None, computed automatically.
-
-    Returns:
-        Calinski-Harabasz index (higher is better).
-
-    Example:
-        ```python
-        from kmeanssa_ng.metrics import calinski_harabasz
-
-        ch = calinski_harabasz(graph, points, centers)
-        print(f"Calinski-Harabasz: {ch:.3f}")
-        # Higher is better
-        ```
-    """
-    if labels is None:
-        labels = compute_labels(space, points, centers)
-
-    # Convert points to feature matrix
-    features = _points_to_features(points)
-
-    return calinski_harabasz_score(features, labels)
-
-
-def _points_to_features(points: list[Point]) -> np.ndarray:
-    """Convert points to a feature matrix for sklearn metrics.
-
-    For quantum graph points, we use (edge_hash, position) as features.
-    For other point types, we try to extract numeric attributes.
-
-    Args:
-        points: List of points to convert.
-
-    Returns:
-        n×d array of features.
-    """
-    # Try to detect point type
-    if hasattr(points[0], "edge") and hasattr(points[0], "position"):
-        # Quantum graph points: use edge hash and position
-        features = []
-        for point in points:
-            edge_hash = hash(point.edge) % 1000000  # Normalize hash
-            features.append([edge_hash, point.position])
-        return np.array(features)
-    else:
-        # Generic points: try to extract any numeric attributes
-        # This is a fallback - users may need custom feature extraction
-        raise NotImplementedError(
-            "Feature extraction not implemented for this point type. "
-            "Please convert points to features manually before using this metric."
-        )
-
-
 def evaluate_clustering(
     space: Space,
     points: list[Point],
@@ -385,10 +276,12 @@ def evaluate_clustering(
     Returns:
         Dictionary with metric names and scores:
         - 'silhouette': Silhouette score (-1 to 1, higher is better)
-        - 'davies_bouldin': Davies-Bouldin index (≥0, lower is better)
-        - 'calinski_harabasz': Calinski-Harabasz score (≥0, higher is better)
         - 'ari': Adjusted Rand Index (-1 to 1, higher is better) [if true_labels provided]
         - 'nmi': Normalized Mutual Information (0 to 1, higher is better) [if true_labels provided]
+
+        Only metrics defined on the space's own distances are reported.
+        Feature-based indices (Davies-Bouldin, Calinski-Harabasz) need vector
+        coordinates, which points of an arbitrary metric space do not have.
 
     Example:
         ```python
@@ -408,10 +301,6 @@ def evaluate_clustering(
 
     results = {
         "silhouette": silhouette(space, points, centers, predicted_labels),
-        "davies_bouldin": davies_bouldin(space, points, centers, predicted_labels),
-        "calinski_harabasz": calinski_harabasz(
-            space, points, centers, predicted_labels
-        ),
     }
 
     if true_labels is not None:

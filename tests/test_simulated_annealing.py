@@ -194,17 +194,25 @@ class TestSimulatedAnnealing:
                 robust_prop=-0.1,
             )
 
-    def test_calculate_energy_fallback(self):
-        """Test energy calculation."""
-        graph = generate_simple_graph(n_a=3)
-        points = graph.sample_points(20, strategy=UniformNodeSampling())
+    def test_calculate_energy_python_fallback(self):
+        """Without precomputing, the energy falls back to Python distances."""
+        from kmeanssa_ng import QuantumGraph
+
+        graph = QuantumGraph()
+        for u, v in [(0, 1), (1, 2), (2, 3), (3, 0)]:
+            graph.add_edge(u, v, length=1.0)
+        points = graph.sample_points(20, strategy=UniformNodeSampling(random_state=3))
 
         sa = SimulatedAnnealing(points, k=2)
         centers = RandomInit().initialize_centers(sa)
 
-        energy = sa.calculate_energy_fallback(centers, points)
+        assert graph._pairwise_nodes_distance_array is None
+        energy_fallback = sa.calculate_energy(centers)
+        graph.precomputing()
+        energy_numba = sa.calculate_energy(centers)
 
-        assert energy >= 0  # Energy should be non-negative
+        assert energy_fallback >= 0
+        assert abs(energy_fallback - energy_numba) < 1e-9
 
     def test_energy_mode_obs(self):
         """Test that energy_mode='obs' uses the correct energy calculation."""

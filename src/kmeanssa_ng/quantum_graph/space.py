@@ -285,8 +285,24 @@ class QuantumGraph(nx.Graph, Space):
         if precompute and self.number_of_nodes() > 0:
             self.precomputing()
 
+    def _invalidate_distance_cache(self) -> None:
+        """Drop every cache derived from the graph structure.
+
+        Called by the graph mutators so that stale distances are never served
+        after an edit: distance queries then fail loudly (or recompute) until
+        ``precomputing()`` is run again.
+        """
+        self._pairwise_nodes_distance = None
+        self._pairwise_nodes_distance_array = None
+        self._node_to_index = None
+        self._diameter = 0.0
+        self._node_position = None
+
     def add_edge(self, u_for_edge, v_for_edge, **attr) -> None:
         """Add an edge with validation of the length attribute.
+
+        Invalidates the precomputed distance cache: call ``precomputing()``
+        again after editing the graph.
 
         Args:
             u_for_edge: First node.
@@ -318,6 +334,22 @@ class QuantumGraph(nx.Graph, Space):
             )
 
         super().add_edge(u_for_edge, v_for_edge, **attr)
+        self._invalidate_distance_cache()
+
+    def add_node(self, node_for_adding, **attr) -> None:
+        """Add a node; invalidates the precomputed distance cache."""
+        super().add_node(node_for_adding, **attr)
+        self._invalidate_distance_cache()
+
+    def remove_edge(self, u, v) -> None:
+        """Remove an edge; invalidates the precomputed distance cache."""
+        super().remove_edge(u, v)
+        self._invalidate_distance_cache()
+
+    def remove_node(self, n) -> None:
+        """Remove a node; invalidates the precomputed distance cache."""
+        super().remove_node(n)
+        self._invalidate_distance_cache()
 
     @property
     def diameter(self) -> float:
@@ -678,18 +710,66 @@ class QuantumGraph(nx.Graph, Space):
         self,
         centers: list[QGCenter],
         how: str = "uniform",
+        observations: list[QGPoint] | None = None,
     ) -> float:
         """Calculate k-means energy for given centers.
+
+        Dispatches to the Numba kernels when pairwise node distances are
+        precomputed (``precomputing()``), and falls back to pure-Python
+        distance computations otherwise — correct on any graph, just slower.
 
         Args:
             centers: List of cluster centers.
             how: Energy calculation mode:
-                - "uniform": Use uniform distribution over nodes
-                - "obs": Weight by observed point counts at nodes
+                - "uniform": average over nodes with equal weight
+                - "obs": average over nodes weighted by their ``nb_obs`` count
+            observations: Accepted for interface compatibility and ignored:
+                on a quantum graph the observation measure lives on the nodes
+                (``nb_obs``), set by the samplers or by the caller.
 
         Returns:
             Average squared distance to nearest center.
+
+        Raises:
+            ValueError: If ``how`` is not "uniform" or "obs", or if ``how`` is
+                "obs" and no node carries a positive ``nb_obs`` (the energy
+                would silently be 0.0 for every configuration of centers).
         """
+        if how not in ("uniform", "obs"):
+            raise ValueError(f"how must be 'uniform' or 'obs', got {how!r}")
+        if how == "obs" and not any(
+            data.get("nb_obs", 0) > 0 for _, data in self.nodes(data=True)
+        ):
+            raise ValueError(
+                "energy mode 'obs' requires an observation measure on the graph, "
+                "but no node carries a positive 'nb_obs'. Node samplers set it "
+                "when sampling; otherwise call register_observations(points) "
+                "(edge-sampled points in particular are not registered "
+                "automatically)."
+            )
+        if self._pairwise_nodes_distance_array is not None:
+            return self.calculate_energy_numba(centers, how=how)
+        return self._calculate_energy_python(centers, how)
+
+    def register_observations(self, points: list[QGPoint]) -> None:
+        """Set the per-node observation measure ``nb_obs`` from these points.
+
+        Each point counts at its closest node. This **replaces** any previous
+        measure — the measure describes one observation set — so callers
+        combining several samples must register the union explicitly.
+
+        Args:
+            points: The observation points (any points of this graph).
+        """
+        nx.set_node_attributes(self, 0, "nb_obs")
+        counts: dict = {}
+        for point in points:
+            node = point.closest_node()
+            counts[node] = counts.get(node, 0) + 1
+        nx.set_node_attributes(self, counts, "nb_obs")
+
+    def _calculate_energy_python(self, centers: list[QGCenter], how: str) -> float:
+        """Pure-Python energy fallback (no precomputed distances needed)."""
         if how == "uniform":
             energy = 0.0
             for node in self.nodes:

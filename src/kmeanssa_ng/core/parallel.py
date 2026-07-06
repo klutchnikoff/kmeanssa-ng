@@ -20,6 +20,19 @@ if TYPE_CHECKING:
     from .strategies.sampling import SamplingStrategy
 
 
+def _mean_energy(space, centers, points) -> float:
+    """Mean squared distance from ``points`` to their nearest center.
+
+    Evaluated on the run's own sampled observations, whatever the sampling
+    strategy (node- or edge-based), so runs are comparable across strategies.
+    """
+    energy = sum(
+        min(space.distance(center, point) ** 2 for center in centers)
+        for point in points
+    )
+    return energy / len(points)
+
+
 def _run_with_seed(
     space: "Space",
     n_points: int,
@@ -86,7 +99,7 @@ def _run_with_seed(
     )
 
     # Calculate final energy
-    energy = sa.calculate_energy_fallback(centers, observations)
+    energy = _mean_energy(space, centers, observations)
 
     return centers, energy, seed
 

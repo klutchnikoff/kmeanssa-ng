@@ -349,13 +349,11 @@ class TestRobustificationBenchmark:
         Each collect() calls calculate_energy() (Python) with mode='uniform'.
         This test temporarily disables Numba acceleration.
         """
-        # Override energy mode and monkey-patch to use Python version
+        # Override energy mode and hide the precomputed distances: without
+        # them, calculate_energy takes its pure-Python fallback.
         sa_prepared._energy_mode = "uniform"
-        original_method = getattr(sa_prepared.space, "calculate_energy_numba", None)
-
-        # Temporarily replace numba version with None to force Python fallback
-        if original_method is not None:
-            sa_prepared.space.calculate_energy_numba = None
+        saved_array = sa_prepared.space._pairwise_nodes_distance_array
+        sa_prepared.space._pairwise_nodes_distance_array = None
 
         def run_robustification_strategy():
             strategy = MinimizeEnergy()
@@ -370,9 +368,7 @@ class TestRobustificationBenchmark:
             result = benchmark(run_robustification_strategy)
             assert result is not None
         finally:
-            # Restore numba method
-            if original_method is not None:
-                sa_prepared.space.calculate_energy_numba = original_method
+            sa_prepared.space._pairwise_nodes_distance_array = saved_array
 
     def test_benchmark_robustification_minimize_energy_obs_python(
         self, benchmark, sa_prepared_obs
@@ -383,11 +379,10 @@ class TestRobustificationBenchmark:
         Each collect() calls calculate_energy() (Python) with mode='obs'.
         This test temporarily disables Numba acceleration.
         """
-        original_method = getattr(sa_prepared_obs.space, "calculate_energy_numba", None)
-
-        # Temporarily replace numba version with None to force Python fallback
-        if original_method is not None:
-            sa_prepared_obs.space.calculate_energy_numba = None
+        # Hide the precomputed distances: without them, calculate_energy
+        # takes its pure-Python fallback.
+        saved_array = sa_prepared_obs.space._pairwise_nodes_distance_array
+        sa_prepared_obs.space._pairwise_nodes_distance_array = None
 
         def run_robustification_strategy():
             strategy = MinimizeEnergy()
@@ -402,6 +397,4 @@ class TestRobustificationBenchmark:
             result = benchmark(run_robustification_strategy)
             assert result is not None
         finally:
-            # Restore numba method
-            if original_method is not None:
-                sa_prepared_obs.space.calculate_energy_numba = original_method
+            sa_prepared_obs.space._pairwise_nodes_distance_array = saved_array

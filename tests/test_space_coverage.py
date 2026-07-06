@@ -207,15 +207,14 @@ class TestSamplingEdgeCases:
         assert energy >= 0
 
     def test_calculate_energy_obs_no_observations(self):
-        """Test energy calculation with obs weighting but no observations."""
+        """Energy with obs weighting but no observation measure fails loudly."""
         graph = QuantumGraph()
         graph.add_edge(0, 1, length=1.0)
         graph.precomputing()
 
         center = graph.node_as_center(0)
-        energy = graph.calculate_energy([center], how="obs")
-
-        assert energy == 0.0  # No observations
+        with pytest.raises(ValueError, match="nb_obs"):
+            graph.calculate_energy([center], how="obs")
 
     def test_calculate_energy_obs_with_observations(self):
         """Test energy calculation with obs weighting and observations."""
