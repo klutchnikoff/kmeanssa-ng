@@ -375,6 +375,20 @@ class BolzaSurface(RiemannianManifold):
         # The disk chart is 2-dimensional: every ambient vector is already tangent.
         return np.asarray(ambient_vec, dtype=float)
 
+    def random_tangent(
+        self, base_point: np.ndarray, rng: np.random.Generator
+    ) -> np.ndarray:
+        """Metric-isotropic tangent draw on the conformal disk chart.
+
+        The hyperbolic metric is conformal with factor 2/(1 - |z|^2), so
+        scaling an ambient Gaussian by (1 - |z|^2)/2 yields a vector whose
+        components are standard normal in an orthonormal frame of the metric
+        -- the same Brownian law at every point of the surface.
+        """
+        gaussian = rng.standard_normal(self.shape)
+        z = _to_complex(np.asarray(base_point, dtype=float))
+        return gaussian * (1.0 - np.abs(z) ** 2) / 2.0
+
     def embed(self, points: np.ndarray) -> np.ndarray:
         """Not available: the quotient has no faithful Euclidean embedding.
 

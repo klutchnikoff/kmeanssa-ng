@@ -21,7 +21,7 @@ from .graph import (
 )
 from .point import RiemannianPoint
 from .space import RiemannianManifold, Sphere
-from .update import FrechetMeanUpdate
+from .update import KarcherFrechetMean
 
 __all__ = [
     "RiemannianManifold",
@@ -32,7 +32,7 @@ __all__ = [
     "create_sphere",
     "create_hyperbolic_space",
     "create_bolza_surface",
-    "FrechetMeanUpdate",
+    "KarcherFrechetMean",
     "EpsilonNetStrategy",
     "UniformNet",
     "RepulsionNet",

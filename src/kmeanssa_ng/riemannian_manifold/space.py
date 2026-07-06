@@ -103,6 +103,37 @@ class RiemannianManifold(Space):
         """Project an ambient vector onto the tangent space at ``base_point``."""
         return np.asarray(self.manifold.to_tangent(ambient_vec, base_point))
 
+    def random_tangent(
+        self, base_point: np.ndarray, rng: np.random.Generator
+    ) -> np.ndarray:
+        """Tangent vector with iid standard-normal components in an
+        orthonormal basis of the metric at ``base_point``.
+
+        This is the Brownian direction of the annealing: drawing it in a
+        metric-orthonormal frame is what makes the exploration isotropic and
+        its law identical at every point. On a hypersphere the ambient
+        Euclidean frame is orthonormal for the induced metric, so projecting
+        an ambient Gaussian is exact. For a general metric it is **not**
+        (on a conformal chart the ambient draw is up to several times longer
+        near the boundary than at the center), so spaces without a known
+        orthonormal frame refuse rather than silently bias the dynamics.
+
+        Raises:
+            NotImplementedError: If no metric-isotropic draw is implemented
+                for this manifold. Override this method with a draw in an
+                orthonormal frame of the metric.
+        """
+        if self.is_sphere:
+            ambient = rng.standard_normal(self.shape)
+            return self.to_tangent(base_point, ambient)
+        raise NotImplementedError(
+            "random_tangent (the metric-isotropic Brownian direction) is not "
+            f"implemented for {type(self.manifold).__name__}: an ambient "
+            "Gaussian is not isotropic for a general Riemannian metric and "
+            "would silently bias the annealing. Override random_tangent with "
+            "a draw in an orthonormal frame of the metric."
+        )
+
     @property
     def shape(self) -> tuple:
         """Ambient shape of a single point on the manifold."""

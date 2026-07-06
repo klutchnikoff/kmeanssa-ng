@@ -6,7 +6,7 @@ import numpy as np
 from kmeanssa_ng import (
     QGPoint,
     RiemannianManifold,
-    FrechetMeanUpdate,
+    KarcherFrechetMean,
     RiemannianPoint,
     QuantumGraph,
     MostFrequentNodeUpdate,
@@ -36,12 +36,12 @@ class TestMostFrequentNodeUpdate:
             strategy.update(points, graph)
 
 
-class TestFrechetMeanUpdate:
+class TestKarcherFrechetMean:
     def test_update_with_empty_points(self):
         """Test that update with empty points list returns None."""
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
-        strategy = FrechetMeanUpdate()
+        strategy = KarcherFrechetMean()
         center = strategy.update([], space)
         assert center is None
 
@@ -52,7 +52,7 @@ class TestFrechetMeanUpdate:
         graph = generate_simple_graph()
         graph.add_edge("A0", "A1", length=1.0)
         points = [QGPoint(graph, ("A0", "A1"), 0.5)]
-        strategy = FrechetMeanUpdate()
+        strategy = KarcherFrechetMean()
         with pytest.raises(TypeError):
             strategy.update(points, space)
 
@@ -120,12 +120,17 @@ class TestSimulatedAnnealingFrechetMean:
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
 
-        # Create a cluster of points close to the north pole ([0, 0, 1])
+        # Create a cluster of points close to the north pole ([0, 0, 1]);
+        # points must lie exactly on the sphere (membership is validated)
+        def unit(v):
+            v = np.asarray(v, dtype=float)
+            return v / np.linalg.norm(v)
+
         points = [
-            RiemannianPoint(space, np.array([0.1, 0, 0.995])),
-            RiemannianPoint(space, np.array([-0.1, 0, 0.995])),
-            RiemannianPoint(space, np.array([0, 0.1, 0.995])),
-            RiemannianPoint(space, np.array([0, -0.1, 0.995])),
+            RiemannianPoint(space, unit([0.1, 0, 0.995])),
+            RiemannianPoint(space, unit([-0.1, 0, 0.995])),
+            RiemannianPoint(space, unit([0, 0.1, 0.995])),
+            RiemannianPoint(space, unit([0, -0.1, 0.995])),
             RiemannianPoint(space, np.array([0, 0, 1.0])),
         ]
 
@@ -134,7 +139,9 @@ class TestSimulatedAnnealingFrechetMean:
 
         # 2. Run strategy
         # Use a small number of samples for a fast test
-        strategy = SimulatedAnnealingFrechetMean(n_samples=20, lambda0=0.5, beta0=3.0)
+        strategy = SimulatedAnnealingFrechetMean(
+            n_samples=20, lambda0=0.5, beta0=3.0, random_state=0
+        )
         new_center = strategy.update(points, space)
 
         # 3. Assert result

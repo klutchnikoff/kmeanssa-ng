@@ -80,7 +80,7 @@ from .riemannian_manifold import (
     create_sphere,
     create_hyperbolic_space,
     create_bolza_surface,
-    FrechetMeanUpdate,
+    KarcherFrechetMean,
     EpsilonNetStrategy,
     UniformNet,
     RepulsionNet,
@@ -118,7 +118,7 @@ __all__ = [
     "MostFrequentNode",
     "MostFrequentNodeUpdate",
     "MinimizeEnergyNodeUpdate",
-    "FrechetMeanUpdate",
+    "KarcherFrechetMean",
     # Quantum graph classes
     "QGPoint",
     "QGCenter",

@@ -19,10 +19,9 @@ class UniformManifoldSampling(SamplingStrategy):
     """Uniform sampling with respect to the Riemannian volume measure.
 
     This strategy samples points uniformly from the manifold using the
-    natural volume measure induced by the Riemannian metric.
-
-    For standard manifolds (sphere, hyperbolic space, etc.), this uses
-    the geomstats library's built-in uniform sampling methods.
+    natural volume measure induced by the Riemannian metric, through the
+    space's own generator-driven sampler (``random_uniform``), so results
+    are reproducible from ``random_state``.
 
     Example:
         ```python
@@ -38,9 +37,12 @@ class UniformManifoldSampling(SamplingStrategy):
         ```
 
     Note:
-        The actual sampling implementation depends on the geomstats library
-        and the specific manifold being used. Most standard manifolds provide
-        efficient uniform sampling methods.
+        Only spaces implementing ``random_uniform`` support this strategy
+        (hyperspheres, the Bolza surface). Others raise
+        ``NotImplementedError``: uniform-in-volume does not exist on
+        non-compact manifolds such as hyperbolic space, and geomstats'
+        samplers draw from the global RNG, which would break
+        reproducibility.
     """
 
     def sample(self, space: "RiemannianManifold", n: int) -> list["RiemannianPoint"]:
@@ -52,20 +54,20 @@ class UniformManifoldSampling(SamplingStrategy):
 
         Returns:
             List of n points sampled uniformly using the volume measure.
+
+        Raises:
+            NotImplementedError: If the space has no generator-driven
+                uniform sampler.
         """
         rng = self._get_rng()
         # Draw through the space's own generator-driven sampler so that
-        # ``random_state`` is honoured. geomstats' manifold.random_uniform /
-        # random_point draw from the global numpy RNG and take no seed.
-        try:
-            coords = space.random_uniform(n, rng)
-        except NotImplementedError:
-            # No generator-driven uniform sampler for this manifold yet: fall back
-            # to geomstats, which draws from the global RNG (not reproducible).
-            if hasattr(space.manifold, "random_uniform"):
-                coords = space.manifold.random_uniform(n_samples=n)
-            else:
-                coords = space.manifold.random_point(n_samples=n)
+        # ``random_state`` is honoured. There is deliberately no geomstats
+        # fallback: manifold.random_uniform/random_point draw from the global
+        # numpy RNG (unseedable per run, hence non-reproducible), and uniform-
+        # in-volume does not even exist on non-compact manifolds such as
+        # hyperbolic space. Spaces without a generator-driven uniform sampler
+        # raise NotImplementedError here.
+        coords = space.random_uniform(n, rng)
 
         # Create RiemannianPoint objects
         points = []
