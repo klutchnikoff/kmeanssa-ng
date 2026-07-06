@@ -34,13 +34,21 @@ class SimulatedAnnealing:
 
     Example:
         ```python
-        # Create observations and space
-        space = QuantumGraph(...)
-        points = space.sample_points(100)
+        from kmeanssa_ng import (
+            KMeansPlusPlus,
+            MinimizeEnergy,
+            SimulatedAnnealing,
+            generate_simple_graph,
+        )
+        from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
+
+        # Create a space and sample observations
+        graph = generate_simple_graph()
+        points = graph.sample_points(100, strategy=UniformNodeSampling(random_state=0))
 
         # Run simulated annealing with the interleaved algorithm
-        sa = SimulatedAnnealing(points, k=5)
-        centers = sa.run(robust_prop=0.1)
+        sa = SimulatedAnnealing(points, k=5, random_state=0)
+        centers = sa.run(KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1)
         ```
     """
 
@@ -59,22 +67,24 @@ class SimulatedAnnealing:
         Args:
             observations: List of points to cluster, all in the same metric space.
             k: Number of clusters.
-            lambda0: Initial Brownian motion intensity parameter (must be > 0).
-                Controls the magnitude of random exploration.
+            lambda0: Intensity scale of the Poisson observation clock (must be > 0).
 
-                Mathematical role: Scales the diffusion coefficient in the
-                Brownian motion component. The standard deviation of each
-                Brownian step is proportional to lambda0 * sqrt(step_size).
+                Mathematical role: the annealing processes one observation per
+                arrival of an inhomogeneous Poisson process whose rate grows
+                proportionally to lambda0 * (1 + t). It does **not** scale the
+                Brownian steps themselves (each micro-step has standard
+                deviation sqrt(step_size), independent of lambda0).
 
                 Practical effect:
-                - Higher values (1.5-3.0): More exploration, slower convergence,
-                  better escape from local minima
-                - Lower values (0.3-0.8): Less exploration, faster convergence,
-                  higher risk of local minima
-                - Recommended default: 1.0 for balanced exploration/exploitation
+                - Higher values: arrivals come faster, so the same number of
+                  observations spans a shorter annealing horizon (less
+                  Brownian exploration per observation)
+                - Lower values: longer horizon, more exploration between
+                  observation events
+                - Recommended default: 1.0
 
                 See the companion paper (References) for the derivation of the
-                diffusion dynamics.
+                time schedule.
 
             beta0: Initial drift intensity parameter (must be > 0).
                 Controls how strongly centers are pulled toward observations.
@@ -176,6 +186,10 @@ class SimulatedAnnealing:
         self._validate_constructor_parameters(
             observations, k, lambda0, beta0, step_size
         )
+        if energy_mode not in ("uniform", "obs"):
+            raise ValueError(
+                f"energy_mode must be 'uniform' or 'obs', got {energy_mode!r}"
+            )
         self._initialize_random_generator(random_state)
 
         self._space = observations[0].space
@@ -360,8 +374,7 @@ class SimulatedAnnealing:
         # Seed each center's RNG from the SA's generator so that all stochastic moves
         # (Brownian step size and vertex routing) are reproducible from random_state.
         for _center in self._centers:
-            if hasattr(_center, "_rng"):
-                _center._rng = self._rng
+            _center.seed_rng(self._rng)
 
         robustification_strategy.initialize(self)
         strategy = robustification_strategy

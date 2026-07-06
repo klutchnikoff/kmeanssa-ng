@@ -10,6 +10,12 @@ on arbitrary metric spaces. The design follows a clear separation of concerns:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import numpy as np
+
+    from .strategies.sampling import SamplingStrategy
 
 
 class Point(ABC):
@@ -62,6 +68,18 @@ class Center(Point):
         """
         raise NotImplementedError
 
+    def seed_rng(self, rng: np.random.Generator) -> None:
+        """Adopt the algorithm's random generator.
+
+        ``SimulatedAnnealing`` seeds every center it drives so that all
+        stochastic moves (Brownian steps, tie-breaking in vertex routing)
+        draw from one reproducible stream. The default stores the generator
+        on ``self._rng``, the attribute the built-in centers read; a center
+        with its own noise source must override this method to honor it,
+        otherwise its randomness escapes ``random_state`` control.
+        """
+        self._rng = rng
+
 
 class Space(ABC):
     """Abstract base class for metric spaces.
@@ -85,7 +103,7 @@ class Space(ABC):
         """
         raise NotImplementedError
 
-    def sample_points(self, n: int, strategy) -> list[Point]:
+    def sample_points(self, n: int, strategy: SamplingStrategy) -> list[Point]:
         """Sample n points using the specified sampling strategy.
 
         Args:
@@ -166,7 +184,9 @@ class Space(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def distances_from_centers(self, centers: list[Center], target: Point):
+    def distances_from_centers(
+        self, centers: list[Center], target: Point
+    ) -> np.ndarray:
         """Compute distances from multiple centers to a single target point.
 
         This method is used by the simulated annealing algorithm to efficiently

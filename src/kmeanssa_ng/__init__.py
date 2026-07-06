@@ -10,17 +10,23 @@ The main algorithm is simulated annealing, which combines:
 
 Example:
     ```python
-    from kmeanssa_ng import generate_sbm, SimulatedAnnealing
+    from kmeanssa_ng import (
+        KMeansPlusPlus,
+        MinimizeEnergy,
+        SimulatedAnnealing,
+        generate_sbm,
+    )
+    from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 
     # Create a quantum graph
     graph = generate_sbm(sizes=[50, 50], p=[[0.7, 0.1], [0.1, 0.7]])
 
     # Sample points
-    points = graph.sample_points(100)
+    points = graph.sample_points(100, strategy=UniformNodeSampling(random_state=0))
 
     # Run simulated annealing
-    sa = SimulatedAnnealing(points, k=2)
-    centers = sa.run(robust_prop=0.1, initialization="kpp")
+    sa = SimulatedAnnealing(points, k=2, random_state=0)
+    centers = sa.run(KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1)
     ```
 """
 
