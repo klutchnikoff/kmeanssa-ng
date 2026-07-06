@@ -1,8 +1,8 @@
-"""Rebuild the three partition figures from saved data and reproducible re-runs.
+"""Rebuild every figure from the saved experiment pickles.
 
-Sphere: plotted directly from results/sphere_multi.pkl. Grid and SBM: the
-lowest-energy SA run of seed 42 is regenerated (same seeding as the experiments),
-giving the node labels and centroids of the partition plot.
+All partitions are read from the experiment results (the lowest-energy SA run
+of the tracked seed), never regenerated: the figures show exactly the runs the
+tables select from.
 
   figures/figure_{1,2,3}.{pdf,png}
 """
@@ -16,29 +16,25 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-from kmeanssa_ng import QGPoint  # noqa: E402
-from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling  # noqa: E402
-
 import grid  # noqa: E402
 import sbm  # noqa: E402
-from multistart import annealings  # noqa: E402
 
 SEED = 42
 CMAP = plt.cm.coolwarm
 
 
-def _lowest_energy_run(graph, observations_for, b, n_runs, seed, energy_of):
-    """Return (node_labels, centroid_nodes) of the lowest-energy run over n_runs."""
-    best_energy, best = np.inf, None
-    for _, centers, sa in annealings(observations_for, 2, b, n_runs, seed + 100):
-        energy = energy_of(sa, centers)
-        if energy < best_energy:
-            best_energy = energy
-            best = (
-                np.argmin(graph.node_center_distances(centers), axis=1),
-                [c.closest_node() for c in centers],
-            )
-    return best
+def _selected_sa_run(store, method):
+    """Return the SA record of ``method`` for the reference seed.
+
+    Refuses to plot when the pickle does not contain the reference seed: it
+    then comes from another campaign than the article's.
+    """
+    if SEED not in store["per_seed"]:
+        raise SystemExit(
+            f"results pickle has seeds {sorted(store['per_seed'])}, not the "
+            f"reference seed {SEED}: rerun the experiment (see reproduce.py)"
+        )
+    return store["per_seed"][SEED]["methods"][method]
 
 
 def _draw_partition(graph, pos, panels, node_size, width, centroid_nodes, path):
@@ -76,20 +72,13 @@ def _draw_partition(graph, pos, panels, node_size, width, centroid_nodes, path):
 
 
 def figure_grid():
-    space = grid.build_space()
+    store = pickle.load(open("results/grid_multi.pkl", "rb"))
+    method = _selected_sa_run(store, "SA")
+    best = int(np.argmin(method["energies"]))
+    lab, cent = method["node_labels"][best], method["centroids"][best]
+
+    space = grid.build_space()  # deterministic; layout and densities only
     graph, nodes, nu = space.graph, space.nodes, space.nu
-    _, data_nodes, obs_idx = grid.sample_data(
-        SEED, space.densities, len(nodes), 1000, 1000
-    )
-    obs = [QGPoint(graph, (nodes[v], space.neighbour[nodes[v]]), 0) for v in obs_idx]
-    lab, cent = _lowest_energy_run(
-        graph,
-        lambda _rng: obs,
-        space.b,
-        30,
-        SEED,
-        energy_of=lambda sa, centers: graph.node_energy(centers, weights=nu),
-    )
     dominant = (space.densities[1] > space.densities[0]).astype(int)
     pos = {node: node for node in nodes}
     sizes = [nu[i] * 9000 + 40 for i in range(len(nodes))]
@@ -109,18 +98,13 @@ def figure_grid():
 
 
 def figure_sbm():
-    space = sbm.build_space(SEED)
+    store = pickle.load(open("results/sbm_multi.pkl", "rb"))
+    method = _selected_sa_run(store, "SA")
+    best = int(np.argmin(method["energies"]))
+    lab, cent = method["labels"][best], method["centroids"][best]
+
+    space = sbm.build_space(SEED)  # deterministic in the seed; layout only
     graph, true = space.graph, space.true_labels
-    lab, cent = _lowest_energy_run(
-        graph,
-        lambda rng: graph.sample_points(
-            100, strategy=UniformNodeSampling(random_state=rng)
-        ),
-        space.b,
-        50,
-        SEED,
-        energy_of=lambda sa, centers: sa.calculate_energy(centers),
-    )
     pos = nx.spring_layout(graph, seed=SEED)
     _draw_partition(
         graph,
@@ -139,9 +123,9 @@ def figure_sbm():
 
 def figure_sphere():
     store = pickle.load(open("results/sphere_multi.pkl", "rb"))
+    method = _selected_sa_run(store, "SA-graph")
     sres = store["per_seed"][SEED]
     data, dtrue = sres["data"], sres["dtrue"]
-    method = sres["methods"]["SA-graph"]
     lab = method["labels"][int(np.argmin(method["energies"]))]
 
     def sphere_bg(axis):

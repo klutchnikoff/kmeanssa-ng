@@ -61,17 +61,18 @@ def _kmedoids_once(D2, weights, k, rng, max_iter=100):
     return labels, energy
 
 
-def weighted_kmedoids(D, weights, k, n_runs, base_seed):
+def weighted_kmedoids(D, weights, k, n_runs, entropy):
     """Multi-start weighted k-medoids on distance matrix D (N x N), node weights (N,).
 
     Returns (labels_per_run, energies). Minimizes sum_v weights[v] * min_i D[v, m_i]^2,
     i.e. the discrete k-means energy with centroids in the vertex set.
+    ``entropy`` is a ``SeedSequence``; each run draws from one of its children.
     """
     D2 = np.asarray(D, dtype=float) ** 2
     weights = np.asarray(weights, dtype=float)
     labels_per_run, energies = [], []
-    for r in range(n_runs):
-        rng = np.random.default_rng(base_seed + r)
+    for child in entropy.spawn(n_runs):
+        rng = np.random.default_rng(child)
         labels, energy = _kmedoids_once(D2, weights, k, rng)
         labels_per_run.append(labels)
         energies.append(energy)
@@ -81,20 +82,22 @@ def weighted_kmedoids(D, weights, k, n_runs, base_seed):
 # --------------------------------------------------------------------------------------
 # Spectral clustering on a precomputed affinity
 # --------------------------------------------------------------------------------------
-def spectral_baseline(affinity, k, n_runs, base_seed):
+def spectral_baseline(affinity, k, n_runs, entropy):
     """SpectralClustering on a precomputed affinity (similarity) matrix.
 
     Returns (labels_per_run, None). Randomness comes from the final k-means on the
-    spectral embedding; we restart n_runs times with distinct seeds.
+    spectral embedding; we restart n_runs times with distinct seeds. ``entropy``
+    is a ``SeedSequence``; scikit-learn only takes integer seeds, so each run
+    uses one 32-bit state word drawn from a child.
     """
     affinity = np.asarray(affinity, dtype=float)
     labels_per_run = []
-    for r in range(n_runs):
+    for child in entropy.spawn(n_runs):
         sc = SpectralClustering(
             n_clusters=k,
             affinity="precomputed",
             assign_labels="kmeans",
-            random_state=base_seed + r,
+            random_state=int(child.generate_state(1)[0]),
         )
         labels_per_run.append(sc.fit_predict(affinity))
     return labels_per_run, None
@@ -167,16 +170,17 @@ def _sphere_geodesic_dist_centroids(centroids, z):
     return np.arccos(np.clip(centroids @ z, -1.0, 1.0))
 
 
-def clvq_sphere(node_coords, k, n_runs, base_seed, n_epochs=10, gamma0=1.0, decay=0.6):
+def clvq_sphere(node_coords, k, n_runs, entropy, n_epochs=10, gamma0=1.0, decay=0.6):
     """Multi-start CLVQ on S^2. Streams uniformly-sampled nodes (n_epochs passes).
 
     Returns (labels_per_run, energies). `node_coords` is (N, 3) unit vectors.
+    ``entropy`` is a ``SeedSequence``; each run draws from one of its children.
     """
     node_coords = np.asarray(node_coords, dtype=float)
     n = node_coords.shape[0]
     labels_per_run, energies = [], []
-    for r in range(n_runs):
-        rng = np.random.default_rng(base_seed + r)
+    for child in entropy.spawn(n_runs):
+        rng = np.random.default_rng(child)
         stream = rng.integers(0, n, size=n_epochs * n)  # uniform on nodes, like nu
         labels, energy = _clvq_once(
             node_coords, stream, k, rng, gamma0=gamma0, decay=decay

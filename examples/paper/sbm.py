@@ -13,7 +13,13 @@ from kmeanssa_ng import generate_random_sbm
 from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 import baselines as B
 from calibration import potential_matrix, critical_depth
-from multistart import annealings, methods_from_raw, summarize, run_seeds
+from multistart import (
+    annealings,
+    method_entropy,
+    methods_from_raw,
+    summarize,
+    run_seeds,
+)
 
 PKL = "results/sbm_multi.pkl"
 
@@ -54,48 +60,76 @@ def build_space(seed):
 def run_seed(space, seed, n_runs, track):
     """Multi-start SA plus baselines for one seed; return (methods, timings, conv)."""
     graph = space.graph
+
+    def observations_for(rng):
+        obs = graph.sample_points(100, strategy=UniformNodeSampling(random_state=rng))
+        # The sampler stamps this run's empirical counts on nb_obs; reset to the
+        # population measure (nu, uniform) so every run and every seed evaluates
+        # the same energy functional, as in the grid and sphere experiments.
+        for node in graph.nodes:
+            graph.nodes[node]["nb_obs"] = 1.0
+        return obs
+
     timings = {"k-medoids matrix": space.dist_build_s}  # built per seed in build_space
     t = time.perf_counter()
-    labels, energies, convergence = [], [], None
+    labels, energies, centroids, convergence = [], [], [], None
     for r, centers, sa in annealings(
-        lambda rng: graph.sample_points(
-            100, strategy=UniformNodeSampling(random_state=rng)
-        ),
+        observations_for,
         2,
         space.b,
         n_runs,
-        seed + 100,
+        "sbm",
+        seed,
         track_first=track,
     ):
         if track and r == 0:
             convergence = {"time": sa.time_history, "energy": sa.energy_history}
         labels.append(np.argmin(graph.node_center_distances(centers), axis=1))
-        energies.append(sa.calculate_energy(centers))
+        energies.append(graph.node_energy(centers, weights=space.nu))
+        # Centroid nodes, so the partition figure is rebuilt from this pickle
+        # instead of re-running the annealer.
+        centroids.append([c.closest_node() for c in centers])
     timings["SA"] = time.perf_counter() - t
     raw = {"SA": (labels, np.array(energies))}
 
     t = time.perf_counter()
-    lk, ek = B.weighted_kmedoids(space.distances, space.nu, 2, n_runs, seed + 2000)
+    lk, ek = B.weighted_kmedoids(
+        space.distances, space.nu, 2, n_runs, method_entropy("sbm", seed, "k-medoids")
+    )
     timings["k-medoids"] = time.perf_counter() - t
     raw["k-medoids"] = (lk, ek)
     t = time.perf_counter()
     adjacency = nx.to_numpy_array(graph, nodelist=space.nodes, weight=None)
-    ls, _ = B.spectral_baseline(adjacency, 2, 20, seed + 2000)
+    ls, _ = B.spectral_baseline(
+        adjacency, 2, n_runs, method_entropy("sbm", seed, "spectral")
+    )
     timings["spectral"] = time.perf_counter() - t
     raw["spectral"] = (ls, None)
-    return methods_from_raw(raw, space.true_labels), timings, convergence
+    methods = methods_from_raw(raw, space.true_labels)
+    methods["SA"]["centroids"] = centroids
+    return methods, timings, convergence
 
 
 def run(seeds=(42, 43, 44, 45, 46), n_runs=50, n_jobs=1):
+    config = {"n_runs": n_runs}
+
     def fn(i, seed):
         space = build_space(seed)
         methods, timings, conv = run_seed(space, seed, n_runs, track=(i == 0))
         return {"methods": methods, "timings": timings}, conv
 
-    per_seed, convergence = run_seeds(seeds, fn, n_jobs=n_jobs, tag="sbm")
+    per_seed, convergence = run_seeds(
+        seeds,
+        fn,
+        n_jobs=n_jobs,
+        tag="sbm",
+        checkpoint_dir="results/checkpoints/sbm",
+        config=config,
+    )
 
     store = {
         "name": "sbm",
+        "config": config,
         "n_runs": n_runs,
         "seeds": list(seeds),
         "n_jobs": n_jobs,

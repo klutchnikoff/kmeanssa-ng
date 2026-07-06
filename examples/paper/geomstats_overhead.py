@@ -33,7 +33,7 @@ from kmeanssa_ng.core.metrics import compute_labels, adjusted_rand_index
 
 import sphere as S
 import baselines as B
-from multistart import annealings
+from multistart import annealings, method_entropy
 
 
 class NaiveSphere(RiemannianManifold):
@@ -62,21 +62,26 @@ def _sa_manifold(manifold, data, dtrue, n_obs, b, n_runs, seed):
         idx = rng.integers(0, n, size=n_obs)
         return [RiemannianPoint(manifold, data[i]) for i in idx]
 
+    # The closed-form and naive spheres share the same entropy on purpose:
+    # identical streams mean identical trajectories, so the timing ratio
+    # isolates the cost of the geometry backend.
     labels = [
         np.array(compute_labels(manifold, all_points, centers))
-        for _, centers, _ in annealings(obs_for, 3, b, n_runs, seed + 300)
+        for _, centers, _ in annealings(
+            obs_for, 3, b, n_runs, "overhead", seed, method="sa-manifold"
+        )
     ]
     return _best_ari(labels, dtrue)
 
 
 def _clvq_naive(
-    data, dtrue, manifold, n_runs, seed, n_epochs=10, gamma0=1.0, decay=0.6
+    data, dtrue, manifold, n_runs, entropy, n_epochs=10, gamma0=1.0, decay=0.6
 ):
     """CLVQ with every geometric quantity (distance, log, exp) via geomstats."""
     n = len(data)
     best = []
-    for r in range(n_runs):
-        rng = np.random.default_rng(seed + r)
+    for child in entropy.spawn(n_runs):
+        rng = np.random.default_rng(child)
         stream = rng.integers(0, n, size=n_epochs * n)
         c = data[rng.choice(n, size=3, replace=False)].astype(float).copy()
         for t, idx in enumerate(stream):
@@ -126,15 +131,25 @@ def main(seed=42, n_data=2000, n_obs=2000, n_net=5000, n_runs=3, b=0.2):
     t["SA-naive"], a["SA-naive"] = _timed(
         lambda: _sa_manifold(naive, data, dtrue, n_obs, b, n_runs, seed)
     )
+    # CLVQ and CLVQ-naive share the same entropy on purpose (identical streams,
+    # so the ratio isolates the geometry backend).
     t["CLVQ"], a["CLVQ"] = _timed(
-        lambda: _best_ari(B.clvq_sphere(data, 3, n_runs, seed + 300)[0], dtrue)
+        lambda: _best_ari(
+            B.clvq_sphere(data, 3, n_runs, method_entropy("overhead", seed, "clvq"))[0],
+            dtrue,
+        )
     )
     t["CLVQ-naive"], a["CLVQ-naive"] = _timed(
-        lambda: _clvq_naive(data, dtrue, naive, n_runs, seed + 300)
+        lambda: _clvq_naive(
+            data, dtrue, naive, n_runs, method_entropy("overhead", seed, "clvq")
+        )
     )
     t["k-medoids"], a["k-medoids"] = _timed(
         lambda: _best_ari(
-            B.weighted_kmedoids(geodesic, w, 3, n_runs, seed + 300)[0], dtrue
+            B.weighted_kmedoids(
+                geodesic, w, 3, n_runs, method_entropy("overhead", seed, "k-medoids")
+            )[0],
+            dtrue,
         )
     )
 
