@@ -41,7 +41,15 @@ def method_entropy(experiment, seed, method="sa"):
 
 
 def annealings(
-    observations_for, k, beta0, n_runs, experiment, seed, method="sa", track_first=False
+    observations_for,
+    k,
+    beta0,
+    n_runs,
+    experiment,
+    seed,
+    method="sa",
+    step_size=0.01,
+    track_first=False,
 ):
     """Yield (run_index, centers, sa) for ``n_runs`` independently-seeded SA runs.
 
@@ -58,6 +66,7 @@ def annealings(
         k, beta0: number of clusters and drift strength.
         n_runs: number of restarts.
         experiment, seed, method: entropy of the run streams (``method_entropy``).
+        step_size: SDE time-discretization step of the annealer.
         track_first: record the energy history of the first run (``sa.energy_history``).
     """
     run_entropy = method_entropy(experiment, seed, method).spawn(n_runs)
@@ -69,7 +78,7 @@ def annealings(
             k=k,
             lambda0=1.0,
             beta0=beta0,
-            step_size=0.01,
+            step_size=step_size,
             energy_mode="obs",
             random_state=np.random.default_rng(sa_seed),
         )
