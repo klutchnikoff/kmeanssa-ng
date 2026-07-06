@@ -16,6 +16,55 @@ if TYPE_CHECKING:
     import matplotlib.pyplot as plt
 
 
+@njit(cache=True, fastmath=True, inline="always")
+def _pair_distance_numba(
+    c_edge_0: int,
+    c_edge_1: int,
+    c_pos: float,
+    c_length: float,
+    p_edge_0: int,
+    p_edge_1: int,
+    p_pos: float,
+    p_length: float,
+    node_dist_matrix: np.ndarray,
+) -> float:
+    """Geodesic distance between two on-edge points of a quantum graph.
+
+    This is the single scalar distance kernel shared by every Numba entry
+    point: a geodesic either goes through one endpoint of each edge (4
+    candidate paths) or stays within the common physical edge.
+
+    Args:
+        c_edge_0, c_edge_1: Node indices of the first point's edge.
+        c_pos, c_length: Its position along the edge, and the edge length.
+        p_edge_0, p_edge_1: Node indices of the second point's edge.
+        p_pos, p_length: Its position along the edge, and the edge length.
+        node_dist_matrix: Precomputed node distances (n, n).
+
+    Returns:
+        The geodesic distance.
+    """
+    # 4 candidate paths through the edge endpoints
+    d0 = node_dist_matrix[c_edge_0, p_edge_0] + c_pos + p_pos
+    d1 = node_dist_matrix[c_edge_0, p_edge_1] + c_pos + (p_length - p_pos)
+    d2 = node_dist_matrix[c_edge_1, p_edge_0] + (c_length - c_pos) + p_pos
+    d3 = node_dist_matrix[c_edge_1, p_edge_1] + (c_length - c_pos) + (p_length - p_pos)
+    d_min = min(d0, d1, d2, d3)
+
+    # Same physical edge cases
+    if c_edge_0 == p_edge_1 and c_edge_1 == p_edge_0:
+        d_same_rev = abs(c_length - c_pos - p_pos)
+        if d_same_rev < d_min:
+            d_min = d_same_rev
+
+    if c_edge_0 == p_edge_0 and c_edge_1 == p_edge_1:
+        d_same = abs(c_pos - p_pos)
+        if d_same < d_min:
+            d_min = d_same
+
+    return d_min
+
+
 @njit(cache=True, fastmath=True)
 def _batch_distances_numba(
     center_edges_0: np.ndarray,
@@ -30,8 +79,7 @@ def _batch_distances_numba(
 ) -> np.ndarray:
     """Numba-accelerated batch distance computation.
 
-    Computes distances from k centers to one target point using
-    the quantum graph distance formula with 4 possible paths.
+    Computes distances from k centers to one target point.
 
     Args:
         center_edges_0: First node of each center's edge (k,)
@@ -51,40 +99,17 @@ def _batch_distances_numba(
     distances = np.empty(k, dtype=np.float64)
 
     for i in range(k):
-        c_edge_0 = center_edges_0[i]
-        c_edge_1 = center_edges_1[i]
-        c_pos = center_positions[i]
-        c_length = center_lengths[i]
-
-        # Compute 4 possible paths
-        d0 = node_dist_matrix[c_edge_0, target_edge_0] + c_pos + target_pos
-        d1 = (
-            node_dist_matrix[c_edge_0, target_edge_1]
-            + c_pos
-            + (target_length - target_pos)
+        distances[i] = _pair_distance_numba(
+            center_edges_0[i],
+            center_edges_1[i],
+            center_positions[i],
+            center_lengths[i],
+            target_edge_0,
+            target_edge_1,
+            target_pos,
+            target_length,
+            node_dist_matrix,
         )
-        d2 = node_dist_matrix[c_edge_1, target_edge_0] + (c_length - c_pos) + target_pos
-        d3 = (
-            node_dist_matrix[c_edge_1, target_edge_1]
-            + (c_length - c_pos)
-            + (target_length - target_pos)
-        )
-
-        # Take minimum
-        d_min = min(d0, d1, d2, d3)
-
-        # Check same edge cases
-        if c_edge_0 == target_edge_1 and c_edge_1 == target_edge_0:
-            d_same_rev = abs(c_length - c_pos - target_pos)
-            if d_same_rev < d_min:
-                d_min = d_same_rev
-
-        if c_edge_0 == target_edge_0 and c_edge_1 == target_edge_1:
-            d_same = abs(c_pos - target_pos)
-            if d_same < d_min:
-                d_min = d_same
-
-        distances[i] = d_min
 
     return distances
 
@@ -133,36 +158,17 @@ def _calculate_energy_uniform_numba(
         min_dist_sq = np.inf
 
         for c_idx in range(k):
-            c_edge_0 = center_edges_0[c_idx]
-            c_edge_1 = center_edges_1[c_idx]
-            c_pos = center_positions[c_idx]
-            c_length = center_lengths[c_idx]
-
-            # Compute 4 possible paths
-            d0 = node_dist_matrix[c_edge_0, p_edge_0] + c_pos + p_pos
-            d1 = node_dist_matrix[c_edge_0, p_edge_1] + c_pos + (p_length - p_pos)
-            d2 = node_dist_matrix[c_edge_1, p_edge_0] + (c_length - c_pos) + p_pos
-            d3 = (
-                node_dist_matrix[c_edge_1, p_edge_1]
-                + (c_length - c_pos)
-                + (p_length - p_pos)
+            d_min = _pair_distance_numba(
+                center_edges_0[c_idx],
+                center_edges_1[c_idx],
+                center_positions[c_idx],
+                center_lengths[c_idx],
+                p_edge_0,
+                p_edge_1,
+                p_pos,
+                p_length,
+                node_dist_matrix,
             )
-
-            # Take minimum
-            d_min = min(d0, d1, d2, d3)
-
-            # Check same edge cases
-            if c_edge_0 == p_edge_1 and c_edge_1 == p_edge_0:
-                d_same_rev = abs(c_length - c_pos - p_pos)
-                if d_same_rev < d_min:
-                    d_min = d_same_rev
-
-            if c_edge_0 == p_edge_0 and c_edge_1 == p_edge_1:
-                d_same = abs(c_pos - p_pos)
-                if d_same < d_min:
-                    d_min = d_same
-
-            # Update minimum distance squared
             if d_min * d_min < min_dist_sq:
                 min_dist_sq = d_min * d_min
 
@@ -202,32 +208,17 @@ def _calculate_energy_obs_numba(
         min_dist_sq = np.inf
 
         for c_idx in range(k):
-            c_edge_0 = center_edges_0[c_idx]
-            c_edge_1 = center_edges_1[c_idx]
-            c_pos = center_positions[c_idx]
-            c_length = center_lengths[c_idx]
-
-            d0 = node_dist_matrix[c_edge_0, p_edge_0] + c_pos + p_pos
-            d1 = node_dist_matrix[c_edge_0, p_edge_1] + c_pos + (p_length - p_pos)
-            d2 = node_dist_matrix[c_edge_1, p_edge_0] + (c_length - c_pos) + p_pos
-            d3 = (
-                node_dist_matrix[c_edge_1, p_edge_1]
-                + (c_length - c_pos)
-                + (p_length - p_pos)
+            d_min = _pair_distance_numba(
+                center_edges_0[c_idx],
+                center_edges_1[c_idx],
+                center_positions[c_idx],
+                center_lengths[c_idx],
+                p_edge_0,
+                p_edge_1,
+                p_pos,
+                p_length,
+                node_dist_matrix,
             )
-
-            d_min = min(d0, d1, d2, d3)
-
-            if c_edge_0 == p_edge_1 and c_edge_1 == p_edge_0:
-                d_same_rev = abs(c_length - c_pos - p_pos)
-                if d_same_rev < d_min:
-                    d_min = d_same_rev
-
-            if c_edge_0 == p_edge_0 and c_edge_1 == p_edge_1:
-                d_same = abs(c_pos - p_pos)
-                if d_same < d_min:
-                    d_min = d_same
-
             if d_min * d_min < min_dist_sq:
                 min_dist_sq = d_min * d_min
 
