@@ -33,6 +33,7 @@ Figures land in `figures/`, tables in `results/`:
 | `figure_bolza` | `figure_bolza` | Bolza-surface partition (true vs recovered) |
 | `table_performance.csv` | `make_tables` | per-experiment energy/ARI summary |
 | `table_comparison.csv` | `make_tables` | ARI vs baselines (mean$\pm\sigma$, best) |
+| `values.tex` | `make_tables` | named LaTeX macros for the campaign numbers quoted in the article prose |
 | `table_timing.csv` | `make_timing` | per-method per-seed wall time on every experiment (mean$\pm\sigma$) + setup costs ($\varepsilon$-net build, k-medoids distance matrices) |
 | `geomstats_overhead.csv` | `geomstats_overhead` | per-method time with vs without closed-form geometry (justifies the $\varepsilon$-net) |
 
@@ -46,7 +47,7 @@ baselines.py      k-medoids, spectral, CLVQ
 grid.py sbm.py sphere.py   the three benchmarks -> results/*_multi.pkl
 rate_toy.py                rate-theorem toy               -> results/rate_toy.pkl
 bolza.py                   Bolza-surface illustration     -> results/bolza.pkl
-make_tables.py    results/*.pkl -> results/table_{performance,comparison}.csv (ARI)
+make_tables.py    results/*.pkl -> results/table_{performance,comparison}.csv + values.tex
 make_timing.py    results/*.pkl -> results/table_timing.csv (per-method wall time)
 make_figures.py   results/*.pkl -> figures/figure_{1..6,bolza}.pdf
 geomstats_overhead.py  closed-form vs geomstats benchmark -> results/geomstats_overhead.csv
