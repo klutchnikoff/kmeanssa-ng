@@ -66,7 +66,7 @@ without re-running the (slow) experiments. The sphere epsilon-net is frozen unde
 pip install "kmeanssa-ng>=0.8.0" scikit-learn matplotlib
 
 python reproduce.py            # EXACTLY the article (100 seeds, full rate) -- a few hours
-python reproduce.py --jobs -1  # same, byte-identical, seeds fanned over every core
+python reproduce.py --jobs -1  # same results, seeds fanned over every core
 python reproduce.py --quick    # seconds-long smoke test of the whole pipeline
 python reproduce.py --seeds 20 # a lighter run (20 seeds instead of 100)
 ```
@@ -82,8 +82,10 @@ independent seeds in parallel for the same results. Individual scripts
 (`python sphere.py`, etc.) can also be run on their own defaults.
 
 Reproducibility: every experiment is seeded, and BLAS is pinned to one thread, so
-results are byte-identical across machines and whatever `--jobs` is. The
-per-method wall times in `table_timing.csv` are clean only from a **sequential**
+results are deterministic on a given machine and identical whatever `--jobs` is.
+Across machines the numbers agree up to the numerics of the local BLAS/LAPACK
+build — bit-for-bit identity is not guaranteed across different CPUs or library
+versions. The per-method wall times in `table_timing.csv` are clean only from a **sequential**
 run (`--jobs 1`, the default); under parallelism they include worker contention,
 and `make_timing` refuses to write the table.
 
