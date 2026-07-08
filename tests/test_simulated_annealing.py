@@ -220,7 +220,7 @@ class TestSimulatedAnnealing:
         import networkx as nx
 
         nx.set_node_attributes(
-            graph, {0: {"nb_obs": 5}, 1: {"nb_obs": 10}, 2: {"nb_obs": 0}}
+            graph, {0: {"obs_weight": 5}, 1: {"obs_weight": 10}, 2: {"obs_weight": 0}}
         )
         points = graph.sample_points(20, strategy=UniformNodeSampling())
 

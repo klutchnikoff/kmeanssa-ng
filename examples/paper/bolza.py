@@ -93,13 +93,13 @@ def cluster(qg, data_nodes, n_runs, seed):
     """Multi-start SA on the net graph; return the lowest-energy partition.
 
     The reference measure is the empirical node measure of the observations
-    (set on ``nb_obs`` for the annealer, and used as the selection weights),
+    (set on ``obs_weight`` for the annealer, and used as the selection weights),
     as in the sphere experiment.
     """
     nu = np.bincount(data_nodes, minlength=qg.number_of_nodes()).astype(float)
     nu /= nu.sum()
     for v, w in zip(qg.nodes(), nu):
-        qg.nodes[v]["nb_obs"] = float(w)
+        qg.nodes[v]["obs_weight"] = float(w)
     nbr = {v: next(iter(qg.neighbors(v))) for v in qg.nodes()}
     obs = [QGPoint(qg, (int(v), nbr[int(v)]), 0) for v in data_nodes]
 

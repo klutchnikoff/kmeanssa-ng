@@ -54,7 +54,7 @@ def annealings(
     """Yield (run_index, centers, sa) for ``n_runs`` independently-seeded SA runs.
 
     The annealer runs in "obs" energy mode, which reads the reference measure
-    from the graph's per-node ``nb_obs``. The experiment owns that measure: it
+    from the graph's per-node ``obs_weight``. The experiment owns that measure: it
     must be in place before (or set by) ``observations_for``, and it is the
     same for every run and every seed -- so the tracked energy history, the
     internal ``MinimizeEnergy`` selection and the downstream selection all
@@ -95,7 +95,7 @@ def run_seeds(seeds, fn, n_jobs=1, tag="", checkpoint_dir=None, config=None):
     """Run ``fn(i, seed) -> (per_seed_value, convergence)`` over all seeds.
 
     Seeds are independent, so they run in parallel when ``n_jobs != 1`` (joblib's
-    loky backend: each worker gets its own copy of the space, so per-node ``nb_obs``
+    loky backend: each worker gets its own copy of the space, so per-node ``obs_weight``
     mutations never race). The result is order-independent -- all randomness flows
     through explicit seed-derived generators -- so the merged output is identical
     whatever ``n_jobs`` is. ``convergence`` is the diagnostic recorded by the one

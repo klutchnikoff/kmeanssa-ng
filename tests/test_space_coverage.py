@@ -213,7 +213,7 @@ class TestSamplingEdgeCases:
         graph.precomputing()
 
         center = graph.node_as_center(0)
-        with pytest.raises(ValueError, match="nb_obs"):
+        with pytest.raises(ValueError, match="obs_weight"):
             graph.calculate_energy([center], how="obs")
 
     def test_calculate_energy_obs_with_observations(self):
@@ -223,7 +223,7 @@ class TestSamplingEdgeCases:
         graph.add_edge(1, 2, length=1.0)
 
         # Set some observations
-        nx.set_node_attributes(graph, {0: {"nb_obs": 5}, 1: {"nb_obs": 3}})
+        nx.set_node_attributes(graph, {0: {"obs_weight": 5}, 1: {"obs_weight": 3}})
 
         center = graph.node_as_center(1)
         energy = graph.calculate_energy([center], how="obs")
@@ -301,7 +301,7 @@ class TestDrawingCoverage:
             captured = capsys.readouterr()
             assert "Warning: Node attribute 'non_existent' not found" in captured.out
 
-            # Test warning for missing nb_obs attribute
+            # Test warning for missing obs_weight attribute
             graph.draw(node_size_by_obs=True, ax=mock_ax)
             captured = capsys.readouterr()
-            assert "Warning: Node attribute 'nb_obs' not found" in captured.out
+            assert "Warning: Node attribute 'obs_weight' not found" in captured.out

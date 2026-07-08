@@ -40,7 +40,7 @@ class UniformNodeSampling(SamplingStrategy):
         ```
 
     Note:
-        Each call stamps the sampled counts on the nodes' ``nb_obs`` attribute
+        Each call stamps the sampled counts on the nodes' ``obs_weight`` attribute
         (the observation measure read by ``calculate_energy(how="obs")``),
         **replacing** the counts of any previous sampling. To use the union of
         several samples as observations, register it explicitly with
@@ -63,15 +63,15 @@ class UniformNodeSampling(SamplingStrategy):
         """
         from ..quantum_graph.space import QGPoint
 
-        nx.set_node_attributes(space, 0, "nb_obs")
+        nx.set_node_attributes(space, 0, "obs_weight")
         points = []
         nodes = list(space.nodes())
         rng = self._get_rng()
 
         for _ in range(n):
             node = rng.choice(nodes)
-            nb_obs = nx.get_node_attributes(space, "nb_obs").get(node, 0) + 1
-            nx.set_node_attributes(space, {node: {"nb_obs": nb_obs}})
+            obs_weight = nx.get_node_attributes(space, "obs_weight").get(node, 0) + 1
+            nx.set_node_attributes(space, {node: {"obs_weight": obs_weight}})
             neighbor = next(space.neighbors(node))
             points.append(QGPoint(space, (node, neighbor), 0))
 
@@ -107,7 +107,7 @@ class UniformEdgeSampling(SamplingStrategy):
         Points are distributed proportionally to edge lengths.
 
         Edge-sampled points lie inside edges, so this strategy does **not**
-        set the nodes' ``nb_obs`` observation measure; to evaluate the "obs"
+        set the nodes' ``obs_weight`` observation measure; to evaluate the "obs"
         energy on such a sample, register it first with
         ``QuantumGraph.register_observations`` (each point then counts at its
         closest node).
@@ -189,7 +189,7 @@ class WeightedNodeSampling(SamplingStrategy):
     Note:
         Requires nodes to have 'weight' attribute with positive values.
 
-        Each call stamps the sampled counts on the nodes' ``nb_obs`` attribute
+        Each call stamps the sampled counts on the nodes' ``obs_weight`` attribute
         (see ``UniformNodeSampling``), replacing any previous counts.
 
     See Also:
@@ -224,7 +224,7 @@ class WeightedNodeSampling(SamplingStrategy):
         if any(w <= 0 for w in node_weights.values()):
             raise ValueError("All node weights must be positive")
 
-        nx.set_node_attributes(space, 0, "nb_obs")
+        nx.set_node_attributes(space, 0, "obs_weight")
         points = []
 
         keys = list(node_weights.keys())
@@ -234,8 +234,8 @@ class WeightedNodeSampling(SamplingStrategy):
 
         for _ in range(n):
             node = rng.choice(keys, p=probabilities)
-            nb_obs = nx.get_node_attributes(space, "nb_obs").get(node, 0) + 1
-            nx.set_node_attributes(space, {node: {"nb_obs": nb_obs}})
+            obs_weight = nx.get_node_attributes(space, "obs_weight").get(node, 0) + 1
+            nx.set_node_attributes(space, {node: {"obs_weight": obs_weight}})
             neighbor = next(space.neighbors(node))
             points.append(QGPoint(space, (node, neighbor), 0))
 

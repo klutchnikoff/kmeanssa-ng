@@ -53,7 +53,7 @@ def medium_graph_with_obs(medium_graph_precomputed):
     graph = medium_graph_precomputed
     # Add some observations to the nodes
     for node in graph.nodes:
-        nx.set_node_attributes(graph, {node: {"nb_obs": np.random.randint(0, 10)}})
+        nx.set_node_attributes(graph, {node: {"obs_weight": np.random.randint(0, 10)}})
     return graph
 
 

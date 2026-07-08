@@ -170,7 +170,7 @@ class Space(ABC):
                   over graph nodes). Spaces without one (continuous
                   manifolds) may reject or ignore this mode.
                 - "obs": the observation measure. Spaces that carry it
-                  internally (e.g. a graph's per-node ``nb_obs`` counts) may
+                  internally (e.g. a graph's per-node ``obs_weight``) may
                   ignore ``observations``; others average over the explicit
                   ``observations`` list.
             observations: The algorithm's observation points, for spaces that

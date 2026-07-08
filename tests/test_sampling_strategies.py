@@ -52,16 +52,16 @@ class TestUniformNodeSampling:
         # Points should be distributed across nodes
 
     def test_uniform_node_sampling_tracks_observations(self):
-        """Test that uniform node sampling tracks nb_obs."""
+        """Test that uniform node sampling tracks obs_weight."""
         graph = generate_simple_graph(n_a=3)
         strategy = UniformNodeSampling()
 
         graph.sample_points(100, strategy=strategy)
 
-        # Check that nb_obs attributes were set
-        nb_obs = nx.get_node_attributes(graph, "nb_obs")
-        assert len(nb_obs) > 0
-        assert sum(nb_obs.values()) == 100
+        # Check that obs_weight attributes were set
+        obs_weight = nx.get_node_attributes(graph, "obs_weight")
+        assert len(obs_weight) > 0
+        assert sum(obs_weight.values()) == 100
 
 
 class TestUniformEdgeSampling:
@@ -170,17 +170,17 @@ class TestWeightedNodeSampling:
             graph.sample_points(10, strategy=strategy)
 
     def test_weighted_node_sampling_tracks_observations(self):
-        """Test that weighted sampling tracks nb_obs."""
+        """Test that weighted sampling tracks obs_weight."""
         graph = generate_simple_graph(n_a=3)
         nx.set_node_attributes(graph, {0: 1.0, 1: 1.0, 2: 1.0}, "weight")
 
         strategy = WeightedNodeSampling()
         graph.sample_points(100, strategy=strategy)
 
-        # Check that nb_obs attributes were set
-        nb_obs = nx.get_node_attributes(graph, "nb_obs")
-        assert len(nb_obs) > 0
-        assert sum(nb_obs.values()) == 100
+        # Check that obs_weight attributes were set
+        obs_weight = nx.get_node_attributes(graph, "obs_weight")
+        assert len(obs_weight) > 0
+        assert sum(obs_weight.values()) == 100
 
     def test_weighted_node_sampling_multiple_calls(self):
         """Test multiple weighted node sampling calls."""
