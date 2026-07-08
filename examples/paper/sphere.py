@@ -164,7 +164,7 @@ def _sa_graph_runs(
 ):
     """SA on the graph; return (data_labels, energies, centroids, convergence)."""
     for node, w in zip(node_list, nu_row):
-        qg.nodes[node]["nb_obs"] = float(w)
+        qg.nodes[node]["obs_weight"] = float(w)
 
     def observations_for(rng):
         on = proj[rng.integers(0, n_data, size=n_obs)]

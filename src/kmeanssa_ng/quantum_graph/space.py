@@ -197,17 +197,17 @@ def _calculate_energy_obs_numba(
     point_edges_1: np.ndarray,
     point_positions: np.ndarray,
     point_lengths: np.ndarray,
-    point_nb_obs: np.ndarray,
+    point_obs_weight: np.ndarray,
     node_dist_matrix: np.ndarray,
 ) -> float:
     n_points = len(point_positions)
     k = len(center_positions)
     total_energy = 0.0
-    total_obs = 0.0
+    total_weight = 0.0
 
     for p_idx in range(n_points):
-        nb_obs = point_nb_obs[p_idx]
-        if nb_obs == 0:
+        obs_weight = point_obs_weight[p_idx]
+        if obs_weight == 0:
             continue
 
         p_edge_0 = point_edges_0[p_idx]
@@ -232,10 +232,10 @@ def _calculate_energy_obs_numba(
             if d_min * d_min < min_dist_sq:
                 min_dist_sq = d_min * d_min
 
-        total_energy += min_dist_sq * nb_obs
-        total_obs += nb_obs
+        total_energy += min_dist_sq * obs_weight
+        total_weight += obs_weight
 
-    return total_energy / total_obs if total_obs > 0 else 0.0
+    return total_energy / total_weight if total_weight > 0 else 0.0
 
 
 class QuantumGraph(nx.Graph, Space):
@@ -722,27 +722,27 @@ class QuantumGraph(nx.Graph, Space):
             centers: List of cluster centers.
             how: Energy calculation mode:
                 - "uniform": average over nodes with equal weight
-                - "obs": average over nodes weighted by their ``nb_obs`` count
+                - "obs": average over nodes weighted by their ``obs_weight``
             observations: Accepted for interface compatibility and ignored:
                 on a quantum graph the observation measure lives on the nodes
-                (``nb_obs``), set by the samplers or by the caller.
+                (``obs_weight``), set by the samplers or by the caller.
 
         Returns:
             Average squared distance to nearest center.
 
         Raises:
             ValueError: If ``how`` is not "uniform" or "obs", or if ``how`` is
-                "obs" and no node carries a positive ``nb_obs`` (the energy
+                "obs" and no node carries a positive ``obs_weight`` (the energy
                 would silently be 0.0 for every configuration of centers).
         """
         if how not in ("uniform", "obs"):
             raise ValueError(f"how must be 'uniform' or 'obs', got {how!r}")
         if how == "obs" and not any(
-            data.get("nb_obs", 0) > 0 for _, data in self.nodes(data=True)
+            data.get("obs_weight", 0) > 0 for _, data in self.nodes(data=True)
         ):
             raise ValueError(
                 "energy mode 'obs' requires an observation measure on the graph, "
-                "but no node carries a positive 'nb_obs'. Node samplers set it "
+                "but no node carries a positive 'obs_weight'. Node samplers set it "
                 "when sampling; otherwise call register_observations(points) "
                 "(edge-sampled points in particular are not registered "
                 "automatically)."
@@ -752,7 +752,7 @@ class QuantumGraph(nx.Graph, Space):
         return self._calculate_energy_python(centers, how)
 
     def register_observations(self, points: list[QGPoint]) -> None:
-        """Set the per-node observation measure ``nb_obs`` from these points.
+        """Set the per-node observation measure ``obs_weight`` from these points.
 
         Each point counts at its closest node. This **replaces** any previous
         measure — the measure describes one observation set — so callers
@@ -761,12 +761,12 @@ class QuantumGraph(nx.Graph, Space):
         Args:
             points: The observation points (any points of this graph).
         """
-        nx.set_node_attributes(self, 0, "nb_obs")
+        nx.set_node_attributes(self, 0, "obs_weight")
         counts: dict = {}
         for point in points:
             node = point.closest_node()
             counts[node] = counts.get(node, 0) + 1
-        nx.set_node_attributes(self, counts, "nb_obs")
+        nx.set_node_attributes(self, counts, "obs_weight")
 
     def _calculate_energy_python(self, centers: list[QGCenter], how: str) -> float:
         """Pure-Python energy fallback (no precomputed distances needed)."""
@@ -782,19 +782,19 @@ class QuantumGraph(nx.Graph, Space):
             return energy / self.number_of_nodes()
         else:  # how == "obs"
             energy = 0.0
-            total_obs = 0
+            total_weight = 0
             for node, data in self.nodes(data=True):
-                nb_obs = data.get("nb_obs", 0)
-                if nb_obs > 0:
+                obs_weight = data.get("obs_weight", 0)
+                if obs_weight > 0:
                     neighbor = next(self.neighbors(node))
                     point = QGPoint(self, (node, neighbor), 0)
                     min_dist_sq = min(
                         self.distance(center, point) ** 2 for center in centers
                     )
-                    energy += min_dist_sq * nb_obs
-                    total_obs += nb_obs
+                    energy += min_dist_sq * obs_weight
+                    total_weight += obs_weight
 
-            return energy / total_obs if total_obs > 0 else 0.0
+            return energy / total_weight if total_weight > 0 else 0.0
 
     def calculate_energy_numba(
         self, centers: list[QGCenter], how: str = "uniform"
@@ -864,13 +864,13 @@ class QuantumGraph(nx.Graph, Space):
                 self._pairwise_nodes_distance_array,
             )
         else:  # how == "obs"
-            # nb_obs is a measure weight, not an integer count: node samplers
-            # set integer counts, but the paper experiments set the fractional
+            # obs_weight is a measure, not a count: node samplers happen to set
+            # integer counts, but the paper experiments set the fractional
             # population measure nu. Casting to int here truncated every
             # fractional weight to zero, so the whole obs-energy collapsed to
             # 0.0 -- silently, since 0 is a valid energy. Keep it float.
-            point_nb_obs = np.array(
-                [data.get("nb_obs", 0) for _, data in self.nodes(data=True)],
+            point_obs_weight = np.array(
+                [data.get("obs_weight", 0) for _, data in self.nodes(data=True)],
                 dtype=np.float64,
             )
             return _calculate_energy_obs_numba(
@@ -882,7 +882,7 @@ class QuantumGraph(nx.Graph, Space):
                 point_edges_1,
                 point_positions,
                 point_lengths,
-                point_nb_obs,
+                point_obs_weight,
                 self._pairwise_nodes_distance_array,
             )
 
@@ -941,7 +941,7 @@ class QuantumGraph(nx.Graph, Space):
                 - "block": Colors nodes by a pre-defined 'block' attribute.
                 - None: All nodes will have the same default color. (Default: "skyblue")
             centers: A list of QGCenter objects to be highlighted on the graph.
-            node_size_by_obs: If True, sizes nodes based on 'nb_obs' attribute.
+            node_size_by_obs: If True, sizes nodes based on 'obs_weight' attribute.
             ax: A matplotlib axes object to draw on. If None, a new figure
                 and axes are created.
             **kwargs: Additional arguments passed to nx.draw().
@@ -974,12 +974,14 @@ class QuantumGraph(nx.Graph, Space):
         # Determine node sizes
         node_sizes = 300  # Default size
         if node_size_by_obs:
-            if not any("nb_obs" in n[1] for n in self.nodes(data=True)):
-                print("Warning: Node attribute 'nb_obs' not found. Using default size.")
+            if not any("obs_weight" in n[1] for n in self.nodes(data=True)):
+                print(
+                    "Warning: Node attribute 'obs_weight' not found. Using default size."
+                )
             else:
                 # Scale size by number of observations, with a minimum size
                 node_sizes = [
-                    self.nodes[n].get("nb_obs", 0) * 50 + 100 for n in self.nodes()
+                    self.nodes[n].get("obs_weight", 0) * 50 + 100 for n in self.nodes()
                 ]
 
         # Draw the graph

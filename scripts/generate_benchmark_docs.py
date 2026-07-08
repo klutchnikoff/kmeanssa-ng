@@ -108,16 +108,16 @@ def generate_structured_data(results: dict, source_file: str) -> dict:
         py_uniform = results.get("test_benchmark_energy_python_uniform")
         nb_uniform = results.get("test_benchmark_energy_numba_uniform")
         py_obs = results.get("test_benchmark_energy_python_obs")
-        nb_obs = results.get("test_benchmark_energy_numba_obs")
+        obs_weight = results.get("test_benchmark_energy_numba_obs")
 
-        if all([py_uniform, nb_uniform, py_obs, nb_obs]):
+        if all([py_uniform, nb_uniform, py_obs, obs_weight]):
             structured["comparisons"]["energy_calculation"] = {
                 "python_uniform_us": format_time(py_uniform["mean"])[0],
                 "numba_uniform_us": format_time(nb_uniform["mean"])[0],
                 "speedup_uniform": py_uniform["mean"] / nb_uniform["mean"],
                 "python_obs_us": format_time(py_obs["mean"])[0],
-                "numba_obs_us": format_time(nb_obs["mean"])[0],
-                "speedup_obs": py_obs["mean"] / nb_obs["mean"],
+                "numba_obs_us": format_time(obs_weight["mean"])[0],
+                "speedup_obs": py_obs["mean"] / obs_weight["mean"],
             }
 
     # Add robustification comparison

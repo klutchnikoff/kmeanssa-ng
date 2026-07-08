@@ -327,7 +327,7 @@ class SimulatedAnnealing:
 
         Delegates to the space, passing the algorithm's own observations:
         spaces without an internal reference measure (manifolds) average over
-        them, while spaces that carry one (a graph's per-node ``nb_obs``)
+        them, while spaces that carry one (a graph's per-node ``obs_weight``)
         ignore them. Acceleration (e.g. the quantum graph's numba kernels) is
         the space's concern, dispatched inside ``Space.calculate_energy``.
         """

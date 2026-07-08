@@ -63,11 +63,11 @@ def run_seed(space, seed, n_runs, track):
 
     def observations_for(rng):
         obs = graph.sample_points(100, strategy=UniformNodeSampling(random_state=rng))
-        # The sampler stamps this run's empirical counts on nb_obs; reset to the
+        # The sampler stamps this run's empirical counts on obs_weight; reset to the
         # population measure (nu, uniform) so every run and every seed evaluates
         # the same energy functional, as in the grid and sphere experiments.
         for node in graph.nodes:
-            graph.nodes[node]["nb_obs"] = 1.0
+            graph.nodes[node]["obs_weight"] = 1.0
         return obs
 
     timings = {"k-medoids matrix": space.dist_build_s}  # built per seed in build_space

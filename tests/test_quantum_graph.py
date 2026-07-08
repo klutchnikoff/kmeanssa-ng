@@ -103,7 +103,7 @@ class TestQuantumGraph:
 
         centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
 
-        with pytest.raises(ValueError, match="nb_obs"):
+        with pytest.raises(ValueError, match="obs_weight"):
             graph.calculate_energy(centers, how="obs")
 
     def test_register_observations_enables_obs_energy(self):
@@ -124,11 +124,11 @@ class TestQuantumGraph:
 
         # Registration replaces the previous measure entirely
         graph.register_observations([QGPoint(graph, (0, 1), 0.0)])
-        counts = [graph.nodes[n].get("nb_obs", 0) for n in graph.nodes]
+        counts = [graph.nodes[n].get("obs_weight", 0) for n in graph.nodes]
         assert sum(counts) == 1
 
     def test_obs_energy_with_fractional_measure(self):
-        """Fractional nb_obs weights (a population measure) are not truncated.
+        """Fractional obs_weight values (a population measure) are not truncated.
 
         Regression: the numba obs kernel built its weights as int32, so a
         measure like the paper's population density nu (all weights < 1) was
@@ -144,7 +144,7 @@ class TestQuantumGraph:
 
         # A genuine fractional measure: weights sum to 1, each strictly below 1
         weights = {0: 0.4, 1: 0.3, 2: 0.2, 3: 0.1}
-        nx.set_node_attributes(graph, weights, "nb_obs")
+        nx.set_node_attributes(graph, weights, "obs_weight")
         centers = [QGCenter(QGPoint(graph, (0, 1), 0.2))]
 
         numba = graph.calculate_energy(centers, how="obs")
@@ -168,7 +168,7 @@ class TestQuantumGraph:
         graph.add_edge(0, 1, length=1.0)
         graph.add_edge(1, 2, length=2.0)
         nx.set_node_attributes(
-            graph, {0: {"nb_obs": 5}, 1: {"nb_obs": 10}, 2: {"nb_obs": 0}}
+            graph, {0: {"obs_weight": 5}, 1: {"obs_weight": 10}, 2: {"obs_weight": 0}}
         )
         graph.precomputing()
 
@@ -785,7 +785,7 @@ class TestSelfLoopDistances:
         graph.add_edge(2, 2, length=0.9)
         graph.precomputing()
         for i, node in enumerate(graph.nodes()):
-            graph.nodes[node]["nb_obs"] = i + 1
+            graph.nodes[node]["obs_weight"] = i + 1
 
         centers = [
             QGCenter(QGPoint(graph, edge=(0, 0), position=1.1)),
