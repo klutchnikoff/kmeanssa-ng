@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - unreleased
+
+Makes the graph/manifold geometry and the experimental pipeline correct enough
+to back the companion paper, and prepares the package for archival and JOSS.
+Contains breaking API changes.
+
+### Added
+- **Bolza surface** (genus 2, curvature −1) as a first-class, quotient-aware geodesic space.
+- **Intrinsic ε-net graph construction** (`build_epsilon_net_graph`, `RepulsionNet`) — embedding-free, with an extrinsic-speedup variant.
+- **Closed-form geodesic operations for the sphere** (a `Sphere` subclass), bypassing the geomstats overhead.
+- Native **energy-history tracking** in `SimulatedAnnealing.run` (`record_energy`), and public quantum-graph node distances / `node_energy`.
+- `register_observations` to set the per-node observation measure from a set of points.
+- **Reproducible paper pipeline** under `examples/paper/`: one-command `reproduce.py` regenerating every figure and table (grid, SBM, sphere, Bolza, the rate-theorem toy, the geomstats overhead), with structured per-seed/-run/-method RNG, per-seed checkpoints and resume, `--seeds`/`--jobs` flags, and a `values.tex` feeding the article prose.
+- JOSS `paper.md`/`paper.bib` and `CONTRIBUTING.md`.
+
+### Changed
+- **Breaking:** the per-node observation-measure attribute `nb_obs` is renamed **`obs_weight`** — it holds a measure weight, not a count.
+- **Breaking:** `Space.calculate_energy(centers, how="uniform", observations=None)` — the reference measure is now explicit and observations are supplied by the algorithm rather than stored on the space; the documented convention is the **mean** squared distance to the nearest center.
+- **Breaking:** `FrechetMeanUpdate` is renamed **`KarcherFrechetMean`** and runs an intrinsic Karcher iteration (no geomstats `FrechetMean`).
+- **Breaking:** the `Center` ABC now requires `seed_rng()`; the annealer seeds centers through it instead of a private attribute.
+- **Breaking:** `UniformManifoldSampling` raises `NotImplementedError` on manifolds without a generator-driven uniform sampler (e.g. hyperbolic); `RiemannianPoint` rejects off-manifold coordinates.
+- The SA-based Fréchet mean now uses a genuine annealing schedule.
+- `pdm.lock` is no longer tracked; the paper README's reproduction claim is scoped to same-machine determinism (numbers agree across machines up to BLAS/LAPACK numerics, not bit-for-bit).
+
+### Fixed
+- **Center dynamics:** Brownian and drift moves keep the center on-edge — no negative positions when crossing a vertex, and correct drift direction on reversed same-edge parametrisations.
+- **Poisson clock:** correct time indexing (no observation silently excluded) and simulation of the residual interval.
+- **Self-loop distances:** correct geodesic on loop edges (no spurious 0.0), across all distance kernels (now deduplicated).
+- **Distance caches** are invalidated on graph edits, and a re-run `precomputing()` actually recomputes.
+- `energy_mode="obs"` raises instead of silently returning 0.0 when no node carries a positive measure; the obs-energy kernel carries `obs_weight` as a float measure, so fractional population weights are no longer truncated to zero.
+- **Lloyd** reseeds empty clusters (farthest point) instead of silently returning fewer than k centers.
+- **Metric-correct Brownian motion** on manifolds via `random_tangent` (sphere and Bolza; unsupported manifolds raise).
+- Paper protocol: equal restart budgets across methods, honest grid-timing attribution, and a harmonised population-measure selection criterion.
+- Executable module-header examples; corrected `lambda0` docstring (it is the Poisson-clock intensity, not a Brownian scale factor).
+
+### Removed
+- **Breaking:** the `hash()`-feature Davies–Bouldin and Calinski–Harabasz metrics (meaningless on graph labels, and non-reproducible across processes).
+
 ## [0.7.0] - 2026-06-30
 
 ### Added
@@ -35,8 +73,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Docs
 - Overhauled the benchmark documentation, separating user-facing performance results from the developer guide.
 - Simplified the script for generating benchmark data from `pytest-benchmark` output.
-
-## [Unreleased]
 
 ## [0.3.0] - 2025-01-27
 
@@ -129,7 +165,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NumPy and pandas dependencies for numerical operations
 - MIT license
 
-[Unreleased]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.7.0...main
+[0.8.0]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.7.0...main
 [0.7.0]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.5.0...v0.7.0
 [0.5.0]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.3.0...v0.5.0
 [0.3.0]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.2.3...v0.3.0
