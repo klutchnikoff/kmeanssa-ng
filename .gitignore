@@ -44,6 +44,13 @@ __pypackages__/
 # OS
 .DS_Store
 
+# Working notes & AI-assistant files (kept out of the public SWH archive)
+IDEAS/
+WARP.md
+
+# Rendered Quarto artifacts
+docs-src/README_files/
+
 # Other
 .claude/
 nohup.out
