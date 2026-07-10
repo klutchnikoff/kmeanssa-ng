@@ -231,7 +231,9 @@ class TestEnergyCalculationBenchmark:
     ):
         """Benchmark pure Python energy calculation with how='obs'."""
         benchmark(
-            medium_graph_with_obs.calculate_energy, centers_for_benchmark, how="obs"
+            medium_graph_with_obs.calculate_energy,
+            centers_for_benchmark,
+            how="node_measure",
         )
 
     def test_benchmark_energy_numba_obs(
@@ -241,7 +243,7 @@ class TestEnergyCalculationBenchmark:
         benchmark(
             medium_graph_with_obs.calculate_energy_numba,
             centers_for_benchmark,
-            how="obs",
+            how="node_measure",
         )
 
 
@@ -271,7 +273,12 @@ class TestRobustificationBenchmark:
             150, strategy=UniformNodeSampling()
         )
         sa = SimulatedAnnealing(
-            points, k=3, lambda0=1.0, beta0=1.0, step_size=0.1, energy_mode="obs"
+            points,
+            k=3,
+            lambda0=1.0,
+            beta0=1.0,
+            step_size=0.1,
+            energy_mode="node_measure",
         )
         # Initialize centers using k-means++
         sa._centers = KMeansPlusPlus().initialize_centers(sa)
@@ -322,7 +329,7 @@ class TestRobustificationBenchmark:
     def test_benchmark_robustification_minimize_energy_obs(
         self, benchmark, sa_prepared_obs
     ):
-        """Benchmark isolated cost of MinimizeEnergy with energy_mode='obs'.
+        """Benchmark isolated cost of MinimizeEnergy with energy_mode='node_measure'.
 
         Measures: initialize() + 15×collect() + get_result()
         Each collect() calls calculate_energy_numba() with mode='obs'.
