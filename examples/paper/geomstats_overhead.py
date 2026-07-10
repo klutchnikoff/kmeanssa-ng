@@ -68,7 +68,14 @@ def _sa_manifold(manifold, data, dtrue, n_obs, b, n_runs, seed):
     labels = [
         np.array(compute_labels(manifold, all_points, centers))
         for _, centers, _ in annealings(
-            obs_for, 3, b, n_runs, "overhead", seed, method="sa-manifold"
+            obs_for,
+            3,
+            b,
+            n_runs,
+            "overhead",
+            seed,
+            method="sa-manifold",
+            energy_mode="empirical",
         )
     ]
     return _best_ari(labels, dtrue)

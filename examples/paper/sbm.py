@@ -64,9 +64,9 @@ def run_seed(space, seed, n_runs, track):
 
     def observations_for(rng):
         obs = graph.sample_points(100, strategy=UniformNodeSampling(random_state=rng))
-        # The sampler stamps this run's empirical counts on obs_weight; reset to the
-        # population measure (nu, uniform) so every run and every seed evaluates
-        # the same energy functional, as in the grid and sphere experiments.
+        # Declare the population measure (nu, uniform) so every run and every
+        # seed evaluates the same "node_measure" energy functional, as in the
+        # grid and sphere experiments.
         for node in graph.nodes:
             graph.nodes[node]["obs_weight"] = 1.0
         return obs
