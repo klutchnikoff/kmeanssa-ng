@@ -51,17 +51,20 @@ class TestUniformNodeSampling:
         assert len(points2) == 50
         # Points should be distributed across nodes
 
-    def test_uniform_node_sampling_tracks_observations(self):
-        """Test that uniform node sampling tracks obs_weight."""
+    def test_uniform_node_sampling_does_not_mutate_the_space(self):
+        """Sampling is a pure draw: it must not touch the graph's node measure.
+
+        A strategy silently stamping obs_weight would let two algorithms
+        sharing one space overwrite each other's reference measure; the
+        measure is now always declared explicitly (register_observations or
+        the obs_weight attribute).
+        """
         graph = generate_simple_graph(n_a=3)
-        strategy = UniformNodeSampling()
+        nx.set_node_attributes(graph, {"A0": 0.7}, "obs_weight")
 
-        graph.sample_points(100, strategy=strategy)
+        graph.sample_points(100, strategy=UniformNodeSampling(random_state=0))
 
-        # Check that obs_weight attributes were set
-        obs_weight = nx.get_node_attributes(graph, "obs_weight")
-        assert len(obs_weight) > 0
-        assert sum(obs_weight.values()) == 100
+        assert nx.get_node_attributes(graph, "obs_weight") == {"A0": 0.7}
 
 
 class TestUniformEdgeSampling:
@@ -169,18 +172,15 @@ class TestWeightedNodeSampling:
         with pytest.raises(ValueError, match="All node weights must be positive"):
             graph.sample_points(10, strategy=strategy)
 
-    def test_weighted_node_sampling_tracks_observations(self):
-        """Test that weighted sampling tracks obs_weight."""
+    def test_weighted_node_sampling_does_not_mutate_the_space(self):
+        """Sampling is a pure draw: it must not touch the graph's node measure."""
         graph = generate_simple_graph(n_a=3)
         nx.set_node_attributes(graph, {0: 1.0, 1: 1.0, 2: 1.0}, "weight")
+        nx.set_node_attributes(graph, {"A0": 0.7}, "obs_weight")
 
-        strategy = WeightedNodeSampling()
-        graph.sample_points(100, strategy=strategy)
+        graph.sample_points(100, strategy=WeightedNodeSampling(random_state=0))
 
-        # Check that obs_weight attributes were set
-        obs_weight = nx.get_node_attributes(graph, "obs_weight")
-        assert len(obs_weight) > 0
-        assert sum(obs_weight.values()) == 100
+        assert nx.get_node_attributes(graph, "obs_weight") == {"A0": 0.7}
 
     def test_weighted_node_sampling_multiple_calls(self):
         """Test multiple weighted node sampling calls."""
