@@ -31,6 +31,7 @@ Contains breaking API changes.
 
 ### Fixed
 - **Center dynamics:** Brownian and drift moves keep the center on-edge — no negative positions when crossing a vertex, and correct drift direction on reversed same-edge parametrisations.
+- **Drift routing & self-loops:** intermediate drift hops are scored by the traversed edge length, so a long direct edge no longer ties with a shorter route through a neighbour; a drift stopping on a self-loop stays on its true exit arc instead of reflecting across the vertex; the target observation is never mutated; Brownian vertex crossings count a self-loop by its two edge-ends (Kirchhoff weights).
 - **Poisson clock:** correct time indexing (no observation silently excluded) and simulation of the residual interval.
 - **Self-loop distances:** correct geodesic on loop edges (no spurious 0.0), across all distance kernels (now deduplicated).
 - **Distance caches** are invalidated on graph edits, and a re-run `precomputing()` actually recomputes.
