@@ -15,6 +15,7 @@ import baselines as B
 from calibration import potential_matrix, critical_depth
 from multistart import (
     annealings,
+    code_stamp,
     method_entropy,
     methods_from_raw,
     summarize,
@@ -129,6 +130,7 @@ def run(seeds=(42, 43, 44, 45, 46), n_runs=50, n_jobs=1):
 
     store = {
         "name": "sbm",
+        "code": code_stamp(),
         "config": config,
         "n_runs": n_runs,
         "seeds": list(seeds),

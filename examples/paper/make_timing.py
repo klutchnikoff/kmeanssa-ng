@@ -50,6 +50,11 @@ def main(measure_net=True):
             f"include worker contention. Not writing {PKL} -- re-run sequentially.",
             flush=True,
         )
+        # A timing table from an earlier campaign must not survive next to the
+        # fresh CSVs: it would silently describe another run of the pipeline.
+        if os.path.exists(PKL):
+            os.remove(PKL)
+            print(f"removed stale {PKL} (from a previous campaign)", flush=True)
         return
 
     rows = []  # (experiment, item, kind, mean_s, std_s, n_seeds)

@@ -79,8 +79,10 @@ def _check_same_campaign(stores):
 
     The experiment scripts overwrite the same result files whatever their
     arguments, so a stray standalone run (e.g. the 5-seed default) would
-    silently replace one experiment of a 100-seed campaign. Seed sets are the
-    campaign signature: they must match across the three pickles.
+    silently replace one experiment of a 100-seed campaign. The campaign
+    signature is the seed set **and the code stamp** (library version + git
+    state): both must match across the three pickles, otherwise the tables
+    would mix results computed by different versions of the library.
     """
     seed_sets = {key: list(_config(store, "seeds")) for key, store in stores.items()}
     reference = next(iter(seed_sets.values()))
@@ -92,6 +94,23 @@ def _check_same_campaign(stores):
         raise SystemExit(
             f"experiment pickles come from different campaigns ({detail}); "
             "re-run the missing experiments (see reproduce.py) before writing tables"
+        )
+
+    codes = {key: store.get("code") for key, store in stores.items()}
+    code_ref = next(iter(codes.values()))
+    if any(code != code_ref for code in codes.values()):
+        detail = ", ".join(f"{k}: {v}" for k, v in codes.items())
+        raise SystemExit(
+            f"experiment pickles were produced by different code ({detail}); "
+            "re-run the outdated experiments (see reproduce.py) before writing tables"
+        )
+    from multistart import code_stamp
+
+    if code_ref != code_stamp():
+        print(
+            f"WARNING: pickles were produced by {code_ref}, current code is "
+            f"{code_stamp()}; the tables describe that older campaign.",
+            flush=True,
         )
 
 

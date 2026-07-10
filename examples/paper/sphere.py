@@ -28,6 +28,7 @@ from kmeanssa_ng.core.metrics import compute_labels, adjusted_rand_index
 import baselines as B
 from multistart import (
     annealings,
+    code_stamp,
     method_entropy,
     methods_from_raw,
     summarize,
@@ -353,6 +354,7 @@ def run(
     )
 
     store = {
+        "code": code_stamp(),
         "config": {**config, "seeds": list(seeds)},
         "V": V,
         "eps": eps,
