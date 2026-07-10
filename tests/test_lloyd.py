@@ -90,3 +90,37 @@ def test_lloyd_reseeds_empty_clusters():
     centers = lloyd.run(initialization_strategy=RandomInit(), max_iterations=5)
 
     assert len(centers) == 4
+
+
+def test_simultaneously_empty_clusters_get_distinct_reseeds():
+    """Two clusters empty at the same iteration must not share one reseed.
+
+    Regression (2026-07-09 review): every empty cluster was reseeded on the
+    point farthest from the *pre-iteration* centers, so simultaneous empties
+    all landed on the same point and k stayed shrunk.
+    """
+    from kmeanssa_ng import QuantumGraph, QGPoint
+    from kmeanssa_ng.core.strategies.initialization import InitializationStrategy
+
+    graph = QuantumGraph()
+    for v in range(4):
+        graph.add_edge(v, v + 1, length=1.0)
+    graph.precomputing()
+
+    # 3 points at node 0, 2 at node 2, 2 at node 4.
+    points = (
+        [QGPoint(graph, (0, 1), 0.0)] * 3
+        + [QGPoint(graph, (2, 3), 0.0)] * 2
+        + [QGPoint(graph, (4, 3), 0.0)] * 2
+    )
+
+    class AllAtNode2(InitializationStrategy):
+        """Degenerate start: every center on node 2 -> clusters 1 and 2 empty."""
+
+        def initialize_centers(self, algo):
+            return [algo.space.node_as_center(2) for _ in range(algo.k)]
+
+    lloyd = Lloyd(points, k=3, update_strategy=MostFrequentNodeUpdate(random_state=0))
+    centers = lloyd.run(initialization_strategy=AllAtNode2(), max_iterations=1)
+
+    assert sorted(c.closest_node() for c in centers) == [0, 2, 4]

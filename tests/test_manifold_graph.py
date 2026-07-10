@@ -113,7 +113,7 @@ class TestApproximateGeodesicSpace:
             lambda0=1.0,
             beta0=0.5,
             step_size=0.05,
-            energy_mode="obs",
+            energy_mode="empirical",
             random_state=3,
         )
         centers = sa.run(KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1)

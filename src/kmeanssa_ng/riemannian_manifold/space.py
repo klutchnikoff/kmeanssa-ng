@@ -196,7 +196,7 @@ class RiemannianManifold(Space):
     def calculate_energy(
         self,
         centers: list[RiemannianCenter],
-        how: str = "obs",
+        how: str = "empirical",
         observations: list[RiemannianPoint] | None = None,
     ) -> float:
         """Calculate the k-means energy for the given centers.
@@ -208,23 +208,35 @@ class RiemannianManifold(Space):
 
         Args:
             centers: List of cluster centers.
-            how: Energy calculation mode. For Riemannian manifolds, only "obs"
-                mode is supported. The "uniform" mode is not applicable as
-                there is no uniform distribution over all points of a
-                continuous manifold. This parameter is kept for API
-                compatibility but ignored.
-            observations: The points to average over (``RiemannianPoint``
-                instances or coordinate arrays).
+            how: Only ``"empirical"`` is supported on a manifold: there is no
+                uniform distribution over the points of a continuous
+                manifold, and no node measure to carry. Any other mode is an
+                error rather than a silent reinterpretation.
+            observations: The points defining the empirical measure
+                (``RiemannianPoint`` instances or coordinate arrays);
+                required.
 
         Returns:
             The k-means energy (mean squared distance to nearest center).
 
         Raises:
-            ValueError: If observations are missing or centers list is empty.
+            ValueError: If the mode is not "empirical", observations are
+                missing, or the centers list is empty.
         """
+        if how == "obs":
+            raise ValueError(
+                "energy mode 'obs' is retired: on a manifold use "
+                "how='empirical' with the explicit 'observations' list"
+            )
+        if how != "empirical":
+            raise ValueError(
+                f"a Riemannian manifold only supports how='empirical', got "
+                f"{how!r}: there is no uniform or node-carried measure on a "
+                "continuous manifold"
+            )
         if not observations:
             raise ValueError(
-                "calculate_energy on a manifold requires the explicit "
+                "energy mode 'empirical' requires the explicit "
                 "'observations' list (there is no reference measure on the "
                 "space itself)"
             )

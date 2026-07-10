@@ -214,17 +214,20 @@ class TestSimulatedAnnealing:
         assert energy_fallback >= 0
         assert abs(energy_fallback - energy_numba) < 1e-9
 
-    def test_energy_mode_obs(self):
-        """Test that energy_mode='obs' uses the correct energy calculation."""
+    def test_energy_mode_node_measure(self):
+        """Test that energy_mode='node_measure' reaches the numba kernel."""
         graph = generate_simple_graph(n_a=3)
         import networkx as nx
 
+        # Declare the node measure explicitly (samplers are pure draws and
+        # no longer stamp it; the old test leaned on that stamping, its own
+        # set_node_attributes silently targeted nonexistent integer nodes).
         nx.set_node_attributes(
-            graph, {0: {"obs_weight": 5}, 1: {"obs_weight": 10}, 2: {"obs_weight": 0}}
+            graph, {"A0": {"obs_weight": 5}, "B0": {"obs_weight": 10}}
         )
         points = graph.sample_points(20, strategy=UniformNodeSampling())
 
-        sa = SimulatedAnnealing(points, k=2, energy_mode="obs")
+        sa = SimulatedAnnealing(points, k=2, energy_mode="node_measure")
         centers = RandomInit().initialize_centers(sa)
 
         # Mock the space's calculate_energy and calculate_energy_numba methods
@@ -234,7 +237,9 @@ class TestSimulatedAnnealing:
             sa.space, "calculate_energy_numba", create=True
         ) as mock_calculate_energy_numba:
             sa.calculate_energy(centers)
-            mock_calculate_energy_numba.assert_called_with(centers, how="obs")
+            mock_calculate_energy_numba.assert_called_with(
+                centers, how="node_measure", observations=None
+            )
 
     def test_centers_property(self):
         """Test centers property (covers line 113)."""

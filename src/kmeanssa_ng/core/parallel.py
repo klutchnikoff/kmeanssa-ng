@@ -59,7 +59,7 @@ def _run_with_seed(
         lambda0: Poisson process intensity parameter.
         beta0: Inverse temperature parameter.
         step_size: Time step size.
-        energy_mode: Energy calculation mode ('uniform' or 'obs').
+        energy_mode: Energy calculation mode ('uniform', 'empirical' or 'node_measure').
         robust_prop: Proportion of observations for robustification.
         sampling_strategy: Strategy for sampling points from the space.
         initialization_strategy: Strategy instance for initializing centers.

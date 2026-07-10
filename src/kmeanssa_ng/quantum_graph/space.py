@@ -720,36 +720,68 @@ class QuantumGraph(nx.Graph, Space):
 
         Args:
             centers: List of cluster centers.
-            how: Energy calculation mode:
-                - "uniform": average over nodes with equal weight
-                - "obs": average over nodes weighted by their ``obs_weight``
-            observations: Accepted for interface compatibility and ignored:
-                on a quantum graph the observation measure lives on the nodes
-                (``obs_weight``), set by the samplers or by the caller.
+            how: Which reference measure to average under (see
+                :meth:`Space.calculate_energy` for the full contract):
+                - "uniform": average over nodes with equal weight; rejects
+                  ``observations``.
+                - "empirical": average over the ``observations`` list
+                  (required), each point exactly where it lies on its edge —
+                  no rounding to nodes.
+                - "node_measure": average over nodes weighted by their
+                  ``obs_weight``, set explicitly by the caller (e.g. through
+                  ``register_observations``); rejects ``observations``.
+            observations: The points defining the empirical measure
+                (``how="empirical"`` only).
 
         Returns:
             Average squared distance to nearest center.
 
         Raises:
-            ValueError: If ``how`` is not "uniform" or "obs", or if ``how`` is
-                "obs" and no node carries a positive ``obs_weight`` (the energy
-                would silently be 0.0 for every configuration of centers).
+            ValueError: If ``how`` is unknown (including the retired
+                ``"obs"``), if ``"empirical"`` lacks observations, if
+                ``"uniform"``/``"node_measure"`` receive some, or if no node
+                carries a positive ``obs_weight`` in ``"node_measure"`` mode
+                (the energy would silently be 0.0 for every configuration
+                of centers).
         """
-        if how not in ("uniform", "obs"):
-            raise ValueError(f"how must be 'uniform' or 'obs', got {how!r}")
-        if how == "obs" and not any(
+        if how == "obs":
+            raise ValueError(
+                "energy mode 'obs' was split into two explicit modes: use "
+                "'empirical' to average over an explicit list of observation "
+                "points, or 'node_measure' to average under the per-node "
+                "'obs_weight' measure registered on the graph."
+            )
+        if how not in ("uniform", "empirical", "node_measure"):
+            raise ValueError(
+                f"how must be 'uniform', 'empirical' or 'node_measure', got {how!r}"
+            )
+        if how == "empirical":
+            if not observations:
+                raise ValueError(
+                    "energy mode 'empirical' requires the explicit "
+                    "'observations' list defining the empirical measure"
+                )
+        elif observations is not None:
+            raise ValueError(
+                f"energy mode {how!r} defines its own reference measure and "
+                "does not take 'observations'; pass them with how='empirical' "
+                "instead"
+            )
+        if how == "node_measure" and not any(
             data.get("obs_weight", 0) > 0 for _, data in self.nodes(data=True)
         ):
             raise ValueError(
-                "energy mode 'obs' requires an observation measure on the graph, "
-                "but no node carries a positive 'obs_weight'. Node samplers set it "
-                "when sampling; otherwise call register_observations(points) "
-                "(edge-sampled points in particular are not registered "
-                "automatically)."
+                "energy mode 'node_measure' requires a measure on the graph "
+                "nodes, but no node carries a positive 'obs_weight'. Register "
+                "one explicitly: register_observations(points) counts each "
+                "point at its closest node, or set the 'obs_weight' node "
+                "attribute directly (e.g. to a population measure)."
             )
         if self._pairwise_nodes_distance_array is not None:
-            return self.calculate_energy_numba(centers, how=how)
-        return self._calculate_energy_python(centers, how)
+            return self.calculate_energy_numba(
+                centers, how=how, observations=observations
+            )
+        return self._calculate_energy_python(centers, how, observations=observations)
 
     def register_observations(self, points: list[QGPoint]) -> None:
         """Set the per-node observation measure ``obs_weight`` from these points.
@@ -768,7 +800,12 @@ class QuantumGraph(nx.Graph, Space):
             counts[node] = counts.get(node, 0) + 1
         nx.set_node_attributes(self, counts, "obs_weight")
 
-    def _calculate_energy_python(self, centers: list[QGCenter], how: str) -> float:
+    def _calculate_energy_python(
+        self,
+        centers: list[QGCenter],
+        how: str,
+        observations: list[QGPoint] | None = None,
+    ) -> float:
         """Pure-Python energy fallback (no precomputed distances needed)."""
         if how == "uniform":
             energy = 0.0
@@ -780,7 +817,13 @@ class QuantumGraph(nx.Graph, Space):
                 )
                 energy += min_dist_sq
             return energy / self.number_of_nodes()
-        else:  # how == "obs"
+        elif how == "empirical":
+            energy = sum(
+                min(self.distance(center, point) ** 2 for center in centers)
+                for point in observations
+            )
+            return energy / len(observations)
+        else:  # how == "node_measure"
             energy = 0.0
             total_weight = 0
             for node, data in self.nodes(data=True):
@@ -796,92 +839,101 @@ class QuantumGraph(nx.Graph, Space):
 
             return energy / total_weight if total_weight > 0 else 0.0
 
+    def _points_as_arrays(
+        self, points: list[QGPoint]
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Edge indices, positions and edge lengths of points, for the kernels."""
+        n = len(points)
+        edges_0 = np.empty(n, dtype=np.int32)
+        edges_1 = np.empty(n, dtype=np.int32)
+        positions = np.empty(n, dtype=np.float64)
+        lengths = np.empty(n, dtype=np.float64)
+        for i, point in enumerate(points):
+            edge = point.edge
+            edges_0[i] = self._node_to_index[edge[0]]
+            edges_1[i] = self._node_to_index[edge[1]]
+            positions[i] = point.position
+            lengths[i] = self.get_edge_length(*edge)
+        return edges_0, edges_1, positions, lengths
+
+    def _nodes_as_arrays(
+        self,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Every node as an on-edge point at position 0, for the kernels."""
+        nodes = list(self.nodes())
+        n = len(nodes)
+        edges_0 = np.empty(n, dtype=np.int32)
+        edges_1 = np.empty(n, dtype=np.int32)
+        positions = np.zeros(n, dtype=np.float64)
+        lengths = np.empty(n, dtype=np.float64)
+        for i, node in enumerate(nodes):
+            neighbor = next(self.neighbors(node))
+            edges_0[i] = self._node_to_index[node]
+            edges_1[i] = self._node_to_index[neighbor]
+            lengths[i] = self.get_edge_length(node, neighbor)
+        return edges_0, edges_1, positions, lengths
+
     def calculate_energy_numba(
-        self, centers: list[QGCenter], how: str = "uniform"
+        self,
+        centers: list[QGCenter],
+        how: str = "uniform",
+        observations: list[QGPoint] | None = None,
     ) -> float:
         """Numba-accelerated energy calculation for centers.
 
-        Uses precomputed distance matrix for fast computation. This method is
-        automatically detected and used by MinimizeEnergy strategy when available.
+        Uses the precomputed distance matrix; ``calculate_energy`` dispatches
+        here automatically once ``precomputing()`` has run.
 
         Args:
             centers: List of cluster centers.
-            how: Energy calculation mode:
-                - "uniform": Use uniform distribution over nodes
-                - "obs": Weight by observed point counts at nodes
+            how: Reference measure — "uniform", "empirical" or "node_measure"
+                (see ``calculate_energy`` for the contract; this method
+                assumes the arguments were already validated there).
+            observations: The points of the empirical measure
+                (``how="empirical"`` only).
 
         Returns:
             Average squared distance to nearest center.
 
         Raises:
             ValueError: If pairwise distances not precomputed.
-
-        Note:
-            Requires precomputing() to have been called first.
         """
         if self._pairwise_nodes_distance_array is None:
             raise ValueError("Must call precomputing() before calculate_energy_numba")
 
-        # Extract center data
-        k = len(centers)
-        center_edges_0 = np.empty(k, dtype=np.int32)
-        center_edges_1 = np.empty(k, dtype=np.int32)
-        center_positions = np.empty(k, dtype=np.float64)
-        center_lengths = np.empty(k, dtype=np.float64)
+        center_arrays = self._points_as_arrays(centers)
 
-        for i, center in enumerate(centers):
-            edge = center.edge
-            center_edges_0[i] = self._node_to_index[edge[0]]
-            center_edges_1[i] = self._node_to_index[edge[1]]
-            center_positions[i] = center.position
-            center_lengths[i] = self.get_edge_length(*edge)
-
-        # Extract point data from stored observations (nodes as points at position 0)
-        nodes = list(self.nodes())
-        n = len(nodes)
-        point_edges_0 = np.empty(n, dtype=np.int32)
-        point_edges_1 = np.empty(n, dtype=np.int32)
-        point_positions = np.zeros(n, dtype=np.float64)  # All at position 0
-        point_lengths = np.empty(n, dtype=np.float64)
-
-        for i, node in enumerate(nodes):
-            neighbor = next(self.neighbors(node))
-            edge = (node, neighbor)
-            point_edges_0[i] = self._node_to_index[edge[0]]
-            point_edges_1[i] = self._node_to_index[edge[1]]
-            point_lengths[i] = self.get_edge_length(*edge)
-
-        if how == "uniform":
+        if how == "empirical":
+            # The empirical measure of the observations: a uniform average
+            # over the points themselves, exactly where they lie on their
+            # edges (no rounding to nodes).
+            point_arrays = self._points_as_arrays(observations)
             return _calculate_energy_uniform_numba(
-                center_edges_0,
-                center_edges_1,
-                center_positions,
-                center_lengths,
-                point_edges_0,
-                point_edges_1,
-                point_positions,
-                point_lengths,
+                *center_arrays,
+                *point_arrays,
                 self._pairwise_nodes_distance_array,
             )
-        else:  # how == "obs"
-            # obs_weight is a measure, not a count: node samplers happen to set
-            # integer counts, but the paper experiments set the fractional
-            # population measure nu. Casting to int here truncated every
-            # fractional weight to zero, so the whole obs-energy collapsed to
-            # 0.0 -- silently, since 0 is a valid energy. Keep it float.
+
+        point_arrays = self._nodes_as_arrays()
+        if how == "uniform":
+            return _calculate_energy_uniform_numba(
+                *center_arrays,
+                *point_arrays,
+                self._pairwise_nodes_distance_array,
+            )
+        else:  # how == "node_measure"
+            # obs_weight is a measure, not a count: integer counts come from
+            # register_observations, but the paper experiments set the
+            # fractional population measure nu. Casting to int here truncated
+            # every fractional weight to zero, so the whole energy collapsed
+            # to 0.0 -- silently, since 0 is a valid energy. Keep it float.
             point_obs_weight = np.array(
                 [data.get("obs_weight", 0) for _, data in self.nodes(data=True)],
                 dtype=np.float64,
             )
             return _calculate_energy_obs_numba(
-                center_edges_0,
-                center_edges_1,
-                center_positions,
-                center_lengths,
-                point_edges_0,
-                point_edges_1,
-                point_positions,
-                point_lengths,
+                *center_arrays,
+                *point_arrays,
                 point_obs_weight,
                 self._pairwise_nodes_distance_array,
             )

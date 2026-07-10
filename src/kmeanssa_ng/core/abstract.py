@@ -10,12 +10,14 @@ on arbitrary metric spaces. The design follows a clear separation of concerns:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     import numpy as np
 
     from .strategies.sampling import SamplingStrategy
+
+EnergyMode = Literal["uniform", "empirical", "node_measure"]
 
 
 class Point(ABC):
@@ -154,7 +156,7 @@ class Space(ABC):
     def calculate_energy(
         self,
         centers: list[Center],
-        how: str = "uniform",
+        how: EnergyMode = "uniform",
         observations: list[Point] | None = None,
     ) -> float:
         """Calculate the k-means energy (distortion) for given centers.
@@ -163,23 +165,43 @@ class Space(ABC):
         taken under a reference measure — the same convention for every
         space, so energies are comparable across modes and implementations.
 
+        The mode names describe the *provenance* of the reference measure —
+        the only thing the space can guarantee. Which measure plays which
+        statistical role is the caller's declaration: for the population
+        objective, register the population measure on the space and use
+        ``"node_measure"``; for the empirical objective, pass the sample
+        with ``"empirical"``; ``"uniform"`` is a geometric reference measure
+        independent of any sampling.
+
         Args:
             centers: List of cluster centers.
-            how: Which reference measure to average under:
+            how: Which reference measure to average under. Each mode has an
+                unambiguous data source, and every mismatch is an error —
+                there is deliberately no silent fallback between modes:
                 - "uniform": the space's own uniform measure (e.g. uniform
-                  over graph nodes). Spaces without one (continuous
-                  manifolds) may reject or ignore this mode.
-                - "obs": the observation measure. Spaces that carry it
-                  internally (e.g. a graph's per-node ``obs_weight``) may
-                  ignore ``observations``; others average over the explicit
-                  ``observations`` list.
-            observations: The algorithm's observation points, for spaces that
-                do not carry an internal observation measure. Observations
-                belong to the algorithm, never to the space: passing them
-                explicitly keeps two algorithms sharing one space independent.
+                  over graph nodes). Rejects ``observations``. Spaces
+                  without a uniform measure (continuous manifolds) reject
+                  the mode itself.
+                - "empirical": the empirical measure of the ``observations``
+                  list, which is **required**. Points are used exactly where
+                  they lie (no rounding to nodes). The only mode supported
+                  on continuous manifolds.
+                - "node_measure": the measure carried by the space's nodes
+                  (a graph's per-node ``obs_weight``, set explicitly by the
+                  caller). Rejects ``observations`` — the caller picks one
+                  source, never both. Graph spaces only.
+            observations: The algorithm's observation points, for
+                ``"empirical"``. Observations belong to the algorithm, never
+                to the space: passing them explicitly keeps two algorithms
+                sharing one space independent.
 
         Returns:
             The mean squared distance to the nearest center.
+
+        Raises:
+            ValueError: If the mode is unknown (including the retired
+                ``"obs"``), unsupported by the space, or its data source is
+                missing or over-specified.
         """
         raise NotImplementedError
 

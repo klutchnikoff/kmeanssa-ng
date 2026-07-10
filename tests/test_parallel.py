@@ -131,7 +131,7 @@ class TestRunParallel:
             lambda0=2,
             beta0=0.5,
             step_size=0.05,
-            energy_mode="obs",
+            energy_mode="empirical",
             robust_prop=0.1,
             n_jobs=2,
         )
@@ -304,7 +304,7 @@ class TestWorkerFunction:
                 lambda0=1,
                 beta0=1.0,
                 step_size=0.1,
-                energy_mode="obs",
+                energy_mode="empirical",
                 robust_prop=0.1,
                 sampling_strategy=UniformNodeSampling(),
                 initialization_strategy=None,
@@ -317,7 +317,7 @@ class TestWorkerFunction:
                 lambda0=1,
                 beta0=1.0,
                 step_size=0.1,
-                energy_mode="obs",
+                energy_mode="empirical",
                 random_state=ANY,
             )
 

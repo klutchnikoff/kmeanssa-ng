@@ -125,24 +125,29 @@ class TestRiemannianManifold:
             space.calculate_energy([], observations=points)
 
     def test_calculate_energy_with_how_parameter(self):
-        """Test energy calculation accepts 'how' parameter for API compatibility."""
+        """Only 'empirical' is a valid mode on a manifold; others fail loudly."""
         sphere = Hypersphere(dim=2)
         space = RiemannianManifold(sphere)
         points = space.sample_points(20, strategy=UniformManifoldSampling())
 
-        sa = SimulatedAnnealing(points, k=3)
+        sa = SimulatedAnnealing(points, k=3, energy_mode="empirical")
         centers = RandomInit().initialize_centers(sa)
-        # Both calls should give the same result since 'how' is ignored
         energy_default = space.calculate_energy(centers, observations=points)
-        energy_obs = space.calculate_energy(centers, how="obs", observations=points)
-        energy_uniform = space.calculate_energy(
-            centers, how="uniform", observations=points
+        energy_empirical = space.calculate_energy(
+            centers, how="empirical", observations=points
         )
 
-        assert energy_default == energy_obs
-        assert energy_default == energy_uniform  # 'uniform' is ignored
+        assert energy_default == energy_empirical  # "empirical" is the default
         assert isinstance(energy_default, float)
         assert energy_default >= 0
+
+        # No silent reinterpretation of the other modes on a manifold
+        with pytest.raises(ValueError, match="empirical"):
+            space.calculate_energy(centers, how="obs", observations=points)
+        with pytest.raises(ValueError, match="empirical"):
+            space.calculate_energy(centers, how="uniform", observations=points)
+        with pytest.raises(ValueError, match="empirical"):
+            space.calculate_energy(centers, how="node_measure", observations=points)
 
     def test_two_annealings_share_a_space_independently(self):
         """Two SAs on one manifold evaluate energies on their own observations.
@@ -154,8 +159,12 @@ class TestRiemannianManifold:
         north = [RiemannianPoint(space, np.array([0.0, 0.0, 1.0])) for _ in range(5)]
         south = [RiemannianPoint(space, np.array([0.0, 0.0, -1.0])) for _ in range(5)]
 
-        sa_north = SimulatedAnnealing(north, k=1, random_state=0)
-        sa_south = SimulatedAnnealing(south, k=1, random_state=0)
+        sa_north = SimulatedAnnealing(
+            north, k=1, random_state=0, energy_mode="empirical"
+        )
+        sa_south = SimulatedAnnealing(
+            south, k=1, random_state=0, energy_mode="empirical"
+        )
 
         center = [space.center_from_point(north[0])]
         assert sa_north.calculate_energy(center) == pytest.approx(0.0)
