@@ -23,6 +23,8 @@ Contains breaking API changes.
 ### Changed
 - **Breaking:** the per-node observation-measure attribute `nb_obs` is renamed **`obs_weight`** — it holds a measure weight, not a count.
 - **Breaking:** `Space.calculate_energy(centers, how="uniform", observations=None)` — the reference measure is now explicit and observations are supplied by the algorithm rather than stored on the space; the documented convention is the **mean** squared distance to the nearest center.
+- **Breaking:** the `"obs"` energy mode is split into two explicit modes named by the provenance of the reference measure — `"empirical"` (the empirical measure of the `observations` list, required, points used exactly where they lie) and `"node_measure"` (the per-node `obs_weight` measure declared on the graph, `observations` rejected); `"obs"` now raises with a migration hint, manifolds accept `"empirical"` only, and every mode/data mismatch is an error instead of a silent fallback.
+- **Breaking:** node sampling strategies are pure draws — they no longer stamp `obs_weight` counts on the graph. Declare the measure explicitly (`register_observations`, or the `obs_weight` node attribute).
 - **Breaking:** `FrechetMeanUpdate` is renamed **`KarcherFrechetMean`** and runs an intrinsic Karcher iteration (no geomstats `FrechetMean`).
 - **Breaking:** the `Center` ABC now requires `seed_rng()`; the annealer seeds centers through it instead of a private attribute.
 - **Breaking:** `UniformManifoldSampling` raises `NotImplementedError` on manifolds without a generator-driven uniform sampler (e.g. hyperbolic); `RiemannianPoint` rejects off-manifold coordinates.
@@ -36,7 +38,8 @@ Contains breaking API changes.
 - **Self-loop distances:** correct geodesic on loop edges (no spurious 0.0), across all distance kernels (now deduplicated).
 - **Distance caches** are invalidated on graph edits, and a re-run `precomputing()` actually recomputes.
 - `energy_mode="obs"` raises instead of silently returning 0.0 when no node carries a positive measure; the obs-energy kernel carries `obs_weight` as a float measure, so fractional population weights are no longer truncated to zero.
-- **Lloyd** reseeds empty clusters (farthest point) instead of silently returning fewer than k centers.
+- **Lloyd** reseeds empty clusters (farthest point) instead of silently returning fewer than k centers; simultaneously-empty clusters now get **distinct** reseeds, and convergence is checked on the empirical energy of the algorithm's own points (it silently used the uniform node energy on graphs).
+- **Fréchet mean on graphs:** the SA-based Fréchet mean selects its best visited state on the **cluster's empirical energy**; it used to select on the graph-wide energy, biasing the returned mean toward the global center of the graph.
 - **Metric-correct Brownian motion** on manifolds via `random_tangent` (sphere and Bolza; unsupported manifolds raise).
 - Paper protocol: equal restart budgets across methods, honest grid-timing attribution, and a harmonised population-measure selection criterion.
 - Executable module-header examples; corrected `lambda0` docstring (it is the Poisson-clock intensity, not a Brownian scale factor).
