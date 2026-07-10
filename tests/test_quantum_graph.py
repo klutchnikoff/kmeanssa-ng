@@ -1365,3 +1365,137 @@ class TestNodeCenterAPI:
         _, _, centers = self._graph_and_centers()
         with pytest.raises(ValueError, match="precomputing"):
             qg.node_center_distances(centers)
+
+
+class TestDriftDynamics:
+    """Regression tests for the drift/Brownian dynamics of QGCenter.
+
+    Converted from the review probes of 2026-07-10: greedy routing scored by
+    shortest-path distance instead of traversed edge length, self-loop drift
+    reflected across the vertex, target observations mutated by reverse(),
+    and self-loops underweighted at Brownian vertex crossings.
+    """
+
+    def _trap_graph(self):
+        """A graph whose direct edge (a, b) is longer than the route a-c-b."""
+        g = QuantumGraph()
+        g.add_edge("d", "a", length=1.0)
+        g.add_edge("a", "b", length=10.0)
+        g.add_edge("a", "c", length=1.0)
+        g.add_edge("c", "b", length=1.0)
+        g.add_edge("b", "e", length=1.0)
+        g.precomputing()
+        return g
+
+    def _loop_graph(self, loop_length=10.0):
+        """A self-loop at node 0 plus a path 0-1-2."""
+        g = QuantumGraph()
+        g.add_edge(0, 0, length=loop_length)
+        g.add_edge(0, 1, length=1.0)
+        g.add_edge(1, 2, length=1.0)
+        g.precomputing()
+        return g
+
+    def test_full_drift_reaches_target_through_long_edge_trap(self):
+        """Routing must charge the traversed edge, not the shortest path.
+
+        The long direct edge (a, b) ties with the true route a-c-b under the
+        old shortest-path scoring, sending ~half the drifts onto the long
+        edge, 5.0 away from the target.
+        """
+        for seed in range(20):
+            g = self._trap_graph()
+            center = QGCenter(
+                QGPoint(g, ("d", "a"), 0.5), rng=np.random.default_rng(seed)
+            )
+            target = QGPoint(g, ("b", "e"), 0.5)
+            center.drift(target, 1.0)
+            assert g.distance(center, target) == pytest.approx(0.0, abs=1e-12)
+
+    def test_partial_drift_shrinks_distance_proportionally(self):
+        """After drift(target, prop), d(center, target) = (1 - prop) * d."""
+        for seed in range(20):
+            g = self._trap_graph()
+            center = QGCenter(
+                QGPoint(g, ("d", "a"), 0.5), rng=np.random.default_rng(seed)
+            )
+            target = QGPoint(g, ("b", "e"), 0.5)
+            d_before = g.distance(center, target)
+            center.drift(target, 0.5)
+            assert g.distance(center, target) == pytest.approx(0.5 * d_before)
+
+    def test_selfloop_drift_moves_along_true_exit_arc(self):
+        """A drift stopping on the loop must not reflect across the vertex.
+
+        Center at arc position 2 (loop length 10), target off the loop: the
+        geodesic exits backward through the vertex, so travelling 1 must land
+        at position 1 -- the reflected walk landed at 9.
+        """
+        g = self._loop_graph()
+        center = QGCenter(QGPoint(g, (0, 0), 2.0), rng=np.random.default_rng(0))
+        target = QGPoint(g, (0, 1), 0.5)
+        d_before = g.distance(center, target)  # 2 + 0.5
+        center.drift(target, 1.0 / d_before)  # travel exactly 1
+        assert center.edge == (0, 0)
+        assert center.position == pytest.approx(1.0)
+        assert g.distance(center, target) == pytest.approx(d_before - 1.0)
+
+    def test_drift_never_mutates_the_target_observation(self):
+        """The target belongs to the caller; drift must not move or reorient it.
+
+        On a self-loop, reverse() maps position p to L - p, which is a
+        *different physical point*: a mutated observation corrupts every
+        subsequent drift and energy evaluation.
+        """
+        g = self._loop_graph()
+        loop_target = QGPoint(g, (0, 0), 8.0)
+        edge_target = QGPoint(g, (2, 1), 0.3)
+
+        center = QGCenter(QGPoint(g, (1, 2), 0.5), rng=np.random.default_rng(0))
+        center.drift(loop_target, 1.0)
+        assert loop_target.edge == (0, 0)
+        assert loop_target.position == 8.0
+
+        center = QGCenter(QGPoint(g, (0, 1), 0.2), rng=np.random.default_rng(0))
+        center.drift(edge_target, 1.0)
+        assert edge_target.edge == (2, 1)
+        assert edge_target.position == 0.3
+
+    def test_full_drift_reaches_selfloop_target_via_far_arc(self):
+        """A loop target nearer the far end is reached exactly (coordinate L - r)."""
+        g = self._loop_graph()
+        center = QGCenter(QGPoint(g, (1, 0), 0.5), rng=np.random.default_rng(0))
+        target = QGPoint(g, (0, 0), 8.0)  # far arc: 2.0 from the vertex backward
+        center.drift(target, 1.0)
+        assert center.edge == (0, 0)
+        assert center.position == pytest.approx(8.0)
+        assert g.distance(center, target) == pytest.approx(0.0, abs=1e-12)
+
+    def test_brownian_vertex_crossing_counts_selfloop_ends_twice(self):
+        """Kirchhoff weights: a self-loop offers two edge-ends at the vertex.
+
+        At a vertex with one loop and one plain edge the walk must enter the
+        loop with probability 2/3 (not 1/2), through either end.
+        """
+        g = QuantumGraph()
+        g.add_edge(0, 0, length=5.0)
+        g.add_edge(0, 1, length=100.0)
+        g.precomputing()
+
+        rng = np.random.default_rng(12345)
+        n_trials = 3000
+        entered_loop, loop_positions = 0, []
+        for _ in range(n_trials):
+            center = QGCenter(QGPoint(g, (0, 1), 0.0), rng=rng)
+            center.brownian_motion(0.01)  # steps ~0.1: at most one crossing
+            if center.edge == (0, 0):
+                entered_loop += 1
+                loop_positions.append(center.position)
+        # A center at position 0 crosses the vertex iff its draw is negative
+        # (p = 1/2), then enters the loop with probability 2/3: 1/3 of all
+        # trials. The old neighbor-uniform choice gave 1/2 * 1/2 = 1/4,
+        # about 10 sigma away from this tolerance band.
+        assert entered_loop / n_trials == pytest.approx(1.0 / 3.0, abs=0.04)
+        # Both loop ends are used: entries near 0 (forward) and near 5 (backward).
+        positions = np.array(loop_positions)
+        assert (positions < 2.5).any() and (positions > 2.5).any()

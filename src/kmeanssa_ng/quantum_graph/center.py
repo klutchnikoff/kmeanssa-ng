@@ -46,14 +46,22 @@ class QGCenter(QGPoint, Center):
         self._rng = rng if rng is not None else default_rng()
 
     def _find_best_neighbor(self, n1: int, n2: int) -> int:
-        """Find the neighbor of n1 that is closest to n2.
+        """Find the neighbor of n1 whose edge starts a shortest walk to n2.
+
+        The walk physically traverses the edge (n1, neighbor), so the cost of
+        a candidate is the *length of that edge* plus the shortest path from
+        the neighbor onward. Scoring with ``node_distance(n1, neighbor)``
+        instead would tie a long direct edge with the true route whenever a
+        shortcut exists (the shortest-path relaxation hides the edge length),
+        and the drift would wander off the geodesic.
 
         Args:
             n1: Starting node.
             n2: Target node.
 
         Returns:
-            The neighbor of n1 that minimizes the path to n2.
+            A neighbor of n1 minimizing the walk to n2 (ties broken at random
+            among neighbors that all realize the same minimal walk length).
         """
         if n1 == n2:
             return n1
@@ -63,9 +71,9 @@ class QGCenter(QGPoint, Center):
         best_neighbors = []
 
         for neighbor in neighbors:
-            distance = self.space.node_distance(
-                neighbor, n2
-            ) + self.space.node_distance(n1, neighbor)
+            distance = self.space.get_edge_length(n1, neighbor) + (
+                self.space.node_distance(neighbor, n2)
+            )
             if distance < min_distance:
                 min_distance = distance
                 best_neighbors = [neighbor]
@@ -151,26 +159,42 @@ class QGCenter(QGPoint, Center):
         """Handle drift when center and target are on different edges."""
         next_node, target_node = path
 
-        # Orient edges so the traversal exits forward and enters at position 0.
+        # Orient this center so the traversal exits forward (position
+        # increasing). On a self-loop, reverse() is a reflection across the
+        # vertex -- a *different physical point*, not a reparametrization --
+        # so it is only safe when the walk provably leaves the loop (the
+        # reflected and true trajectories then meet at the vertex). A walk
+        # that stops on the loop must move along the true exit arc directly.
         if self.edge[0] == self.edge[1]:
-            # Self-loop: both directions reach the vertex; the geodesic always
-            # exits via the shorter arc.
             edge_length = self.space.get_edge_length(*self.edge)
-            if self.position < edge_length - self.position:
+            backward = self.position < edge_length - self.position
+            arc = self.position if backward else edge_length - self.position
+            if dist_to_travel < arc:
+                self.position += -dist_to_travel if backward else dist_to_travel
+                return
+            if backward:
                 self.reverse()
         elif self.edge[0] == next_node:
             self.reverse()
 
-        if target_point.edge[0] == target_point.edge[1]:
-            # Self-loop target: the geodesic enters via its shorter arc.
-            target_length = self.space.get_edge_length(*target_point.edge)
-            if target_point.position > target_length - target_point.position:
-                target_point.reverse()
-        elif target_point.edge[1] == target_node:
-            target_point.reverse()
+        # Orient the target locally: the observation belongs to the caller
+        # and must never be mutated (on a self-loop, reverse() would even
+        # move it to a different point of the graph).
+        target_edge = target_point.edge
+        target_length = self.space.get_edge_length(*target_edge)
+        enter_far_arc = False
+        if target_edge[0] == target_edge[1]:
+            # Self-loop target: the geodesic enters via the shorter arc. Via
+            # the far end, the coordinate runs backward from the loop length.
+            enter_far_arc = (
+                target_point.position > target_length - target_point.position
+            )
+        elif target_edge[1] == target_node:
+            target_edge = (target_edge[1], target_edge[0])
 
         remaining_dist = dist_to_travel
         dist_to_next_node = self.space.get_edge_length(*self.edge) - self.position
+        on_target_edge = False
 
         # Traverse edges until we've traveled the required distance
         while remaining_dist > dist_to_next_node:
@@ -179,7 +203,8 @@ class QGCenter(QGPoint, Center):
             if target_node == next_node:
                 # Reached target edge
                 self.position = 0
-                self.edge = target_point.edge
+                self.edge = target_edge
+                on_target_edge = True
                 dist_to_next_node = remaining_dist + 1  # Exit condition
             else:
                 # Move to next edge
@@ -189,7 +214,10 @@ class QGCenter(QGPoint, Center):
                 self.edge = (cur_node, next_node)
                 dist_to_next_node = self.space.get_edge_length(*self.edge)
 
-        self.position += remaining_dist
+        if on_target_edge and enter_far_arc:
+            self.position = target_length - remaining_dist
+        else:
+            self.position += remaining_dist
 
     def clone(self) -> QGCenter:
         """Create an independent copy of this center.
@@ -260,16 +288,25 @@ class QGCenter(QGPoint, Center):
         while remaining_dist >= dist_to_next_node:
             remaining_dist -= dist_to_next_node
             cur_node = next_node
-            _nbrs = list(self.space.neighbors(cur_node))
-            next_node = _nbrs[self._rng.integers(len(_nbrs))]
+            # Brownian motion on a metric graph leaves a vertex through an
+            # *edge-end* chosen uniformly (Kirchhoff conditions). A self-loop
+            # is attached to the vertex by both of its ends, so it counts
+            # twice -- once entered forward (from position 0), once backward
+            # (from the loop length).
+            ends = []
+            for nbr in self.space.neighbors(cur_node):
+                ends.append((nbr, True))
+                if nbr == cur_node:
+                    ends.append((nbr, False))
+            next_node, forward = ends[self._rng.integers(len(ends))]
             self.edge = (cur_node, next_node)
             edge_length = self.space.get_edge_length(*self.edge)
-            self.position = 0
+            # Whatever the sign of the initial draw, the leftover motion
+            # continues away from the vertex: toward next_node on an edge
+            # entered forward, toward decreasing positions on a self-loop
+            # entered through its far end.
+            self.position = 0 if forward else edge_length
             dist_to_next_node = edge_length
-            # Each traversed edge is oriented (cur_node, next_node), so the
-            # leftover motion continues toward next_node whatever the sign
-            # of the initial draw.
-            forward = True
 
         # Final position update
         self.position += remaining_dist if forward else -remaining_dist
