@@ -80,15 +80,18 @@ def annealings(
     method="sa",
     step_size=0.01,
     track_first=False,
+    energy_mode="node_measure",
 ):
     """Yield (run_index, centers, sa) for ``n_runs`` independently-seeded SA runs.
 
-    The annealer runs in "obs" energy mode, which reads the reference measure
-    from the graph's per-node ``obs_weight``. The experiment owns that measure: it
-    must be in place before (or set by) ``observations_for``, and it is the
-    same for every run and every seed -- so the tracked energy history, the
-    internal ``MinimizeEnergy`` selection and the downstream selection all
-    evaluate the same functional.
+    On the graph experiments the annealer runs in "node_measure" energy mode,
+    reading the reference measure from the graph's per-node ``obs_weight``.
+    The experiment owns that measure: it must be in place before
+    ``observations_for``, and it is the same for every run and every seed --
+    so the tracked energy history, the internal ``MinimizeEnergy`` selection
+    and the downstream selection all evaluate the same functional. Manifold
+    runs pass ``energy_mode="empirical"`` (the only mode a manifold
+    supports): their selection energy is that of the run's own observations.
 
     Args:
         observations_for: callback ``rng -> observations`` building a run's data from
@@ -98,6 +101,7 @@ def annealings(
         experiment, seed, method: entropy of the run streams (``method_entropy``).
         step_size: SDE time-discretization step of the annealer.
         track_first: record the energy history of the first run (``sa.energy_history``).
+        energy_mode: reference measure of the internal energy evaluations.
     """
     run_entropy = method_entropy(experiment, seed, method).spawn(n_runs)
     for r in range(n_runs):
@@ -109,7 +113,7 @@ def annealings(
             lambda0=1.0,
             beta0=beta0,
             step_size=step_size,
-            energy_mode="obs",
+            energy_mode=energy_mode,
             random_state=np.random.default_rng(sa_seed),
         )
         centers = sa.run(

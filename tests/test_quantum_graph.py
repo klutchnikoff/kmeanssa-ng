@@ -92,7 +92,7 @@ class TestQuantumGraph:
             graph.get_edge_length(2, 3)
 
     def test_calculate_energy_with_no_observations_raises(self):
-        """how='obs' without an observation measure fails loudly.
+        """how='node_measure' without a registered measure fails loudly.
 
         Regression: it used to return 0.0 for every configuration of centers,
         silently disabling any energy-based selection.
@@ -104,7 +104,7 @@ class TestQuantumGraph:
         centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
 
         with pytest.raises(ValueError, match="obs_weight"):
-            graph.calculate_energy(centers, how="obs")
+            graph.calculate_energy(centers, how="node_measure")
 
     def test_register_observations_enables_obs_energy(self):
         """Edge-sampled points can be registered as the observation measure."""
@@ -119,7 +119,7 @@ class TestQuantumGraph:
         centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
 
         graph.register_observations(points)
-        energy = graph.calculate_energy(centers, how="obs")
+        energy = graph.calculate_energy(centers, how="node_measure")
         assert energy > 0
 
         # Registration replaces the previous measure entirely
@@ -147,8 +147,8 @@ class TestQuantumGraph:
         nx.set_node_attributes(graph, weights, "obs_weight")
         centers = [QGCenter(QGPoint(graph, (0, 1), 0.2))]
 
-        numba = graph.calculate_energy(centers, how="obs")
-        python = graph._calculate_energy_python(centers, "obs")
+        numba = graph.calculate_energy(centers, how="node_measure")
+        python = graph._calculate_energy_python(centers, "node_measure")
         assert numba > 0
         assert numba == pytest.approx(python, abs=1e-12)
 
@@ -163,7 +163,7 @@ class TestQuantumGraph:
             graph.calculate_energy(centers, how="unifrom")
 
     def test_calculate_energy_numba_obs(self):
-        """Test Numba-accelerated energy calculation with how='obs'."""
+        """Test Numba-accelerated energy calculation with how='node_measure'."""
         graph = QuantumGraph()
         graph.add_edge(0, 1, length=1.0)
         graph.add_edge(1, 2, length=2.0)
@@ -176,10 +176,10 @@ class TestQuantumGraph:
 
         # Calculate with pure Python (calculate_energy itself dispatches to
         # numba on a precomputed graph, so target the fallback directly)
-        energy_python = graph._calculate_energy_python(centers, how="obs")
+        energy_python = graph._calculate_energy_python(centers, how="node_measure")
 
         # Calculate with Numba
-        energy_numba = graph.calculate_energy_numba(centers, how="obs")
+        energy_numba = graph.calculate_energy_numba(centers, how="node_measure")
 
         assert np.isclose(energy_python, energy_numba)
 
@@ -791,7 +791,7 @@ class TestSelfLoopDistances:
             QGCenter(QGPoint(graph, edge=(0, 0), position=1.1)),
             QGCenter(QGPoint(graph, edge=(1, 2), position=0.3)),
         ]
-        for how in ("uniform", "obs"):
+        for how in ("uniform", "node_measure"):
             assert graph.calculate_energy_numba(centers, how=how) == pytest.approx(
                 graph._calculate_energy_python(centers, how), abs=1e-12
             )
@@ -1499,3 +1499,58 @@ class TestDriftDynamics:
         # Both loop ends are used: entries near 0 (forward) and near 5 (backward).
         positions = np.array(loop_positions)
         assert (positions < 2.5).any() and (positions > 2.5).any()
+
+
+class TestEnergyModes:
+    """Contract of the three explicit reference measures (2026-07-10 reviews).
+
+    The former "obs" mode meant "node measure" on a graph and "empirical" on
+    a manifold; splitting it removes that ambiguity, and every mode/data
+    mismatch is an error rather than a silent fallback.
+    """
+
+    def _graph_and_centers(self):
+        graph = QuantumGraph()
+        graph.add_edge(0, 1, length=1.0)
+        graph.add_edge(1, 2, length=2.0)
+        graph.precomputing()
+        centers = [QGCenter(QGPoint(graph, (0, 1), 0.5))]
+        return graph, centers
+
+    def test_retired_obs_mode_raises_with_migration_hint(self):
+        graph, centers = self._graph_and_centers()
+        with pytest.raises(ValueError, match="empirical.*node_measure"):
+            graph.calculate_energy(centers, how="obs")
+
+        from kmeanssa_ng import SimulatedAnnealing
+
+        points = [QGPoint(graph, (0, 1), 0.0)]
+        with pytest.raises(ValueError, match="empirical.*node_measure"):
+            SimulatedAnnealing(points, k=1, energy_mode="obs")
+
+    def test_empirical_requires_observations(self):
+        graph, centers = self._graph_and_centers()
+        with pytest.raises(ValueError, match="requires the explicit"):
+            graph.calculate_energy(centers, how="empirical")
+
+    def test_uniform_and_node_measure_reject_observations(self):
+        graph, centers = self._graph_and_centers()
+        points = [QGPoint(graph, (0, 1), 0.0)]
+        with pytest.raises(ValueError, match="empirical"):
+            graph.calculate_energy(centers, how="uniform", observations=points)
+        with pytest.raises(ValueError, match="empirical"):
+            graph.calculate_energy(centers, how="node_measure", observations=points)
+
+    def test_empirical_uses_exact_on_edge_positions(self):
+        """The empirical measure keeps points where they lie: no node rounding."""
+        graph, centers = self._graph_and_centers()
+        # Two points inside edges; center at (0, 1) position 0.5.
+        points = [QGPoint(graph, (0, 1), 0.9), QGPoint(graph, (1, 2), 0.6)]
+        expected = (0.4**2 + 1.1**2) / 2  # exact on-edge distances
+
+        energy = graph.calculate_energy(centers, how="empirical", observations=points)
+        assert energy == pytest.approx(expected, abs=1e-12)
+
+        # numba path (precomputed) and pure-Python fallback agree
+        python = graph._calculate_energy_python(centers, "empirical", points)
+        assert energy == pytest.approx(python, abs=1e-12)

@@ -118,16 +118,22 @@ class SimulatedAnnealing:
                 - Rule of thumb: Use step_size much smaller than the typical
                   time scale of the Poisson process (~ 1/lambda0)
 
-            energy_mode: How the k-means energy (mean squared distance to the
-                nearest center) is averaged over the space:
+            energy_mode: Which reference measure the k-means energy (mean
+                squared distance to the nearest center) is averaged under —
+                used by ``MinimizeEnergy`` to select the best visited state
+                and by ``record_energy`` diagnostics:
                 - "uniform": average over all graph nodes with equal weight,
                   measuring how well the centers cover the whole geometry
                   irrespective of where the observations lie.
-                - "obs": average over nodes weighted by the number of
-                  observations at each node (the empirical k-means objective);
-                  only nodes carrying observations contribute.
-                Riemannian manifolds support "obs" only, since there is no
-                uniform distribution over all of their points.
+                - "empirical": average over this algorithm's own observation
+                  points, exactly where they lie (the empirical k-means
+                  objective). The only mode supported on Riemannian
+                  manifolds.
+                - "node_measure": average under the per-node ``obs_weight``
+                  measure registered on the graph by the caller (e.g. a
+                  population measure); graph spaces only.
+                The former "obs" mode was split into "empirical" and
+                "node_measure" and now raises.
 
             random_state: Controls randomness for reproducibility.
                 Determines random number generation for all random operations:
@@ -186,9 +192,17 @@ class SimulatedAnnealing:
         self._validate_constructor_parameters(
             observations, k, lambda0, beta0, step_size
         )
-        if energy_mode not in ("uniform", "obs"):
+        if energy_mode == "obs":
             raise ValueError(
-                f"energy_mode must be 'uniform' or 'obs', got {energy_mode!r}"
+                "energy_mode 'obs' was split into two explicit modes: use "
+                "'empirical' to average over this algorithm's observation "
+                "points, or 'node_measure' to average under the per-node "
+                "'obs_weight' measure registered on the graph."
+            )
+        if energy_mode not in ("uniform", "empirical", "node_measure"):
+            raise ValueError(
+                "energy_mode must be 'uniform', 'empirical' or "
+                f"'node_measure', got {energy_mode!r}"
             )
         self._initialize_random_generator(random_state)
 
@@ -325,14 +339,16 @@ class SimulatedAnnealing:
     def calculate_energy(self, centers: list[Center]) -> float:
         """Calculate k-means energy for given centers based on the energy mode.
 
-        Delegates to the space, passing the algorithm's own observations:
-        spaces without an internal reference measure (manifolds) average over
-        them, while spaces that carry one (a graph's per-node ``obs_weight``)
-        ignore them. Acceleration (e.g. the quantum graph's numba kernels) is
-        the space's concern, dispatched inside ``Space.calculate_energy``.
+        Delegates to the space. The algorithm's own observations are the data
+        of the "empirical" mode only: "uniform" and "node_measure" define
+        their reference measure without them (and reject them, so no mode can
+        silently shadow another). Acceleration (e.g. the quantum graph's
+        numba kernels) is the space's concern, dispatched inside
+        ``Space.calculate_energy``.
         """
+        observations = self._observations if self._energy_mode == "empirical" else None
         return self.space.calculate_energy(
-            centers, how=self._energy_mode, observations=self._observations
+            centers, how=self._energy_mode, observations=observations
         )
 
     def run(

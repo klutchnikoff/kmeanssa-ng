@@ -108,12 +108,24 @@ class SimulatedAnnealingFrechetMean(LloydUpdateStrategy):
         else:
             observations = points
 
-        # Use SA to find the point that minimizes the energy (the Fréchet mean)
+        # Use SA to find the point that minimizes the energy (the Fréchet
+        # mean). The Fréchet functional is by definition the empirical energy
+        # of the cluster points: with any other mode, MinimizeEnergy would
+        # select the best visited state against a foreign objective (on a
+        # graph, the old "obs"/uniform default measured the distance to *all*
+        # nodes, biasing the returned mean toward the graph's global center).
+        if self.sa_kwargs.get("energy_mode", "empirical") != "empirical":
+            raise ValueError(
+                "SimulatedAnnealingFrechetMean pins energy_mode='empirical': "
+                "the Fréchet functional is the empirical energy of the "
+                "cluster points, any other selection objective returns a "
+                "biased mean"
+            )
         sa = SimulatedAnnealing(
             observations=observations,
             k=1,
             random_state=self.random_state,
-            **self.sa_kwargs,
+            **{**self.sa_kwargs, "energy_mode": "empirical"},
         )
 
         # The run method requires a robustification strategy.

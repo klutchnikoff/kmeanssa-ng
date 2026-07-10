@@ -151,3 +151,41 @@ class TestSimulatedAnnealingFrechetMean:
             new_center, RiemannianPoint(space, expected_mean)
         )
         assert distance_to_expected < 0.15
+
+
+class TestFrechetMeanSelectionEnergy:
+    """The inner SA must select on the *cluster's* empirical energy.
+
+    Regression (2026-07-09 review): on a graph, the selection went through
+    the old "obs"/uniform energy — the mean squared distance to *all* graph
+    nodes — so the returned "Fréchet mean" was biased toward the global
+    center of the graph (a 9-node path returned node 2 instead of node 1 for
+    the cluster {0, 1, 2}).
+    """
+
+    def test_returns_the_cluster_mean_not_the_graph_center(self):
+        graph = QuantumGraph()
+        for v in range(8):
+            graph.add_edge(v, v + 1, length=1.0)
+        graph.precomputing()
+
+        cluster = [
+            QGPoint(graph, (v, v + 1), 0.0) for v in (0, 1, 2)
+        ]  # true Fréchet mean: node 1 (empirical energy 2/3; node 2 gives 5/3)
+
+        strategy = SimulatedAnnealingFrechetMean(
+            random_state=np.random.default_rng(0), n_samples=40
+        )
+        for _ in range(3):  # three clusters' worth of calls, all must stay local
+            center = strategy.update(cluster, graph)
+            energy = graph.calculate_energy(
+                [center], how="empirical", observations=cluster
+            )
+            assert energy < 1.0  # node 1 -> 0.667, the biased node 2 -> 1.667
+
+    def test_rejects_a_foreign_energy_mode(self):
+        graph = generate_simple_graph()
+        points = [QGPoint(graph, ("A0", "B0"), 0.0)]
+        strategy = SimulatedAnnealingFrechetMean(random_state=0, energy_mode="uniform")
+        with pytest.raises(ValueError, match="empirical"):
+            strategy.update(points, graph)

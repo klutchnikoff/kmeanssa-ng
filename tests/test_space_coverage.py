@@ -214,7 +214,7 @@ class TestSamplingEdgeCases:
 
         center = graph.node_as_center(0)
         with pytest.raises(ValueError, match="obs_weight"):
-            graph.calculate_energy([center], how="obs")
+            graph.calculate_energy([center], how="node_measure")
 
     def test_calculate_energy_obs_with_observations(self):
         """Test energy calculation with obs weighting and observations."""
@@ -226,7 +226,7 @@ class TestSamplingEdgeCases:
         nx.set_node_attributes(graph, {0: {"obs_weight": 5}, 1: {"obs_weight": 3}})
 
         center = graph.node_as_center(1)
-        energy = graph.calculate_energy([center], how="obs")
+        energy = graph.calculate_energy([center], how="node_measure")
 
         assert isinstance(energy, float)
         assert energy >= 0

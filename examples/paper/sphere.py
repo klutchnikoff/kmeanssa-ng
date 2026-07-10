@@ -196,7 +196,14 @@ def _sa_sphere_runs(data, n_data, n_obs, b, n_runs, seed):
 
     labels, energies = [], []
     for _, centers, sa in annealings(
-        observations_for, 3, b, n_runs, "sphere", seed, method="sa-manifold"
+        observations_for,
+        3,
+        b,
+        n_runs,
+        "sphere",
+        seed,
+        method="sa-manifold",
+        energy_mode="empirical",
     ):
         labels.append(np.array(compute_labels(sphere, all_points, centers)))
         energies.append(sa.calculate_energy(centers))

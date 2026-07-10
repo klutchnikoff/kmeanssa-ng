@@ -34,13 +34,13 @@ coords = sphere.random_uniform(150, random_state=0)
 observations = [RiemannianPoint(sphere, x) for x in coords]
 
 sa = SimulatedAnnealing(
-    observations, k=3, lambda0=1.0, beta0=0.5, step_size=0.05, energy_mode="obs"
+    observations, k=3, lambda0=1.0, beta0=0.5, step_size=0.05, energy_mode="empirical"
 )
 centers = sa.run(KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1)
 print(f"Found {len(centers)} cluster centers on the sphere")
 ```
 
-On a manifold, energy is always measured over the sampled observations (`energy_mode="obs"`), since there is no natural uniform distribution over a continuous surface to sum against.
+On a manifold, energy is always the empirical energy of the observations (`energy_mode="empirical"`), since there is no natural uniform distribution over a continuous surface to sum against.
 
 ## Geodesic operations
 

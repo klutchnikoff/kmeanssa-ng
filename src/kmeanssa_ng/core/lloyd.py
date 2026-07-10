@@ -105,7 +105,14 @@ class Lloyd:
                     else None
                 )
                 if new_center is None:
-                    new_center = self._reseed_center(centers)
+                    # Reseed against the configuration as it stands *now* —
+                    # the centers already updated (including earlier reseeds
+                    # of this same iteration) plus the not-yet-updated ones.
+                    # Reseeding against the pre-iteration centers would hand
+                    # every simultaneously-empty cluster the same farthest
+                    # point, leaving k shrunk despite the reseeding.
+                    reference = new_centers + centers[cluster_idx + 1 :]
+                    new_center = self._reseed_center(reference or centers)
                     logger.warning(
                         "Cluster %d is empty; reseeding its center on the point "
                         "farthest from the current centers.",
@@ -115,10 +122,11 @@ class Lloyd:
 
             centers = new_centers
 
-            # Check for convergence on this algorithm's own points (the space
-            # may be shared with other running algorithms).
+            # Check for convergence on the empirical objective of this
+            # algorithm's own points (the space may be shared with other
+            # running algorithms, and may carry unrelated node measures).
             current_energy = self.space.calculate_energy(
-                centers, observations=self.points
+                centers, how="empirical", observations=self.points
             )
             if abs(last_energy - current_energy) < tolerance:
                 break
