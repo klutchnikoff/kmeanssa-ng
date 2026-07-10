@@ -7,9 +7,11 @@ module factors out that seeded loop and the per-method ARI aggregation.
 
 import os
 import pickle
+import subprocess
 
 import numpy as np
 
+import kmeanssa_ng
 from kmeanssa_ng import SimulatedAnnealing, KMeansPlusPlus, MinimizeEnergy
 from kmeanssa_ng.core.metrics import adjusted_rand_index
 
@@ -26,6 +28,34 @@ _EXPERIMENT_IDS = {
     "overhead": 6,
 }
 _METHOD_IDS = {"sa": 0, "sa-manifold": 1, "k-medoids": 2, "spectral": 3, "clvq": 4}
+
+_CODE_STAMP = None
+
+
+def code_stamp():
+    """Identity of the code that produced a result: package version + git state.
+
+    Checkpoints and result stores carry this stamp so that artifacts computed
+    by an older version of the library are never silently reused: the protocol
+    ``config`` alone cannot see code changes, and a resumed campaign would
+    otherwise mix eras. ``git`` is None outside a git checkout (e.g. running
+    from an sdist); two None stamps compare equal, so version equality then
+    carries the check alone.
+    """
+    global _CODE_STAMP
+    if _CODE_STAMP is None:
+        try:
+            git = subprocess.run(
+                ["git", "describe", "--always", "--dirty"],
+                cwd=os.path.dirname(os.path.abspath(__file__)),
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+        except (OSError, subprocess.CalledProcessError):
+            git = None
+        _CODE_STAMP = {"kmeanssa_ng": kmeanssa_ng.__version__, "git": git}
+    return _CODE_STAMP
 
 
 def method_entropy(experiment, seed, method="sa"):
@@ -102,13 +132,16 @@ def run_seeds(seeds, fn, n_jobs=1, tag="", checkpoint_dir=None, config=None):
     tracked seed (``i == 0``); the others return ``None``.
 
     When ``checkpoint_dir`` is set, each seed's result is written there on
-    completion (``seed_<s>.pkl``, atomically) together with ``config``, and a
-    later invocation with the same ``config`` resumes from those files instead
-    of recomputing -- a crash at seed 99 no longer loses the first 98. A
-    checkpoint whose config differs belongs to another protocol and is
-    recomputed (then overwritten).
+    completion (``seed_<s>.pkl``, atomically) together with ``config`` and the
+    code stamp, and a later invocation with the same ``config`` **and the same
+    code** resumes from those files instead of recomputing -- a crash at seed
+    99 no longer loses the first 98. A checkpoint whose config differs belongs
+    to another protocol, and one whose code stamp differs was computed by
+    another version of the library; both are recomputed (then overwritten).
     """
     from joblib import Parallel, delayed
+
+    code = code_stamp()
 
     def ckpt_path(seed):
         return os.path.join(checkpoint_dir, f"seed_{seed}.pkl")
@@ -118,7 +151,9 @@ def run_seeds(seeds, fn, n_jobs=1, tag="", checkpoint_dir=None, config=None):
             return None
         with open(ckpt_path(seed), "rb") as f:
             saved = pickle.load(f)
-        return saved if saved.get("config") == config else None
+        if saved.get("config") != config or saved.get("code") != code:
+            return None
+        return saved
 
     def one(i, seed):
         saved = load_checkpoint(seed)
@@ -129,7 +164,15 @@ def run_seeds(seeds, fn, n_jobs=1, tag="", checkpoint_dir=None, config=None):
         if checkpoint_dir is not None:
             tmp = ckpt_path(seed) + ".tmp"
             with open(tmp, "wb") as f:
-                pickle.dump({"config": config, "value": value, "convergence": conv}, f)
+                pickle.dump(
+                    {
+                        "config": config,
+                        "code": code,
+                        "value": value,
+                        "convergence": conv,
+                    },
+                    f,
+                )
             os.replace(tmp, ckpt_path(seed))
         print(f"[{tag}] seed {seed} done", flush=True)
         return seed, value, conv

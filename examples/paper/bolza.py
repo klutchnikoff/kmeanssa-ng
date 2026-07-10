@@ -33,7 +33,7 @@ from kmeanssa_ng.riemannian_manifold import (
 )
 from kmeanssa_ng.riemannian_manifold import bolza as bz
 
-from multistart import annealings
+from multistart import annealings, code_stamp
 
 N_NET = 400  # epsilon-net points
 N_ITER = 120  # repulsion relaxation steps
@@ -267,6 +267,7 @@ def run(seed=42, n_runs=8, n_data=N_DATA):
 
     store = {
         "name": "bolza",
+        "code": code_stamp(),
         "config": {
             "seed": seed,
             "n_runs": n_runs,

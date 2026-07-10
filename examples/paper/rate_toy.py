@@ -30,7 +30,7 @@ from kmeanssa_ng import (
 )
 from kmeanssa_ng.quantum_graph.generators import UniformDistribution
 from calibration import potential_matrix, critical_depth
-from multistart import method_entropy
+from multistart import code_stamp, method_entropy
 
 PKL = "results/rate_toy.pkl"
 
@@ -102,6 +102,7 @@ def run(n_runs=300, n_obs=100000, b=0.3, l_ab=1.0, l_bc=2.0, seed=7, n_grid=800)
 
     store = {
         "name": "rate",
+        "code": code_stamp(),
         "grid": grid,
         "stacked": stacked,
         "ustar": ustar,
