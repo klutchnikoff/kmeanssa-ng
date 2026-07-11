@@ -35,10 +35,11 @@ from kmeanssa_ng.riemannian_manifold import bolza as bz
 
 from multistart import annealings, code_stamp, data_entropy
 
-N_NET = 400  # epsilon-net points
+N_NET = 800  # epsilon-net points (illustrative: no repetitions, so a finer net
+# -- a closer approximation of the surface -- costs a one-off build, cached)
 N_ITER = 120  # repulsion relaxation steps
 K = 3  # clusters
-N_DATA = 900  # observations
+N_DATA = 1500  # observations
 BETA0 = 0.5  # drift strength
 STEP_SIZE = 0.05  # SDE time-discretization step
 SIGMA = 0.22  # blob spread, as a hyperbolic-distance scale (surface diameter ~2.09)
