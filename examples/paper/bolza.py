@@ -33,7 +33,7 @@ from kmeanssa_ng.riemannian_manifold import (
 )
 from kmeanssa_ng.riemannian_manifold import bolza as bz
 
-from multistart import annealings, code_stamp
+from multistart import annealings, code_stamp, data_entropy
 
 N_NET = 400  # epsilon-net points
 N_ITER = 120  # repulsion relaxation steps
@@ -258,7 +258,9 @@ def run(seed=42, n_runs=8, n_data=N_DATA):
         flush=True,
     )
 
-    data, true_labels = generate_data(surface, np.random.default_rng(seed), n_data)
+    data, true_labels = generate_data(
+        surface, np.random.default_rng(data_entropy("bolza", seed)), n_data
+    )
     data_nodes = nearest_node(net, data)
     node_label, centroids, energies = cluster(qg, data_nodes, n_runs, seed)
     data_label = node_label[data_nodes]

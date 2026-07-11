@@ -49,7 +49,19 @@ def _best_ari(labels, dtrue):
 
 def _sa_graph(qg, V, nbr, node_list, nu_row, proj, data, dtrue, n_obs, b, n_runs, seed):
     labels, _, _, _ = S._sa_graph_runs(
-        qg, V, nbr, node_list, nu_row, proj, len(data), n_obs, b, n_runs, seed, False
+        qg,
+        V,
+        nbr,
+        node_list,
+        nu_row,
+        proj,
+        len(data),
+        n_obs,
+        b,
+        n_runs,
+        seed,
+        False,
+        experiment="overhead",
     )
     return _best_ari(labels, dtrue)
 

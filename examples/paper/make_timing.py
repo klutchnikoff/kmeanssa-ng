@@ -59,7 +59,17 @@ def main(measure_net=True):
 
     rows = []  # (experiment, item, kind, mean_s, std_s, n_seeds)
     for name, store in stores:
-        timings = [v["timings"] for v in store["per_seed"].values() if "timings" in v]
+        # The tracked seed (the first of the campaign) runs the convergence
+        # diagnostic, which recomputes the full energy after every observation
+        # inside the SA timing bracket; that inflates only its SA row. Exclude
+        # it so the reported per-seed times measure the algorithm alone.
+        seeds = store.get("seeds") or store.get("config", {}).get("seeds", [])
+        tracked = seeds[0] if seeds else None
+        timings = [
+            v["timings"]
+            for s, v in store["per_seed"].items()
+            if "timings" in v and s != tracked
+        ]
         n = len(timings)
         for m in timings[0] if timings else []:
             ts = np.array([t[m] for t in timings])
