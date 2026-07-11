@@ -1641,3 +1641,55 @@ class TestConstructionLengthValidation:
         nx.set_edge_attributes(qg, 1.0, "length")
         qg.precomputing()
         assert qg.node_distance(0, 3) == 3.0
+
+
+class TestSingleMutatorsAndFallbacks:
+    """Cache invalidation for the single-edit mutators and the distance
+    fallbacks (completes the bulk-mutator coverage of lot 4)."""
+
+    def _triangle(self):
+        g = QuantumGraph()
+        g.add_edge(0, 1, length=1.0)
+        g.add_edge(1, 2, length=1.0)
+        g.add_edge(0, 2, length=5.0)
+        g.precomputing()
+        return g
+
+    def test_remove_edge_single_invalidates_cache(self):
+        g = self._triangle()
+        assert g.node_distance(0, 2) == 2.0
+        g.remove_edge(0, 1)
+        assert g.node_distance(0, 2) == 5.0  # recomputed, not the stale 2.0
+
+    def test_remove_node_single_invalidates_cache(self):
+        g = self._triangle()
+        assert g._pairwise_nodes_distance_array is not None
+        g.remove_node(1)
+        assert g._pairwise_nodes_distance_array is None
+
+    def test_clear_edges_invalidates_cache(self):
+        g = self._triangle()
+        g.clear_edges()
+        assert g._pairwise_nodes_distance_array is None
+
+    def test_construction_with_precompute_true(self):
+        base = nx.Graph()
+        base.add_edge(0, 1, length=1.0)
+        base.add_edge(1, 2, length=2.0)
+        g = QuantumGraph(base, precompute=True)
+        assert g._pairwise_nodes_distance_array is not None
+        assert g.node_distance(0, 2) == 3.0
+
+    def test_node_distance_dict_fallback(self, monkeypatch):
+        """When only the dict form is present (no array), node_distance reads it."""
+        g = self._triangle()
+        g._pairwise_nodes_distance_array = None  # keep only the dict form
+        assert g._pairwise_nodes_distance is not None
+        assert g.node_distance(0, 2) == 2.0
+
+    def test_calculate_energy_numba_requires_precomputing(self):
+        g = QuantumGraph()
+        g.add_edge(0, 1, length=1.0)
+        center = [QGCenter(QGPoint(g, (0, 1), 0.5))]
+        with pytest.raises(ValueError, match="precomputing"):
+            g.calculate_energy_numba(center, how="uniform")
