@@ -293,6 +293,33 @@ class TestRiemannianCenter:
         norm = np.linalg.norm(center.coordinates)
         np.testing.assert_allclose(norm, 1.0, rtol=1e-5)
 
+    def test_brownian_step_radial_law_is_chi(self):
+        """The step is sqrt(t) * V with V ~ N(0, I) tangent (DYN-3 regression).
+
+        On S^2 the geodesic displacement of one step exp(x, sqrt(t) V) has
+        length sqrt(t) |V| with |V| ~ chi_2, so E[dist]/sqrt(t) = E[chi_2] =
+        sqrt(pi/2) ~ 1.2533. The previous code multiplied V by an extra scalar
+        N(0,1); that product law has E[|step|]/sqrt(t) = E[|N|] E[chi_2] = 1.0
+        (the same second moment, hence the covariance looked right, but a
+        heavier-tailed, non-Gaussian step). The mean displacement separates
+        the two laws cleanly.
+        """
+        space = RiemannianManifold(Hypersphere(dim=2))
+        base = np.array([1.0, 0.0, 0.0])
+        t = 0.01
+        rng = np.random.default_rng(0)
+
+        n = 4000
+        displacements = np.empty(n)
+        for i in range(n):
+            center = RiemannianCenter(RiemannianPoint(space, base), rng=rng)
+            center.brownian_motion(time_to_travel=t)
+            displacements[i] = space.distance(center, RiemannianPoint(space, base))
+
+        mean_normalized = displacements.mean() / np.sqrt(t)
+        assert mean_normalized == pytest.approx(np.sqrt(np.pi / 2), abs=0.04)
+        assert mean_normalized > 1.1  # excludes the product-law value 1.0
+
     def test_brownian_motion_reproducible_across_global_rng(self):
         """Brownian motion depends only on the center's generator, not global RNG.
 

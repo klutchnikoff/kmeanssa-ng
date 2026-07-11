@@ -75,18 +75,23 @@ class RiemannianCenter(RiemannianPoint, AbstractCenter):
         if time_float == 0:
             return  # No movement
 
-        # Sample a random tangent vector and move along it, scaled by sqrt(time)
-        # for the Brownian-motion property. The direction comes from the space
-        # (metric-isotropic frame; spaces without one refuse) and is drawn from
-        # this center's own generator: geomstats' random_tangent_vec would draw
-        # from the global RNG, which cannot be seeded per run and breaks
-        # reproducibility.
+        # The Brownian increment is sqrt(time) * V, where V is a standard
+        # Gaussian tangent vector (iid N(0,1) components in a metric-orthonormal
+        # frame). random_tangent already returns that full Gaussian vector --
+        # random in both direction *and* length -- so it is the whole
+        # increment; multiplying it by an extra scalar N(0,1) would double-count
+        # the noise (a product of two normals: kurtosis 9 instead of 3, wrong
+        # radial law at finite step_size) and diverge from the 1-D graph step,
+        # which draws a single Gaussian. It comes from the space (spaces without
+        # a metric-orthonormal frame refuse) and from this center's own
+        # generator, not geomstats' global RNG, so runs stay reproducible.
         tangent_vec = self.space.random_tangent(self.coordinates, self._rng)
-        step_size = np.sqrt(time_float) * self._rng.standard_normal()
 
         # Move along the exponential map (self.space dispatches to a closed form
         # on known manifolds, e.g. the sphere, and to geomstats otherwise).
-        self.coordinates = self.space.exp(self.coordinates, step_size * tangent_vec)
+        self.coordinates = self.space.exp(
+            self.coordinates, np.sqrt(time_float) * tangent_vec
+        )
 
     def drift(self, target_point: RiemannianPoint, prop_to_travel: float) -> None:
         """Move toward a target point along the geodesic.
