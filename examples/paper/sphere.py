@@ -29,6 +29,7 @@ import baselines as B
 from multistart import (
     annealings,
     code_stamp,
+    data_entropy,
     method_entropy,
     methods_from_raw,
     summarize,
@@ -149,7 +150,7 @@ def build_graph(n_net):
 
 def make_data(seed, n_data):
     """Sample n_data vMF points over the three modes; return (points, labels)."""
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng(data_entropy("sphere", seed))
     comps = rng.integers(3, size=n_data)
     data = np.empty((n_data, 3))
     for c in range(3):
@@ -161,9 +162,27 @@ def make_data(seed, n_data):
 
 
 def _sa_graph_runs(
-    qg, V, nbr, node_list, nu_row, proj, n_data, n_obs, b, n_runs, seed, track
+    qg,
+    V,
+    nbr,
+    node_list,
+    nu_row,
+    proj,
+    n_data,
+    n_obs,
+    b,
+    n_runs,
+    seed,
+    track,
+    experiment="sphere",
 ):
-    """SA on the graph; return (data_labels, energies, centroids, convergence)."""
+    """SA on the graph; return (data_labels, energies, centroids, convergence).
+
+    ``experiment`` names the entropy family: the sphere campaign passes
+    "sphere", but the overhead experiment reuses this routine and must pass its
+    own id, otherwise its SA-graph runs are bit-for-bit copies of the sphere
+    campaign's rather than independent measurements.
+    """
     for node, w in zip(node_list, nu_row):
         qg.nodes[node]["obs_weight"] = float(w)
 
@@ -174,7 +193,7 @@ def _sa_graph_runs(
     node_label = np.empty(len(V), dtype=int)
     labels, energies, centroids, convergence = [], [], [], None
     for r, centers, sa in annealings(
-        observations_for, 3, b, n_runs, "sphere", seed, track_first=track
+        observations_for, 3, b, n_runs, experiment, seed, track_first=track
     ):
         if track and r == 0:
             convergence = {"time": sa.time_history, "energy": sa.energy_history}
@@ -206,7 +225,14 @@ def _sa_sphere_runs(data, n_data, n_obs, b, n_runs, seed):
         energy_mode="empirical",
     ):
         labels.append(np.array(compute_labels(sphere, all_points, centers)))
-        energies.append(sa.calculate_energy(centers))
+        # Score every run on the *same* fixed set (the full data, uniform), so
+        # cross-run selection compares energies under one measure -- exactly as
+        # CLVQ and k-medoids do. sa.calculate_energy(centers) instead measured
+        # each run on its own bootstrap resample, a noisy criterion that put
+        # ~half the seeds' selection within the bootstrap noise.
+        centroid_coords = np.array([c.coordinates for c in centers])
+        dists = np.arccos(np.clip(data @ centroid_coords.T, -1.0, 1.0))
+        energies.append(float((dists.min(axis=1) ** 2).mean()))
     return labels, np.array(energies)
 
 

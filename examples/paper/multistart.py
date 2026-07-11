@@ -28,6 +28,10 @@ _EXPERIMENT_IDS = {
     "overhead": 6,
 }
 _METHOD_IDS = {"sa": 0, "sa-manifold": 1, "k-medoids": 2, "spectral": 3, "clvq": 4}
+# Dataset streams get their own slot, distinct from every method id above, so
+# an experiment's data is independent of its method streams and of the other
+# experiments' data (raw default_rng(seed) collided across experiments).
+_DATA_ID = 99
 
 _CODE_STAMP = None
 
@@ -68,6 +72,16 @@ def method_entropy(experiment, seed, method="sa"):
     return np.random.SeedSequence(
         [_EXPERIMENT_IDS[experiment], seed, _METHOD_IDS[method]]
     )
+
+
+def data_entropy(experiment, seed):
+    """Root ``SeedSequence`` for one experiment's dataset stream.
+
+    Distinct from the method streams (``_DATA_ID`` slot) and from the other
+    experiments (``_EXPERIMENT_IDS``), so datasets never share a bit stream --
+    ``default_rng(seed)`` alone collided across experiments at equal seeds.
+    """
+    return np.random.SeedSequence([_EXPERIMENT_IDS[experiment], seed, _DATA_ID])
 
 
 def annealings(

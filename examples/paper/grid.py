@@ -15,6 +15,7 @@ from calibration import potential_matrix, critical_depth
 from multistart import (
     annealings,
     code_stamp,
+    data_entropy,
     method_entropy,
     methods_from_raw,
     summarize,
@@ -61,7 +62,7 @@ def build_space():
 
 def sample_data(seed, densities, n_nodes, n_data, n_obs):
     """Draw latent components and their node positions for one seed."""
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng(data_entropy("grid", seed))
     comps = rng.integers(0, 2, n_data)
     data_nodes = np.array([rng.choice(n_nodes, p=densities[c]) for c in comps])
     if n_obs == n_data:
