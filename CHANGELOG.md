@@ -19,6 +19,7 @@ Contains breaking API changes.
 - `register_observations` to set the per-node observation measure from a set of points.
 - **Reproducible paper pipeline** under `examples/paper/`: one-command `reproduce.py` regenerating every figure and table (grid, SBM, sphere, Bolza, the rate-theorem toy, the geomstats overhead), with structured per-seed/-run/-method RNG, per-seed checkpoints and resume, `--seeds`/`--jobs` flags, and a `values.tex` feeding the article prose.
 - JOSS `paper.md`/`paper.bib` and `CONTRIBUTING.md`.
+- **Default strategies** for a zero-config quickstart: `SimulatedAnnealing.run()` defaults to `KMeansPlusPlus()` initialization and `MinimizeEnergy()` robustification, and `Lloyd.run()` defaults its initialization to `KMeansPlusPlus()` (its `update_strategy` stays required — the canonical choice is space-dependent). So `SimulatedAnnealing(points, k=5).run()` just works; passing the strategies explicitly is unchanged.
 
 ### Changed
 - **Breaking:** the per-node observation-measure attribute `nb_obs` is renamed **`obs_weight`** — it holds a measure weight, not a count.

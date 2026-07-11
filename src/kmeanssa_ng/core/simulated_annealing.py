@@ -3,17 +3,15 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
 
 import numpy as np
 
 from .abstract import Center, Point, Space
 from .strategies.initialization import (
     InitializationStrategy,
+    KMeansPlusPlus,
 )
-
-if TYPE_CHECKING:
-    from .strategies.robustification import RobustificationStrategy
+from .strategies.robustification import MinimizeEnergy, RobustificationStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -363,8 +361,8 @@ class SimulatedAnnealing:
 
     def run(
         self,
-        initialization_strategy: InitializationStrategy,
-        robustification_strategy: RobustificationStrategy,
+        initialization_strategy: InitializationStrategy | None = None,
+        robustification_strategy: RobustificationStrategy | None = None,
         robust_prop: float = 0.0,
         record_energy: bool = False,
     ):
@@ -375,11 +373,33 @@ class SimulatedAnnealing:
         and drift (exploitation) for the cluster centers.
 
         Args:
+            initialization_strategy: How the initial centers are chosen.
+                Defaults to :class:`KMeansPlusPlus`, the canonical k-means++
+                seeding, so ``sa.run()`` works out of the box.
+            robustification_strategy: How the returned centers are selected
+                from the trajectory. Defaults to :class:`MinimizeEnergy`, which
+                keeps the lowest-energy state seen during the collection window.
+            robust_prop: Fraction of the (trailing) observations over which the
+                robustification strategy collects candidate states, in [0, 1].
+                Left at 0.0 by default, the window is a single point, so the
+                default :class:`MinimizeEnergy` only compares the initial and
+                final states — pass ``robust_prop`` around 0.1 for a genuine
+                best-of-window robustification.
             record_energy: If True, record the energy and annealing time after
                 each observation into :attr:`energy_history` and
                 :attr:`time_history` (for convergence diagnostics). Off by
                 default so the energy is not recomputed when not needed.
+
+        Example:
+            >>> # Zero-config quickstart: k-means++ init, energy-minimizing
+            >>> # robustification.
+            >>> centers = SimulatedAnnealing(points, k=5, random_state=0).run()
         """
+        if initialization_strategy is None:
+            initialization_strategy = KMeansPlusPlus()
+        if robustification_strategy is None:
+            robustification_strategy = MinimizeEnergy()
+
         logger.info(
             "Starting SA: k=%d, n_obs=%d, lambda0=%.3f, beta0=%.3f, "
             "step_size=%.4f, robust_prop=%.2f",

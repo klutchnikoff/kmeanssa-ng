@@ -774,3 +774,31 @@ class TestInitializationStrategyGuards:
         sa = SimulatedAnnealing(coincident, k=3, random_state=0)
         centers = KMeansPlusPlus().initialize_centers(sa)
         assert len(centers) == 3
+
+
+class TestDefaultStrategies:
+    """run() defaults to KMeansPlusPlus init and MinimizeEnergy robustification
+    (lot 9d ergonomics), so a bare SimulatedAnnealing(...).run() works."""
+
+    def _points(self):
+        graph = generate_simple_graph(n_a=3)
+        return graph.sample_points(30, strategy=UniformNodeSampling(random_state=0))
+
+    def test_run_without_arguments(self):
+        centers = SimulatedAnnealing(self._points(), k=3, random_state=0).run()
+        assert len(centers) == 3
+
+    def test_defaults_match_explicit_kpp_minimize_energy(self):
+        pts = self._points()
+        implicit = SimulatedAnnealing(pts, k=3, random_state=0).run(robust_prop=0.1)
+        explicit = SimulatedAnnealing(pts, k=3, random_state=0).run(
+            KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1
+        )
+        assert [c.edge for c in implicit] == [c.edge for c in explicit]
+        assert [c.position for c in implicit] == [c.position for c in explicit]
+
+    def test_explicit_strategies_still_accepted_positionally(self):
+        centers = SimulatedAnnealing(self._points(), k=3, random_state=0).run(
+            RandomInit(), MinimizeEnergy()
+        )
+        assert len(centers) == 3
