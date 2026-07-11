@@ -19,8 +19,9 @@ Contributions are welcome in many forms, including but not limited to:
 
 ## Reporting Bugs
 
-If you encounter a bug, please open an issue on our GitLab repository. A
-great bug report includes:
+If you encounter a bug, please open an issue on the [GitHub
+repository](https://github.com/klutchnikoff/kmeanssa-ng/issues). A great
+bug report includes:
 
 1.  **A clear title and description:** Summarize the issue concisely.
 2.  **Steps to reproduce:** Provide a minimal code example that
@@ -41,9 +42,10 @@ efforts and ensure the proposal aligns with the project’s goals.
 
 Ready to contribute code? Here’s how to get started:
 
-1.  **Fork the repository** on GitLab.
+1.  **Fork the repository** on GitHub
+    (<https://github.com/klutchnikoff/kmeanssa-ng>).
 2.  **Clone your fork** locally:
-    `git clone https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng.git`
+    `git clone https://github.com/<your-username>/kmeanssa-ng.git`
 3.  **Set up the development environment** (see below).
 4.  **Create a new branch** for your changes:
     `git checkout -b feature/my-new-feature` or `fix/a-specific-bug`.
@@ -54,8 +56,8 @@ Ready to contribute code? Here’s how to get started:
 7.  **Commit your changes** with a clear and descriptive commit message.
 8.  **Push your branch** to your fork:
     `git push origin feature/my-new-feature`.
-9.  **Open a Merge Request** from your fork to the main `kmeanssa-ng`
-    repository.
+9.  **Open a Pull Request** from your fork to the main `kmeanssa-ng`
+    repository on GitHub.
 
 ## Setting Up the Development Environment
 
@@ -96,7 +98,7 @@ pdm run check
 ## Submitting Changes
 
 Once your changes are ready and verified, push them to your fork and
-open a Merge Request. Provide a clear description of the changes you’ve
+open a Pull Request. Provide a clear description of the changes you’ve
 made and link to any relevant issues. We will review your contribution
 as soon as possible.
 

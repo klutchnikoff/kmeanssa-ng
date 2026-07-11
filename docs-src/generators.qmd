@@ -138,7 +138,7 @@ This approach is useful when your data doesn't naturally form a graph structure 
 
 When working with graph generators, keep these guidelines in mind:
 
-- **Always call `precomputing()`** after generation. The clustering algorithm relies on precomputed shortest paths for efficient distance queries.
+- **Precomputing is automatic.** Generators precompute the pairwise shortest paths by default (`precompute=True`); you only need to call `precomputing()` again if you modify a graph after creation.
 - **Check connectivity** for random graphs. If using `as_quantum_graph()` with random graph models like Erdős-Rényi, verify the graph is connected or extract the largest connected component.
 - **Choose the right generator** for your use case:
   - `generate_simple_graph()`: Quick testing and development

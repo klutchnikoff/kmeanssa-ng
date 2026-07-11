@@ -49,6 +49,7 @@ nav:
     - "Quantum Graphs": quantum-graphs.md
     - "Riemannian Manifolds": riemannian-manifolds.md
     - "Meshing a Manifold": epsilon-net.md
+    - "The Bolza Surface": bolza.md
     - "Parallel Execution": parallel-execution.md
     - "Generators": generators.md
     - "Advanced Usage": advanced-usage.md

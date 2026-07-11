@@ -13,10 +13,12 @@ manifolds**, where the meaningful notion of distance is the
 **geodesic**—the length of the shortest path *along the surface*, not
 the straight line through the ambient space.
 
-`kmeanssa-ng` clusters directly on such manifolds. Under the hood it
-wraps [geomstats](https://geomstats.github.io/), which provides the
-exponential and logarithm maps that let cluster centers move along
-geodesics.
+`kmeanssa-ng` clusters directly on such manifolds using the exponential
+and logarithm maps that let cluster centers move along geodesics. These
+come from [geomstats](https://geomstats.github.io/) for a general
+manifold, or from built-in closed forms where they are known (the
+sphere, and the quotient [Bolza surface](bolza.md)), which avoid the
+geomstats per-call overhead.
 
 ## Creating a manifold
 
@@ -51,7 +53,7 @@ coords = sphere.random_uniform(150, random_state=0)
 observations = [RiemannianPoint(sphere, x) for x in coords]
 
 sa = SimulatedAnnealing(
-    observations, k=3, lambda0=1.0, beta0=0.5, step_size=0.05, energy_mode="obs"
+    observations, k=3, lambda0=1.0, beta0=0.5, step_size=0.05, energy_mode="empirical"
 )
 centers = sa.run(KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1)
 print(f"Found {len(centers)} cluster centers on the sphere")
@@ -59,9 +61,9 @@ print(f"Found {len(centers)} cluster centers on the sphere")
 
     Found 3 cluster centers on the sphere
 
-On a manifold, energy is always measured over the sampled observations
-(`energy_mode="obs"`), since there is no natural uniform distribution
-over a continuous surface to sum against.
+On a manifold, energy is always the empirical energy of the observations
+(`energy_mode="empirical"`), since there is no natural uniform
+distribution over a continuous surface to sum against.
 
 ## Geodesic operations
 

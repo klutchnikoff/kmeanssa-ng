@@ -13,7 +13,7 @@ Consider a road network. In a classical graph, you can only place things at inte
 - Molecular structures (atoms positioned along chemical bonds)
 - Sensor networks (devices placed along communication lines)
 
-Each edge has a **`length`** attribute representing its physical or logical distance. A point on the graph is specified by a pair `(edge, position)`, where `position ∈ [0,1]` indicates how far along that edge the point sits. The distance between any two points is the **geodesic distance**—the length of the shortest path through the graph—making this a genuine metric space suitable for k-means clustering.
+Each edge has a **`length`** attribute representing its physical or logical distance. A point on the graph is specified by a pair `(edge, position)`, where `position` is the **distance from the first node of the edge**, so it ranges over `[0, length]` (an absolute distance, not a fraction of the edge). The distance between any two points is the **geodesic distance**—the length of the shortest path through the graph—making this a genuine metric space suitable for k-means clustering.
 
 ## Structure and Requirements
 
@@ -30,7 +30,7 @@ In practice, you won't create quantum graphs manually. Instead, use the [graph g
 
 There are two types of quantum graph entities:
 
-**`QGPoint`** represents an **observation**—a fixed data point. It's immutable and specified by an `(edge, position)` pair. For example, `QGPoint(graph, edge=(0,1), position=0.3)` places a point 30% along the edge from node 0 to node 1. These are the data you want to cluster.
+**`QGPoint`** represents an **observation**—a fixed data point. It's immutable and specified by an `(edge, position)` pair. For example, on an edge of length 1, `QGPoint(graph, edge=(0,1), position=0.3)` places a point at distance 0.3 from node 0 toward node 1 (on an edge of length 5, that same `position=0.3` would sit near node 0). These are the data you want to cluster.
 
 **`QGCenter`** represents a **cluster center**. Unlike points, centers are mobile: they can perform **Brownian motion** (random walks for exploration) and **drift** (directed movement toward nearby observations). These operations are the core of the [simulated annealing algorithm](simulated-annealing.md). You don't typically create centers manually—the algorithm handles that.
 
@@ -38,7 +38,7 @@ There are two types of quantum graph entities:
 
 The quantum graph computes **geodesic distances**—the shortest path length through the graph structure. The computation strategy depends on whether two points share an edge:
 
-**Same edge**: The distance is simply $|\text{pos}_1 - \text{pos}_2| \times \text{edge length}$. If two delivery points are at 20% and 80% along a 5 km road, they're $|0.8 - 0.2| \times 5 = 3$ km apart.
+**Same edge**: The distance is simply $|\text{pos}_1 - \text{pos}_2|$ (positions are absolute distances). If two delivery points are at 1 km and 4 km along a 5 km road, they're $|4 - 1| = 3$ km apart.
 
 **Different edges**: The algorithm finds the shortest path by:
 1. Computing the distance from each point to its nearest nodes
@@ -65,7 +65,7 @@ points = graph.sample_points(100, strategy=UniformNodeSampling())
 print(f"Sampled {len(points)} points across the graph")
 ```
 
-The `UniformNodeSampling` strategy samples points **proportional to edge lengths**: a 5 km road gets more points than a 1 km road, ensuring true uniformity across the graph's total length. 
+The `UniformNodeSampling` strategy samples **uniformly over the graph nodes**: every node is equally likely, and node weights are ignored. (For continuous uniformity along the edges—so a 5 km road gets more points than a 1 km road—use `UniformEdgeSampling`; to weight by node importance, use `WeightedNodeSampling`, shown next.)
 
 ### Weighted Sampling with Node Weights
 
@@ -89,9 +89,11 @@ weighted_graph.nodes['C']['weight'] = 1.0
 
 weighted_graph.precomputing()  # Required after manual graph construction
 
-# Sample points - more will appear near node B
-from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
-weighted_points = weighted_graph.sample_points(1000, strategy=UniformNodeSampling())
+# Sample points with WeightedNodeSampling - more will appear near node B
+from kmeanssa_ng.quantum_graph.sampling import WeightedNodeSampling
+weighted_points = weighted_graph.sample_points(
+    1000, strategy=WeightedNodeSampling(random_state=0)
+)
 
 # Count points by closest node to see the distribution
 node_counts = {'A': 0, 'B': 0, 'C': 0}
