@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from kmeanssa_ng import (
+    QGPoint,
     SimulatedAnnealing,
     generate_sbm,
     generate_simple_graph,
@@ -736,3 +737,40 @@ class TestRandomInitReplacement:
         sa = SimulatedAnnealing(points, k=5, random_state=0)
         with pytest.raises(ValueError, match="distinct centers"):
             RandomInit().initialize_centers(sa)
+
+
+class TestInitializationStrategyGuards:
+    """Defensive branches of the init strategies (coverage of the error paths
+    and the all-coincident degenerate case)."""
+
+    class _Stub:
+        """Minimal object exposing what initialize_centers reads."""
+
+        def __init__(self, k, observations):
+            self.k = k
+            self.observations = observations
+
+    def test_random_init_rejects_non_positive_k(self):
+        with pytest.raises(ValueError, match="k must be positive"):
+            RandomInit().initialize_centers(self._Stub(0, [object()]))
+
+    def test_random_init_rejects_empty_observations(self):
+        with pytest.raises(ValueError, match="No observations available"):
+            RandomInit().initialize_centers(self._Stub(2, []))
+
+    def test_kpp_rejects_non_positive_k(self):
+        with pytest.raises(ValueError, match="k must be positive"):
+            KMeansPlusPlus().initialize_centers(self._Stub(-1, [object()]))
+
+    def test_kpp_rejects_empty_observations(self):
+        with pytest.raises(ValueError, match="No observations available"):
+            KMeansPlusPlus().initialize_centers(self._Stub(3, []))
+
+    def test_kpp_with_all_coincident_points_falls_back_to_uniform(self):
+        """When every observation coincides, all squared distances are 0, so
+        k-means++ falls back to a uniform choice instead of dividing by zero."""
+        graph = generate_simple_graph(n_a=3)
+        coincident = [QGPoint(graph, ("A0", "B0"), 0.0) for _ in range(5)]
+        sa = SimulatedAnnealing(coincident, k=3, random_state=0)
+        centers = KMeansPlusPlus().initialize_centers(sa)
+        assert len(centers) == 3

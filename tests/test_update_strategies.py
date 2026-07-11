@@ -213,3 +213,25 @@ class TestFrechetMeanSelectionEnergy:
         # Two instances with the same int seed reproduce the first update.
         again = SimulatedAnnealingFrechetMean(random_state=42, n_samples=30)
         assert np.allclose(again.update(cloud, space).coordinates, first)
+
+
+class TestSimulatedAnnealingFrechetMeanEdges:
+    """Edge cases of the SA-based Fréchet mean (coverage of empty input and
+    the explicit-init branch)."""
+
+    def test_update_with_empty_points_returns_none(self):
+        graph = generate_simple_graph()
+        assert SimulatedAnnealingFrechetMean(random_state=0).update([], graph) is None
+
+    def test_accepts_explicit_init_strategy(self):
+        from kmeanssa_ng.core.strategies.initialization import KMeansPlusPlus
+
+        graph = generate_simple_graph()
+        strat = SimulatedAnnealingFrechetMean(
+            sa_initialization_strategy=KMeansPlusPlus(),
+            random_state=0,
+            n_samples=20,
+        )
+        assert strat.sa_initialization_strategy.__class__.__name__ == "KMeansPlusPlus"
+        cluster = [QGPoint(graph, ("A0", "B0"), 0.0)]
+        assert strat.update(cluster, graph) is not None
