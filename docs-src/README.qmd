@@ -81,6 +81,8 @@ If you use this package in your research, please cite:
 }
 ```
 
+A companion theoretical article is in preparation; this section will be updated with its reference once it is available.
+
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
