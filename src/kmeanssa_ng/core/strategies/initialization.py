@@ -32,7 +32,7 @@ class RandomInit(InitializationStrategy):
     """Initializes centers by sampling them randomly from the observations."""
 
     def initialize_centers(self, sa: SimulatedAnnealing) -> list[Center]:
-        """Sample k centers randomly from the observations."""
+        """Sample k distinct observations as the initial centers."""
         if sa.k <= 0:
             raise ValueError(f"k must be positive, got {sa.k}")
 
@@ -41,7 +41,19 @@ class RandomInit(InitializationStrategy):
                 "No observations available. Call sample_points() first or provide observations."
             )
 
-        indices = sa._rng.choice(len(sa.observations), size=sa.k, replace=True)
+        # Sample without replacement so k distinct observations become k
+        # distinct centers. Drawing with replacement could pick one point
+        # several times, starting centers on top of each other and shrinking k
+        # from the outset. Coincident observations (several points at one node)
+        # can still yield coincident centers; KMeansPlusPlus spreads centers by
+        # construction when that matters.
+        if sa.k > len(sa.observations):
+            raise ValueError(
+                f"cannot initialize k={sa.k} distinct centers from "
+                f"{len(sa.observations)} observations; use fewer clusters or "
+                "more observations"
+            )
+        indices = sa._rng.choice(len(sa.observations), size=sa.k, replace=False)
         points = [sa.observations[idx] for idx in indices]
         return [sa.space.center_from_point(p) for p in points]
 

@@ -439,7 +439,13 @@ class QuantumGraph(nx.Graph, Space):
                 (i, j): {"drawing": 1 / drawing[(i, j)]} for i, j in drawing
             }
             nx.set_edge_attributes(self, drawing_weights)
-            self._node_position = nx.layout.spring_layout(self, weight="drawing")
+            # Fixed seed: the layout is the force-directed embedding of the
+            # graph, only used for drawing, but leaving it unseeded made every
+            # figure non-reproducible, breaking the package's determinism
+            # guarantee.
+            self._node_position = nx.layout.spring_layout(
+                self, weight="drawing", seed=0
+            )
         return self._node_position
 
     def node_distance(self, n1: int, n2: int) -> float:

@@ -40,15 +40,36 @@ class SamplingStrategy(ABC):
         """Initialize the sampling strategy.
 
         Args:
-            random_state: Controls randomness for reproducibility.
+            random_state: Controls randomness for reproducibility. Normalized
+                once to a numpy Generator (see the ``random_state`` property),
+                so the strategy owns a single stream that advances across
+                calls — successive ``sample`` calls on one instance draw
+                *different* points, as expected. Passing an int seeds it
+                reproducibly; a Generator is adopted as-is.
         """
         self.random_state = random_state
 
+    @property
+    def random_state(self) -> np.random.Generator:
+        """The strategy's numpy Generator (always normalized)."""
+        return self._rng
+
+    @random_state.setter
+    def random_state(self, value: int | np.random.Generator | None) -> None:
+        # Normalize on every assignment: an int seed used to be re-wrapped in a
+        # fresh default_rng on *each* draw, so two sample() calls on one
+        # instance returned identical points. Wrapping once, here, gives one
+        # advancing stream. Assigning a Generator (as run_parallel does per
+        # worker) adopts it directly.
+        self._rng = (
+            value
+            if isinstance(value, np.random.Generator)
+            else np.random.default_rng(value)
+        )
+
     def _get_rng(self) -> np.random.Generator:
-        """Get a numpy Generator instance based on the random_state."""
-        if isinstance(self.random_state, np.random.Generator):
-            return self.random_state
-        return np.random.default_rng(self.random_state)
+        """The strategy's Generator (kept for subclasses that call it)."""
+        return self._rng
 
     @abstractmethod
     def sample(self, space: Space, n: int) -> list[Point]:

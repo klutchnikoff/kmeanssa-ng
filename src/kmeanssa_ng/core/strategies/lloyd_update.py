@@ -76,7 +76,16 @@ class SimulatedAnnealingFrechetMean(LloydUpdateStrategy):
     ):
         self.n_samples = n_samples
         self.sa_kwargs = sa_kwargs
-        self.random_state = random_state
+        # Normalize once: with an int seed, the previous code rebuilt
+        # default_rng(seed) on *every* update() call, so every cluster and
+        # every Lloyd iteration reused an identical stream (the resample drew
+        # the same indices, the inner SA followed the same trajectory). One
+        # owned Generator advances across calls, decorrelating them.
+        self._rng = (
+            random_state
+            if isinstance(random_state, np.random.Generator)
+            else np.random.default_rng(random_state)
+        )
         self.robust_prop = robust_prop
 
         if sa_initialization_strategy is None:
@@ -93,17 +102,12 @@ class SimulatedAnnealingFrechetMean(LloydUpdateStrategy):
 
         # Import locally to avoid circular dependency at module level
         from ..simulated_annealing import SimulatedAnnealing
-        import numpy as np
 
         if self.n_samples is not None and len(points) != self.n_samples:
             # Resample with replacement, up or down: the empirical measure is
             # unchanged, but the inner annealing horizon (~ sqrt(#obs)) is
             # decoupled from the cluster size.
-            if isinstance(self.random_state, np.random.Generator):
-                rng = self.random_state
-            else:
-                rng = np.random.default_rng(self.random_state)
-            indices = rng.choice(len(points), size=self.n_samples, replace=True)
+            indices = self._rng.choice(len(points), size=self.n_samples, replace=True)
             observations = [points[idx] for idx in indices]
         else:
             observations = points
@@ -124,7 +128,7 @@ class SimulatedAnnealingFrechetMean(LloydUpdateStrategy):
         sa = SimulatedAnnealing(
             observations=observations,
             k=1,
-            random_state=self.random_state,
+            random_state=self._rng,
             **{**self.sa_kwargs, "energy_mode": "empirical"},
         )
 

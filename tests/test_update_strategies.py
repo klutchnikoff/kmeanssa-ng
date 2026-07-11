@@ -189,3 +189,27 @@ class TestFrechetMeanSelectionEnergy:
         strategy = SimulatedAnnealingFrechetMean(random_state=0, energy_mode="uniform")
         with pytest.raises(ValueError, match="empirical"):
             strategy.update(points, graph)
+
+    def test_int_seed_decorrelates_successive_updates(self):
+        """With an int seed, consecutive update() calls must differ (RNG-1).
+
+        The int seed used to rebuild default_rng(seed) inside every update(),
+        so each cluster and each Lloyd iteration reused an identical stream
+        (same resample indices, same inner SA trajectory). One owned Generator
+        now advances across calls.
+        """
+        space = RiemannianManifold(Hypersphere(dim=2))
+        rng = np.random.default_rng(1)
+        cloud = []
+        for _ in range(15):
+            v = np.array([1.0, 0.0, 0.0]) + 0.05 * rng.standard_normal(3)
+            cloud.append(RiemannianPoint(space, v / np.linalg.norm(v)))
+
+        strategy = SimulatedAnnealingFrechetMean(random_state=42, n_samples=30)
+        first = strategy.update(cloud, space).coordinates
+        second = strategy.update(cloud, space).coordinates
+        assert not np.allclose(first, second)
+
+        # Two instances with the same int seed reproduce the first update.
+        again = SimulatedAnnealingFrechetMean(random_state=42, n_samples=30)
+        assert np.allclose(again.update(cloud, space).coordinates, first)
