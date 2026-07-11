@@ -1554,3 +1554,90 @@ class TestEnergyModes:
         # numba path (precomputed) and pure-Python fallback agree
         python = graph._calculate_energy_python(centers, "empirical", points)
         assert energy == pytest.approx(python, abs=1e-12)
+
+
+class TestBulkMutatorIntegrity:
+    """Bulk networkx mutators must not bypass cache invalidation (GRAPH-1).
+
+    add_edge/remove_edge were overridden to drop the distance cache, but the
+    inherited bulk mutators (add_edges_from, remove_edges_from, update, ...)
+    edit the graph without routing through them, so a stale cache used to be
+    served silently after a bulk edit.
+    """
+
+    def _triangle_with_shortcut(self):
+        g = QuantumGraph()
+        g.add_edge(0, 1, length=1.0)
+        g.add_edge(1, 2, length=1.0)
+        g.precomputing()
+        return g
+
+    def test_add_edges_from_invalidates_cache(self):
+        g = self._triangle_with_shortcut()
+        assert g.node_distance(0, 2) == 2.0
+        g.add_edges_from([(0, 2, {"length": 0.1})])
+        assert g.node_distance(0, 2) == pytest.approx(0.1)
+
+    def test_remove_edges_from_invalidates_cache(self):
+        g = QuantumGraph()
+        g.add_edge(0, 1, length=1.0)
+        g.add_edge(1, 2, length=1.0)
+        g.add_edge(0, 2, length=5.0)
+        g.precomputing()
+        assert g.node_distance(0, 2) == 2.0
+        g.remove_edges_from([(0, 1)])
+        assert g.node_distance(0, 2) == 5.0
+
+    def test_add_nodes_from_invalidates_cache(self):
+        g = self._triangle_with_shortcut()
+        assert g._pairwise_nodes_distance_array is not None
+        g.add_nodes_from([7, 8])
+        assert g._pairwise_nodes_distance_array is None
+
+    def test_remove_nodes_from_invalidates_cache(self):
+        g = self._triangle_with_shortcut()
+        g.remove_nodes_from([2])
+        assert g._pairwise_nodes_distance_array is None
+
+    def test_update_invalidates_cache(self):
+        g = self._triangle_with_shortcut()
+        h = nx.Graph()
+        h.add_edge(0, 2, length=0.5)
+        g.update(h)
+        assert g._pairwise_nodes_distance_array is None
+
+    def test_clear_invalidates_cache(self):
+        g = self._triangle_with_shortcut()
+        g.clear()
+        assert g._pairwise_nodes_distance_array is None
+
+
+class TestConstructionLengthValidation:
+    """Lengths carried by incoming data are validated (NUM-1 guard).
+
+    A degenerate edge (e.g. a zero-length edge from a collapsed epsilon-net)
+    must fail with a clear ValueError at construction, even when
+    precompute=False, instead of silently poisoning a later precomputing().
+    The 'add the topology, then set the lengths' pattern must still work.
+    """
+
+    def test_zero_length_edge_rejected_at_construction(self):
+        bad = nx.Graph()
+        bad.add_weighted_edges_from([(0, 1, 0.0), (1, 2, 1.0)], weight="length")
+        with pytest.raises(ValueError, match="length must be positive"):
+            QuantumGraph(bad, precompute=False)
+
+    def test_negative_length_edge_rejected_at_construction(self):
+        bad = nx.Graph()
+        bad.add_weighted_edges_from([(0, 1, -2.0)], weight="length")
+        with pytest.raises(ValueError, match="length must be positive"):
+            QuantumGraph(bad, precompute=False)
+
+    def test_topology_first_construction_without_lengths_is_allowed(self):
+        # No 'length' attribute yet: construction must not complain; lengths
+        # are set afterwards (as generate_sbm / as_quantum_graph do).
+        plain = nx.path_graph(4)
+        qg = QuantumGraph(plain, precompute=False)
+        nx.set_edge_attributes(qg, 1.0, "length")
+        qg.precomputing()
+        assert qg.node_distance(0, 3) == 3.0
