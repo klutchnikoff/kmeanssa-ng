@@ -14,7 +14,8 @@ To run this entire guide, including the visualization step, you need to
 install `kmeanssa-ng` with the `plot` extra:
 
 ``` bash
-pip install "kmeanssa-ng[plot]"
+pip install "kmeanssa-ng[plot]" # latest version
+pip install "kmeanssa-ng[plot] == 0.6.1" # specific version 
 ```
 
 ## 1. Generate a Sample Graph
@@ -53,7 +54,7 @@ sampled uniformly from the nodes.
 from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 
 # Sample points to serve as a proxy for a uniform data distribution
-points = graph.sample_points(500, strategy=UniformNodeSampling())
+points = graph.sample_points(500, strategy=UniformNodeSampling(random_state=0))
 ```
 
 ## 3. Run K-means with Simulated Annealing
@@ -63,23 +64,21 @@ centers. We specify the number of clusters (`k=2`) and other parameters
 for the annealing process.
 
 ``` python
-from kmeanssa_ng import SimulatedAnnealing, MostFrequentNode, KMeansPlusPlus
+from kmeanssa_ng import SimulatedAnnealing, MostFrequentNode
 
-# Run quantum graph specialized simulated annealing
 sa = SimulatedAnnealing(
     observations=points,
     k=2,  # We know there are 2 clusters
-    lambda0=1.0,  # Cooling rate: higher values mean slower cooling
-    beta0=1.0,  # Drift strength: higher values attract centers to dense areas more strongly
-    step_size=0.1,  # Step size for center updates in each iteration
+    lambda0=1.0,  # Poisson-clock intensity: higher packs the same observations into a shorter annealing horizon (less exploration)
+    beta0=1.0,  # Drift strength: higher pulls centers toward observations more strongly
+    step_size=0.1,  # SDE time step
+    random_state=0,  # reproducible run
 )
 
-# Get cluster centers. The robustification strategy ensures these are node IDs.
-centers = sa.run(
-    robust_prop=0.1,  # 10% robustness
-    initialization_strategy=KMeansPlusPlus(),  # K-means++ initialization
-    robustification_strategy=MostFrequentNode(),  # Choose centers as most frequent nodes in clusters
-)
+# MostFrequentNode places each returned center exactly on a graph node,
+# which is convenient for the node-based visualisation below. Initialisation
+# defaults to KMeansPlusPlus.
+centers = sa.run(robustification_strategy=MostFrequentNode(), robust_prop=0.1)
 
 print("Cluster centers (position in edge):")
 for center in centers:
@@ -87,8 +86,8 @@ for center in centers:
 ```
 
     Cluster centers (position in edge):
-    Center near node 17 [edge (17, 2), pos=0.000]
-    Center near node 57 [edge (57, 77), pos=0.000]
+    Center near node 65 [edge (65, 49), pos=0.000]
+    Center near node 3 [edge (3, 32), pos=0.000]
 
 ## 4. Visualize the Results
 
@@ -129,7 +128,9 @@ plt.title("K-means Clustering on a Quantum Graph")
 plt.show()
 ```
 
-![](quickstart_files/figure-commonmark/cell-5-output-1.png)
+    Warning: Node attribute 'obs_weight' not found. Using default size.
+
+![](quickstart_files/figure-commonmark/cell-5-output-2.png)
 
 The resulting plot will show the two communities of the graph, with the
 nodes colored according to their assigned cluster and the cluster

@@ -75,7 +75,10 @@ class MyCenter(MyPoint, Center):
 
 - `brownian_motion`: Implements random, exploratory movement. The
   distance of the move should typically scale with the square root of
-  `time_to_travel`.
+  `time_to_travel`. Draw the randomness from the center’s own generator,
+  `self._rng` — the algorithm seeds it through `seed_rng()` — rather
+  than the global `np.random`, so that runs stay reproducible from
+  `random_state`.
 - `drift`: Implements deterministic, exploitative movement towards a
   `target_point`. The `prop_to_travel` parameter specifies what fraction
   of the distance to the target should be covered.
@@ -102,8 +105,10 @@ class MySpace(Space):
         # but you can override it for performance if needed.
         return super().assign_clusters(points, centers)
     
-    def calculate_energy(self, centers: list[Center]) -> float:
-        """Compute sum of squared distances to nearest centers."""
+    def calculate_energy(
+        self, centers: list[Center], how="uniform", observations=None
+    ) -> float:
+        """Mean squared distance to the nearest center, under the chosen measure."""
         # Your energy calculation
         pass
 
@@ -116,9 +121,10 @@ and centers and returns a list of integer labels indicating the closest
 center for each point. The base class provides a default implementation
 that works for any space, so you don’t have to implement it unless you
 want to provide a more optimized version. - `calculate_energy`:
-Calculates the k-means energy (sum of squared distances from each point
-to its nearest center). - `sample_points` and `center_from_point`:
-Factory methods for creating points and centers.
+Calculates the k-means energy — the mean squared distance to the nearest
+center, under a reference measure selected by `how`. - `sample_points`
+and `center_from_point`: Factory methods for creating points and
+centers.
 
 ## Step 4: Use the Algorithm
 
@@ -134,14 +140,9 @@ my_space = MySpace(...)
 points = my_space.sample_points(100, strategy=MySamplingStrategy())
 
 # 2. Run simulated annealing - it works immediately!
-from kmeanssa_ng.core.strategies.initialization import KMeansPlusPlus
-from kmeanssa_ng.core.strategies.robustification import MinimizeEnergy
-
+#    (defaults: k-means++ initialisation, energy-minimising robustification)
 sa = SimulatedAnnealing(observations=points, k=5)
-centers = sa.run(
-    initialization_strategy=KMeansPlusPlus(),
-    robustification_strategy=MinimizeEnergy(),
-)
+centers = sa.run()
 
 print("Found cluster centers:", centers)
 ```
@@ -168,8 +169,9 @@ class CirclePoint(Point):
 
 class CircleCenter(CirclePoint, Center):
     def brownian_motion(self, time_to_travel: float) -> None:
-        # Random angular displacement
-        displacement = np.random.normal(0, np.sqrt(time_to_travel))
+        # Random angular displacement, drawn from the center's own generator
+        # (seeded by the algorithm via seed_rng), never the global np.random.
+        displacement = self._rng.standard_normal() * np.sqrt(time_to_travel)
         self.angle = (self.angle + displacement) % (2 * np.pi)
     
     def drift(self, target_point: Point, prop_to_travel: float) -> None:

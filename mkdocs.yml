@@ -1,6 +1,6 @@
 site_name: kmeanssa-ng
 site_description: K-means clustering on quantum graphs and metric spaces using simulated annealing
-repo_url: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng
+repo_url: https://github.com/klutchnikoff/kmeanssa-ng
 edit_uri: ""
 
 theme:
@@ -44,15 +44,14 @@ nav:
     - "Concepts": concepts.md
   - "User Guide":
     - "Clustering Methods": clustering-methods.md
-    - "Lloyd's Algorithm": lloyd.md
     - "Simulated Annealing": simulated-annealing.md
+    - "Lloyd's Algorithm": lloyd.md
     - "Quantum Graphs": quantum-graphs.md
     - "Riemannian Manifolds": riemannian-manifolds.md
     - "Meshing a Manifold": epsilon-net.md
     - "Parallel Execution": parallel-execution.md
     - "Generators": generators.md
     - "Advanced Usage": advanced-usage.md
-    - "Performance": performance.md
   - "Developer Guide":
     - "Contributing": contributing.md
     - "Custom Spaces": custom-spaces.md

@@ -3,9 +3,6 @@ title: Benchmark Developer Guide
 ---
 
 
-For the latest performance results and analysis, please see the
-[Performance page](performance.md).
-
 This document provides technical instructions for developers on how to
 run, manage, and contribute to the performance benchmarks for
 `kmeanssa-ng`.

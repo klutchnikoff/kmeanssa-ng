@@ -62,12 +62,14 @@ geodesic path)
 #### Temperature Schedule
 
 The “temperature” controls the balance between exploration and
-exploitation over time. `kmeanssa-ng` uses an **inhomogeneous Poisson
-process** to generate a decreasing temperature schedule:
+exploitation over time. `kmeanssa-ng` advances an annealing clock with
+an **inhomogeneous Poisson process** of intensity
+$\lambda(t) = \lambda_0 (1 + t)$ (the schedule of the companion paper).
+The $n$-th observation is processed at clock time
 
-$$ T(n) = \sqrt{\sum_{i=1}^{n} E_i + 1} - 1 $$
+$$ T(n) = \sqrt{\,2\sum_{i=1}^{n} E_i + 1\,} - 1 $$
 
-where $E_i \sim \text{Exp}(\lambda)$ are exponential random variables.
+where $E_i \sim \text{Exp}(\lambda_0)$ are the inter-arrival intervals.
 
 Key properties:
 
@@ -109,37 +111,53 @@ print(f"Found {len(centers)} cluster centers")
 Passing an integer `random_state` (as above) makes a run fully
 reproducible.
 
+Two robustification strategies are built in, trading quality for speed.
+`MinimizeEnergy` (the default) keeps the lowest-energy state in the
+collection window — the higher-quality choice, but it recomputes the
+energy repeatedly. On a quantum graph, `MostFrequentNode` instead
+returns the most frequently visited node, which is faster and places
+each center exactly on a node, at the cost of some selection accuracy.
+Prefer `MinimizeEnergy` unless the selection cost dominates your
+runtime.
+
 ## Algorithm Parameters
 
 The behavior of the simulated annealing algorithm is controlled by three
 main parameters. Understanding these parameters is crucial for achieving
 good clustering results.
 
-### `lambda0`: Brownian Motion Intensity
+### `lambda0`: Observation-Clock Intensity
 
-Controls the **initial strength of random exploration** in the metric
-space.
+Controls the **rate at which observations arrive**, and therefore how
+much Brownian exploration happens *between* them.
 
-**Mathematical role**: Scales the diffusion coefficient in the Brownian
-motion component. The standard deviation of each random step is
-proportional to $\lambda_0 \sqrt{\Delta t}$.
+**Mathematical role**: `lambda0` is the scale of the inhomogeneous
+Poisson clock, of intensity $\lambda(t) = \lambda_0 (1 + t)$; it sets
+the pace of the annealing schedule. It does **not** scale the Brownian
+steps — each micro-step has standard deviation $\sqrt{\Delta t}$ (the
+`step_size`), independent of `lambda0`.
 
 **Practical effects**:
 
 - **Higher values** ($\lambda_0 \in [1.5, 3.0]$):
-  - More exploration of the solution space
-  - Better escape from local minima
-  - Slower convergence
-  - Recommended for complex landscapes with many local optima
+  - Observations arrive faster, so the same number of observations spans
+    a **shorter** annealing horizon
+  - **Less** Brownian exploration between observations
+  - Higher risk of getting trapped in a local minimum
 - **Lower values** ($\lambda_0 \in [0.3, 0.8]$):
-  - Less exploration, more focused search
-  - Faster convergence
-  - Higher risk of getting trapped in local minima
-  - Suitable for simpler problems or when speed is critical
+  - A **longer** horizon, hence **more** Brownian exploration between
+    observations
+  - Better escape from local minima, at the cost of more computation
 - **Default**: $\lambda_0 = 1.0$ provides a good balance for most use
-  cases
+  cases.
 
-<!-- TODO: Add specific guidance based on problem characteristics (graph size, number of clusters, etc.) -->
+**Choosing it for your problem**: the annealing horizon grows like
+$\sqrt{n_\text{obs} / \lambda_0}$, so with more observations you can
+afford a larger `lambda0` (each observation already refines the
+centres). On larger graphs or with more clusters, keep `lambda0` at or
+below $1.0$: the longer horizon gives the centres the exploration they
+need to separate distant modes rather than collapsing onto the nearest
+one.
 
 ### `beta0`: Drift Intensity
 
@@ -164,7 +182,13 @@ nearest observation.
   - Better for difficult optimization landscapes
 - **Default**: $\beta_0 \in [1.0, 2.0]$ works well for most problems
 
-<!-- TODO: Discuss the interaction between lambda0 and beta0 -->
+**Interaction with `lambda0`**: `lambda0` sets *how long* the annealing
+runs (the horizon), while `beta0` sets *how hard* each observation pulls
+its nearest centre. A strong drift (`beta0`) on a short horizon (large
+`lambda0`) converges fast but can lock the centres in before they have
+explored — the classic premature-convergence failure. If clusters come
+out merged or a centre is stranded, **lower** `beta0` or `lambda0`
+(lengthening the horizon) rather than raising them.
 
 ### `step_size`: Time Discretization
 
@@ -191,7 +215,12 @@ accurate simulation of the continuous process.
 characteristic time scale of your Poisson process (approximately
 $1/\lambda_0$).
 
-<!-- TODO: Add guidance on how to check if step_size is appropriate -->
+**Checking it is small enough**: a Brownian micro-step moves a centre by
+about $\sqrt{\Delta t}$. If that is comparable to the spacing between
+clusters, a centre can jump across a cluster boundary in a single step
+and the discretisation is too coarse. Halve `step_size` until the
+clustering stops changing; as a guide, keep $\sqrt{\Delta t}$ well below
+the smallest inter-cluster distance in your space.
 
 ### Choosing Parameter Combinations
 
@@ -254,7 +283,7 @@ history = sa.energy_history          # energy after each observation
 print(f"recorded {len(history)} energies; lowest reached = {history.min():.3f}")
 ```
 
-    recorded 151 energies; lowest reached = 0.837
+    recorded 151 energies; lowest reached = 1.224
 
 Recording does not affect the result and is off by default, so the
 energy is only recomputed when you ask for it.
