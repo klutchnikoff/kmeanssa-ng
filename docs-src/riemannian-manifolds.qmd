@@ -6,7 +6,7 @@ title: "Riemannian Manifolds"
 
 Not all data lives on a graph or in flat Euclidean space. **Directions** (wind, magnetic fields, gene expression on the unit sphere), **geographic positions** on the globe, or **hierarchical structures** embedded in hyperbolic space all live on curved **Riemannian manifolds**, where the meaningful notion of distance is the **geodesic**—the length of the shortest path *along the surface*, not the straight line through the ambient space.
 
-`kmeanssa-ng` clusters directly on such manifolds. Under the hood it wraps [geomstats](https://geomstats.github.io/), which provides the exponential and logarithm maps that let cluster centers move along geodesics.
+`kmeanssa-ng` clusters directly on such manifolds using the exponential and logarithm maps that let cluster centers move along geodesics. These come from [geomstats](https://geomstats.github.io/) for a general manifold, or from built-in closed forms where they are known (the sphere, and the quotient [Bolza surface](bolza.md)), which avoid the geomstats per-call overhead.
 
 ## Creating a manifold
 

@@ -67,7 +67,7 @@ sbm_graph = generate_sbm(
 print(f"SBM graph: {sbm_graph.number_of_nodes()} nodes, {sbm_graph.number_of_edges()} edges")
 ```
 
-    SBM graph: 100 nodes, 2130 edges
+    SBM graph: 100 nodes, 2103 edges
 
 The probability matrix `p[i][j]` controls the probability of edges
 between blocks `i` and `j`. High diagonal values (like 0.8 and 0.7
@@ -102,10 +102,10 @@ print(f"Short edges (~1.0): {sum(1 for l in edge_lengths if l < 2)}")
 print(f"Long edges (~4.0): {sum(1 for l in edge_lengths if l > 3)}")
 ```
 
-    Custom SBM: 100 nodes, 1976 edges
+    Custom SBM: 100 nodes, 1977 edges
     Edge lengths: min=1.0, max=4.0
-    Short edges (~1.0): 1713
-    Long edges (~4.0): 263
+    Short edges (~1.0): 1720
+    Long edges (~4.0): 257
 
 This is particularly useful when you want to model scenarios where
 inter-cluster distances are significantly larger than intra-cluster
@@ -192,9 +192,9 @@ structure but you have a distance or similarity measure. The optional
 
 When working with graph generators, keep these guidelines in mind:
 
-- **Always call `precomputing()`** after generation. The clustering
-  algorithm relies on precomputed shortest paths for efficient distance
-  queries.
+- **Precomputing is automatic.** Generators precompute the pairwise
+  shortest paths by default (`precompute=True`); you only need to call
+  `precomputing()` again if you modify a graph after creation.
 - **Check connectivity** for random graphs. If using
   `as_quantum_graph()` with random graph models like Erdős-Rényi, verify
   the graph is connected or extract the largest connected component.

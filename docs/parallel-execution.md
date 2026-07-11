@@ -66,9 +66,8 @@ print(f"Best result has {len(best_centers)} centers")
 - `k`: Number of clusters
 - `n_runs`: Number of parallel executions (default: 10)
 - `n_jobs`: Number of worker processes (default: -1 = all cores)
-- `algorithm`: `"interleaved"` (default) or `"sequential"`
 - Other parameters are passed to `SimulatedAnnealing` (lambda0, beta0,
-  step_size, robust_prop)
+  step_size, energy_mode, robust_prop)
 
 **Note**: Each run samples its own observations, ensuring complete
 independence between runs.
@@ -101,10 +100,10 @@ print(f"Mean energy: {np.mean(energies):.4f}")
 print(f"Std energy: {np.std(energies):.4f}")
 ```
 
-    Best energy: 1.1073
-    Worst energy: 2.4579
-    Mean energy: 1.7652
-    Std energy: 0.3214
+    Best energy: 1.6800
+    Worst energy: 2.4400
+    Mean energy: 1.8987
+    Std energy: 0.1766
 
 ## Progress Monitoring
 
@@ -130,26 +129,26 @@ centers = run_parallel_with_callback(
 )
 ```
 
-    ✓ Run 2/20 completed - Energy: 2.1277 (seed=1888337406)
-    ✓ Run 8/20 completed - Energy: 1.9740 (seed=2083830131)
-    ✓ Run 5/20 completed - Energy: 1.4797 (seed=2007689151)
-    ✓ Run 4/20 completed - Energy: 1.8165 (seed=1236780805)
-    ✓ Run 3/20 completed - Energy: 1.6800 (seed=44838237)
-    ✓ Run 11/20 completed - Energy: 1.4473 (seed=2056193096)
-    ✓ Run 12/20 completed - Energy: 1.5966 (seed=127175766)
-    ✓ Run 9/20 completed - Energy: 2.2717 (seed=2041474240)
-    ✓ Run 1/20 completed - Energy: 1.7700 (seed=1508769162)
-    ✓ Run 13/20 completed - Energy: 1.7849 (seed=762282098)
-    ✓ Run 14/20 completed - Energy: 1.7900 (seed=54310350)
-    ✓ Run 7/20 completed - Energy: 1.4700 (seed=801393112)
-    ✓ Run 15/20 completed - Energy: 2.1100 (seed=108973978)
-    ✓ Run 16/20 completed - Energy: 1.6274 (seed=1085546245)
-    ✓ Run 17/20 completed - Energy: 2.3000 (seed=1053922785)
-    ✓ Run 10/20 completed - Energy: 1.6500 (seed=1291494583)
-    ✓ Run 6/20 completed - Energy: 1.8051 (seed=75922632)
-    ✓ Run 18/20 completed - Energy: 1.8100 (seed=631452356)
-    ✓ Run 19/20 completed - Energy: 1.3600 (seed=2015074449)
-    ✓ Run 20/20 completed - Energy: 1.7200 (seed=519860216)
+    ✓ Run 8/20 completed - Energy: 1.8100 (seed=1880415768)
+    ✓ Run 1/20 completed - Energy: 1.8000 (seed=1495694099)
+    ✓ Run 7/20 completed - Energy: 1.7000 (seed=589881679)
+    ✓ Run 2/20 completed - Energy: 1.5100 (seed=183384938)
+    ✓ Run 5/20 completed - Energy: 1.8009 (seed=1494222352)
+    ✓ Run 3/20 completed - Energy: 2.0131 (seed=1680864592)
+    ✓ Run 4/20 completed - Energy: 2.2200 (seed=1690508300)
+    ✓ Run 11/20 completed - Energy: 1.9400 (seed=1754662378)
+    ✓ Run 6/20 completed - Energy: 1.2800 (seed=83158909)
+    ✓ Run 9/20 completed - Energy: 1.8509 (seed=1529584231)
+    ✓ Run 13/20 completed - Energy: 1.8000 (seed=1118367909)
+    ✓ Run 12/20 completed - Energy: 1.8905 (seed=1327791181)
+    ✓ Run 14/20 completed - Energy: 1.8800 (seed=526868701)
+    ✓ Run 15/20 completed - Energy: 2.0903 (seed=420427166)
+    ✓ Run 16/20 completed - Energy: 1.9100 (seed=96177084)
+    ✓ Run 10/20 completed - Energy: 1.7615 (seed=899972701)
+    ✓ Run 17/20 completed - Energy: 2.0200 (seed=121421773)
+    ✓ Run 18/20 completed - Energy: 2.1323 (seed=2047946061)
+    ✓ Run 19/20 completed - Energy: 1.5400 (seed=1455078363)
+    ✓ Run 20/20 completed - Energy: 1.8600 (seed=1842492945)
 
 The callback function receives three arguments:
 
@@ -191,12 +190,11 @@ centers = run_parallel(
     robustification_strategy=MinimizeEnergy(),
     n_runs=50,
     # SimulatedAnnealing parameters
-    lambda0=2,             # Poisson intensity
-    beta0=0.5,             # Inverse temperature
-    step_size=0.05,        # Time step
+    lambda0=2,             # Poisson-clock intensity
+    beta0=0.5,             # drift strength
+    step_size=0.05,        # SDE time step
     robust_prop=0.1,       # Use 10% of observations for robustification
     # Parallel execution parameters
-    algorithm="sequential",
     n_jobs=4,              # Use only 4 cores
     seeds=list(range(100, 150)),  # Specific seeds
     mp_context='fork'      # For Jupyter/Quarto compatibility
@@ -269,10 +267,10 @@ print(f"\nFound optimal solution in {n_optimal}/100 runs ({n_optimal}%)")
 ```
 
     Energy statistics:
-      Min:    0.8186
-      Median: 1.5500
-      Max:    2.3200
-      Std:    0.2783
+      Min:    1.0933
+      Median: 1.4679
+      Max:    2.2933
+      Std:    0.2243
 
     Found optimal solution in 1/100 runs (1%)
 

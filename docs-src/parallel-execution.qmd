@@ -56,8 +56,7 @@ print(f"Best result has {len(best_centers)} centers")
 - `k`: Number of clusters
 - `n_runs`: Number of parallel executions (default: 10)
 - `n_jobs`: Number of worker processes (default: -1 = all cores)
-- `algorithm`: `"interleaved"` (default) or `"sequential"`
-- Other parameters are passed to `SimulatedAnnealing` (lambda0, beta0, step_size, robust_prop)
+- Other parameters are passed to `SimulatedAnnealing` (lambda0, beta0, step_size, energy_mode, robust_prop)
 
 **Note**: Each run samples its own observations, ensuring complete independence between runs.
 
@@ -149,12 +148,11 @@ centers = run_parallel(
     robustification_strategy=MinimizeEnergy(),
     n_runs=50,
     # SimulatedAnnealing parameters
-    lambda0=2,             # Poisson intensity
-    beta0=0.5,             # Inverse temperature
-    step_size=0.05,        # Time step
+    lambda0=2,             # Poisson-clock intensity
+    beta0=0.5,             # drift strength
+    step_size=0.05,        # SDE time step
     robust_prop=0.1,       # Use 10% of observations for robustification
     # Parallel execution parameters
-    algorithm="sequential",
     n_jobs=4,              # Use only 4 cores
     seeds=list(range(100, 150)),  # Specific seeds
     mp_context='fork'      # For Jupyter/Quarto compatibility

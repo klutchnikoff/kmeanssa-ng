@@ -1,13 +1,15 @@
 # Contributing to kmeanssa-ng
 
 Thanks for your interest in `kmeanssa-ng`! Contributions, bug reports and
-questions are all welcome. This project is developed on GitLab at
-<https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng>.
+questions are all welcome. This project is hosted on GitHub at
+<https://github.com/klutchnikoff/kmeanssa-ng>, where issues and pull requests are
+welcome. (The maintainers also develop on a GitLab instance, from which the
+GitHub repository is mirrored and where the CI and releases run.)
 
 ## Reporting bugs and problems
 
-Please open an **issue** on the GitLab tracker:
-<https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/issues>.
+Please open an **issue** on the GitHub tracker:
+<https://github.com/klutchnikoff/kmeanssa-ng/issues>.
 
 A helpful report includes:
 
@@ -25,16 +27,14 @@ tutorials) is the best first stop.
 
 ## Contributing code
 
-The `main` branch is **protected**: you cannot push to it directly, so every
-change goes through a topic branch and a merge request.
-
-1. **Fork** the repository (or ask for developer access) and create a topic
-   branch off `main` (e.g. `feature/my-change` or `fix/some-bug`).
+1. **Fork** the repository on GitHub and create a topic branch off `main`
+   (e.g. `feature/my-change` or `fix/some-bug`).
 2. Make your change with tests and, when relevant, documentation.
-3. Open a **merge request** targeting `main`. The CI (lint + tests on Python
-   3.10–3.12) must pass before it can be merged, and merges go through review.
+3. Open a **pull request** targeting `main`. A maintainer integrates accepted
+   pull requests through the GitLab mirror, where the CI (lint + tests on
+   Python 3.10–3.12) must pass; merges go through review.
 
-Small, focused merge requests are easiest to review. If you plan a larger
+Small, focused pull requests are easiest to review. If you plan a larger
 change, please open an issue first to discuss the design.
 
 ## Development setup
@@ -42,14 +42,14 @@ change, please open an issue first to discuss the design.
 The project is managed with [PDM](https://pdm-project.org/):
 
 ```bash
-git clone https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng.git
+git clone https://github.com/klutchnikoff/kmeanssa-ng.git
 cd kmeanssa-ng
 pdm install                 # installs the package and the dev dependency groups
 pdm run pre-commit install                     # ruff check + format on commit
 pdm run pre-commit install --hook-type pre-push  # pytest on push
 ```
 
-Then, before opening a merge request:
+Then, before opening a pull request:
 
 ```bash
 pdm run pytest              # run the test suite
