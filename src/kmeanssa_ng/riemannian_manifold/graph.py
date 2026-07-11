@@ -12,7 +12,6 @@ import numpy as np
 import networkx as nx
 from sklearn.neighbors import NearestNeighbors
 
-from ..quantum_graph.generators import UniformDistribution
 from ..quantum_graph.space import QuantumGraph
 from .epsilon_net import EpsilonNetStrategy, RepulsionNet
 from .space import RiemannianManifold
@@ -149,11 +148,7 @@ def build_epsilon_net_graph(
 
     qg = QuantumGraph(graph, precompute=False)
     nx.set_node_attributes(qg, 1.0, "weight")
-    for edge in qg.edges:
-        length = qg.get_edge_data(*edge)["length"]
-        nx.set_edge_attributes(
-            qg, {edge: {"weight": 1.0, "distribution": UniformDistribution(length)}}
-        )
+    nx.set_edge_attributes(qg, 1.0, "weight")
     if precompute:
         qg.precomputing()
     return qg

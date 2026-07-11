@@ -73,7 +73,6 @@ class TestBuildEpsilonNetGraph:
         qg = build_epsilon_net_graph(sphere, points, ell=ell)
         for _, _, data in qg.edges(data=True):
             assert data["weight"] == 1.0
-            assert "distribution" in data
             assert data["length"] <= ell + 1e-9
         assert all(w == 1.0 for w in nx.get_node_attributes(qg, "weight").values())
 
