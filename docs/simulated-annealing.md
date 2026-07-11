@@ -62,12 +62,14 @@ geodesic path)
 #### Temperature Schedule
 
 The “temperature” controls the balance between exploration and
-exploitation over time. `kmeanssa-ng` uses an **inhomogeneous Poisson
-process** to generate a decreasing temperature schedule:
+exploitation over time. `kmeanssa-ng` advances an annealing clock with
+an **inhomogeneous Poisson process** of intensity
+$\lambda(t) = \lambda_0 (1 + t)$ (the schedule of the companion paper).
+The $n$-th observation is processed at clock time
 
-$$ T(n) = \sqrt{\sum_{i=1}^{n} E_i + 1} - 1 $$
+$$ T(n) = \sqrt{\,2\sum_{i=1}^{n} E_i + 1\,} - 1 $$
 
-where $E_i \sim \text{Exp}(\lambda)$ are exponential random variables.
+where $E_i \sim \text{Exp}(\lambda_0)$ are the inter-arrival intervals.
 
 Key properties:
 
@@ -254,7 +256,7 @@ history = sa.energy_history          # energy after each observation
 print(f"recorded {len(history)} energies; lowest reached = {history.min():.3f}")
 ```
 
-    recorded 151 energies; lowest reached = 0.837
+    recorded 151 energies; lowest reached = 1.224
 
 Recording does not affect the result and is off by default, so the
 energy is only recomputed when you ask for it.

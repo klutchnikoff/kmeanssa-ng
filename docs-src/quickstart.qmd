@@ -44,7 +44,7 @@ In this example, our goal is to find centers for the **uniform distribution over
 from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 
 # Sample points to serve as a proxy for a uniform data distribution
-points = graph.sample_points(500, strategy=UniformNodeSampling())
+points = graph.sample_points(500, strategy=UniformNodeSampling(random_state=0))
 ```
 
 ## 3. Run K-means with Simulated Annealing
@@ -52,23 +52,21 @@ points = graph.sample_points(500, strategy=UniformNodeSampling())
 Now, we run the simulated annealing algorithm to find the cluster centers. We specify the number of clusters (`k=2`) and other parameters for the annealing process.
 
 ```{python}
-from kmeanssa_ng import SimulatedAnnealing, MostFrequentNode, KMeansPlusPlus
+from kmeanssa_ng import SimulatedAnnealing, MostFrequentNode
 
-# Run quantum graph specialized simulated annealing
 sa = SimulatedAnnealing(
     observations=points,
     k=2,  # We know there are 2 clusters
-    lambda0=1.0,  # Cooling rate: higher values mean slower cooling
-    beta0=1.0,  # Drift strength: higher values attract centers to dense areas more strongly
-    step_size=0.1,  # Step size for center updates in each iteration
+    lambda0=1.0,  # Poisson-clock intensity: higher packs the same observations into a shorter annealing horizon (less exploration)
+    beta0=1.0,  # Drift strength: higher pulls centers toward observations more strongly
+    step_size=0.1,  # SDE time step
+    random_state=0,  # reproducible run
 )
 
-# Get cluster centers. The robustification strategy ensures these are node IDs.
-centers = sa.run(
-    robust_prop=0.1,  # 10% robustness
-    initialization_strategy=KMeansPlusPlus(),  # K-means++ initialization
-    robustification_strategy=MostFrequentNode(),  # Choose centers as most frequent nodes in clusters
-)
+# MostFrequentNode places each returned center exactly on a graph node,
+# which is convenient for the node-based visualisation below. Initialisation
+# defaults to KMeansPlusPlus.
+centers = sa.run(robustification_strategy=MostFrequentNode(), robust_prop=0.1)
 
 print("Cluster centers (position in edge):")
 for center in centers:
