@@ -617,8 +617,12 @@ class TestEnergyTracking:
 
     def test_final_recorded_energy_matches_centers(self):
         sa = self._sa()
-        centers = self._run(sa, record_energy=True)
-        assert abs(sa.energy_history[-1] - sa.calculate_energy(centers)) < 1e-9
+        # The last recorded energy is computed on the final trajectory state,
+        # so it matches the current centers (sa.centers) exactly. It does *not*
+        # match run()'s return value, which is the robustified best-of-window
+        # result and generally a different, lower-energy configuration.
+        self._run(sa, record_energy=True)
+        assert abs(sa.energy_history[-1] - sa.calculate_energy(sa.centers)) < 1e-9
 
     def test_tracking_does_not_change_result(self):
         untracked = self._run(self._sa(), record_energy=False)
@@ -653,6 +657,31 @@ class TestPoissonTimes:
         assert times[0] == 0.0
         assert np.all(np.isfinite(times))
         assert np.all(np.diff(times) > 0)
+
+    def test_arrival_times_follow_the_paper_intensity(self):
+        """The clock realises lambda(t) = lambda0 (1 + t) (RNG-3 regression).
+
+        The i-th arrival satisfies Lambda(T_i) = S_i with the paper's
+        cumulative intensity Lambda(t) = lambda0 (t + t^2/2). Mapping the
+        arrival times back through Lambda must recover unit-rate exponential
+        increments. The previous clock dropped the factor 2, realising
+        lambda(t) = 2 lambda0 (1 + t) instead, which halves these increments
+        (mean 0.5) and fails the test.
+        """
+        from scipy import stats
+
+        graph = generate_simple_graph(n_a=3)
+        points = graph.sample_points(2, strategy=UniformNodeSampling(random_state=1))
+        lambda0 = 2.0
+        sa = SimulatedAnnealing(points, k=1, lambda0=lambda0, random_state=7)
+
+        times = sa._initialize_times(20000)[1:]
+        cumulative = lambda0 * (times + times**2 / 2.0)  # Lambda(T_i)
+        increments = np.diff(cumulative, prepend=0.0)  # unit exponentials
+        assert increments.mean() == pytest.approx(1.0, abs=0.03)
+        # Distribution, not just the mean: KS against a unit exponential.
+        _, p_value = stats.kstest(increments, "expon")
+        assert p_value > 0.01
 
     def test_every_observation_advances_time(self):
         """Each observation, including the first, drives a positive time interval."""

@@ -70,10 +70,11 @@ class SimulatedAnnealing:
             lambda0: Intensity scale of the Poisson observation clock (must be > 0).
 
                 Mathematical role: the annealing processes one observation per
-                arrival of an inhomogeneous Poisson process whose rate grows
-                proportionally to lambda0 * (1 + t). It does **not** scale the
-                Brownian steps themselves (each micro-step has standard
-                deviation sqrt(step_size), independent of lambda0).
+                arrival of an inhomogeneous Poisson process of intensity
+                lambda(t) = lambda0 * (1 + t) (the paper's schedule). It does
+                **not** scale the Brownian steps themselves (each micro-step
+                has standard deviation sqrt(step_size), independent of
+                lambda0).
 
                 Practical effect:
                 - Higher values: arrivals come faster, so the same number of
@@ -329,11 +330,20 @@ class SimulatedAnnealing:
         Returns:
             Array of n+1 time points.
         """
+        # Arrival times of an inhomogeneous Poisson process of intensity
+        # lambda(t) = lambda0 * (1 + t) (the paper's schedule). Its cumulative
+        # intensity is Lambda(t) = lambda0 * (t + t^2/2), and the i-th arrival
+        # is T_i = Lambda^{-1}(S_i) where S_i is a sum of unit-rate
+        # exponentials. Here poiss_sum accumulates S_i / lambda0 (draws of mean
+        # 1/lambda0), so inverting Lambda gives sqrt(2 * poiss_sum + 1) - 1.
+        # The factor 2 was previously missing, which realised the schedule
+        # lambda(t) = 2 * lambda0 * (1 + t) instead -- a silent doubling of
+        # lambda0 relative to the paper.
         T = np.zeros(n + 1)
         poiss_sum = 0.0
         for i in range(n):
             poiss_sum += self._rng.exponential(1.0 / self._lambda)
-            T[i + 1] = np.sqrt(poiss_sum + 1) - 1
+            T[i + 1] = np.sqrt(2.0 * poiss_sum + 1.0) - 1.0
         return T
 
     def calculate_energy(self, centers: list[Center]) -> float:
