@@ -282,6 +282,16 @@ class QuantumGraph(nx.Graph, Space):
         self._diameter: float = 0.0
         self._node_position: dict | None = None
 
+        # Validate any length carried by the incoming data, so a degenerate
+        # edge (e.g. a zero-length edge from a collapsed epsilon-net) fails
+        # here with a clear ValueError rather than silently poisoning a later
+        # precomputing() when precompute=False. Only lengths that are present
+        # are checked, so building the topology first and setting the lengths
+        # afterwards (generate_sbm, as_quantum_graph) still works.
+        for u, v, length in self.edges(data="length"):
+            if length is not None:
+                self._validate_length(u, v, length)
+
         if precompute and self.number_of_nodes() > 0:
             self.precomputing()
 
@@ -317,24 +327,24 @@ class QuantumGraph(nx.Graph, Space):
                 f"Edge ({u_for_edge}, {v_for_edge}) must have a 'length' attribute"
             )
 
-        length = attr["length"]
+        self._validate_length(u_for_edge, v_for_edge, attr["length"])
 
-        # Check if length is a number
+        super().add_edge(u_for_edge, v_for_edge, **attr)
+        self._invalidate_distance_cache()
+
+    @staticmethod
+    def _validate_length(u, v, length) -> None:
+        """Validate a single edge length (a positive number)."""
         try:
             length_float = float(length)
         except (TypeError, ValueError) as e:
             raise ValueError(
-                f"Edge ({u_for_edge}, {v_for_edge}) length must be a number, got {type(length).__name__}"
+                f"Edge ({u}, {v}) length must be a number, got {type(length).__name__}"
             ) from e
-
-        # Check if length is positive
         if length_float <= 0:
             raise ValueError(
-                f"Edge ({u_for_edge}, {v_for_edge}) length must be positive, got {length_float}"
+                f"Edge ({u}, {v}) length must be positive, got {length_float}"
             )
-
-        super().add_edge(u_for_edge, v_for_edge, **attr)
-        self._invalidate_distance_cache()
 
     def add_node(self, node_for_adding, **attr) -> None:
         """Add a node; invalidates the precomputed distance cache."""
@@ -349,6 +359,47 @@ class QuantumGraph(nx.Graph, Space):
     def remove_node(self, n) -> None:
         """Remove a node; invalidates the precomputed distance cache."""
         super().remove_node(n)
+        self._invalidate_distance_cache()
+
+    # The bulk mutators inherited from networkx.Graph do not route through the
+    # add_edge/add_node overrides above, so without these the distance cache
+    # would be served stale after a bulk edit (and the graph constructor, which
+    # feeds incoming data through add_edges_from/add_nodes_from, would bypass
+    # cache invalidation entirely). Each override invalidates the cache once for
+    # the whole batch. Length validation is not done here: the constructor
+    # routes incoming data through add_edges_from, and networkx wraps any
+    # exception raised there into an opaque NetworkXError; supplied lengths are
+    # validated once in __init__ instead (a clean ValueError), which also keeps
+    # the "add the topology, then set the lengths" pattern working.
+
+    def add_edges_from(self, ebunch_to_add, **attr) -> None:
+        """Add edges in bulk; invalidates the precomputed distance cache."""
+        super().add_edges_from(ebunch_to_add, **attr)
+        self._invalidate_distance_cache()
+
+    def add_nodes_from(self, nodes_for_adding, **attr) -> None:
+        """Add nodes in bulk; invalidates the precomputed distance cache."""
+        super().add_nodes_from(nodes_for_adding, **attr)
+        self._invalidate_distance_cache()
+
+    def remove_edges_from(self, ebunch) -> None:
+        """Remove edges in bulk; invalidates the precomputed distance cache."""
+        super().remove_edges_from(ebunch)
+        self._invalidate_distance_cache()
+
+    def remove_nodes_from(self, nodes) -> None:
+        """Remove nodes in bulk; invalidates the precomputed distance cache."""
+        super().remove_nodes_from(nodes)
+        self._invalidate_distance_cache()
+
+    def clear(self) -> None:
+        """Clear the graph; invalidates the precomputed distance cache."""
+        super().clear()
+        self._invalidate_distance_cache()
+
+    def clear_edges(self) -> None:
+        """Clear all edges; invalidates the precomputed distance cache."""
+        super().clear_edges()
         self._invalidate_distance_cache()
 
     @property
