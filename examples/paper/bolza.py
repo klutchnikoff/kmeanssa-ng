@@ -8,7 +8,8 @@ octagon, the data coloured by true mode, and the net coloured by recovered clust
 with the centroids.
 
 Run: ``python bolza.py`` (caches results/bolza.pkl, then writes
-figures/figure_bolza.{pdf,png}; ``reproduce.py`` runs it as its Part 4). The net
+figures/figure_bolza.{pdf,png}). This is a standalone illustration, not part of
+``reproduce.py``. The net
 is cached in data/ since the intrinsic (quotient-aware) repulsion is the build's
 bottleneck. The experiment is a qualitative illustration: one documented seed,
 with every random stream derived from the shared structured entropy.
@@ -242,8 +243,8 @@ def make_figure(net, data, true_labels, data_label, centroids, ari, stem):
 def run(seed=42, n_runs=8, n_data=N_DATA):
     """Run the Bolza experiment and cache its raw results to ``results/bolza.pkl``.
 
-    The figure is rendered separately (``render``, called by
-    ``make_figures.figure_bolza``), so it is a pure view of these results.
+    The figure is rendered separately (``render``), so it is a pure view of
+    these results.
     """
     surface = create_bolza_surface()
 

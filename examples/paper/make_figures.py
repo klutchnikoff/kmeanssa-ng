@@ -16,7 +16,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-import bolza  # noqa: E402
 import grid  # noqa: E402
 import sbm  # noqa: E402
 
@@ -173,13 +172,6 @@ def figure_sphere():
     print("figure_3 (sphere) done")
 
 
-def figure_bolza():
-    """Bolza-surface partition, rendered from the cached experiment results."""
-    store = pickle.load(open("results/bolza.pkl", "rb"))
-    bolza.render(store)
-    print("figure_bolza done")
-
-
 def figure_convergence():
     """Energy along the annealing time for the tracked run of each experiment."""
     experiments = [
@@ -313,7 +305,6 @@ if __name__ == "__main__":
     figure_grid()
     figure_sbm()
     figure_sphere()
-    figure_bolza()
     figure_convergence()
     figure_rate()
     figure_memory()
