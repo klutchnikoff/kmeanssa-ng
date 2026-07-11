@@ -67,7 +67,7 @@ class Lloyd:
 
     def run(
         self,
-        initialization_strategy: InitializationStrategy,
+        initialization_strategy: InitializationStrategy | None = None,
         max_iterations: int = 100,
         tolerance: float = 1e-4,
     ) -> list[Center]:
@@ -75,6 +75,10 @@ class Lloyd:
 
         Args:
             initialization_strategy: The strategy for initializing centers.
+                Defaults to :class:`KMeansPlusPlus`. (Unlike the initialization,
+                the ``update_strategy`` is required at construction: its
+                canonical choice depends on the space — a graph node update, a
+                Karcher mean on a manifold — so there is no universal default.)
             max_iterations: The maximum number of iterations to run.
             tolerance: The tolerance for convergence. If the change in
                 energy is less than this value, the algorithm stops.
@@ -82,6 +86,11 @@ class Lloyd:
         Returns:
             A list of the final cluster centers.
         """
+        if initialization_strategy is None:
+            from .strategies.initialization import KMeansPlusPlus
+
+            initialization_strategy = KMeansPlusPlus()
+
         # 1. Initialization
         centers = initialization_strategy.initialize_centers(self)
 

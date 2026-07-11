@@ -124,3 +124,17 @@ def test_simultaneously_empty_clusters_get_distinct_reseeds():
     centers = lloyd.run(initialization_strategy=AllAtNode2(), max_iterations=1)
 
     assert sorted(c.closest_node() for c in centers) == [0, 2, 4]
+
+
+def test_lloyd_run_defaults_to_kmeanspp_init():
+    """Lloyd.run() with no initialization strategy uses KMeansPlusPlus."""
+    graph = generate_sbm(sizes=[15, 15], p=[[0.8, 0.1], [0.1, 0.8]], random_state=0)
+    points = graph.sample_points(60, strategy=UniformNodeSampling(random_state=0))
+    lloyd = Lloyd(
+        points,
+        k=2,
+        update_strategy=MostFrequentNodeUpdate(random_state=0),
+        random_state=0,
+    )
+    centers = lloyd.run()  # no initialization_strategy -> KMeansPlusPlus
+    assert len(centers) == 2

@@ -3,56 +3,46 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://img.shields.io/pypi/v/kmeanssa-ng.svg)](https://pypi.org/project/kmeanssa-ng/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Documentation Status](https://readthedocs.org/projects/kmeanssa-ng/badge/?version=latest)](https://kmeanssa-ng.readthedocs.io/en/latest/?badge=latest)
+<!-- Raw HTML so pandoc's default-image-extension does not append ".png" to
+     the extensionless RTD badge URL (which would break the badge image). -->
+<a href="https://kmeanssa-ng.readthedocs.io/en/latest/?badge=latest"><img src="https://readthedocs.org/projects/kmeanssa-ng/badge/?version=latest" alt="Documentation Status"></a>
 [![Pipeline Status](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/badges/main/pipeline.svg)](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/pipelines)
 [![Coverage Report](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/badges/main/coverage.svg)](https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/commits/main)
 [![Code style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 **K-means clustering on metric graphs and Riemannian manifolds, via simulated annealing.**
 
-`kmeanssa-ng` clusters data that lives on complex network structures (**quantum graphs**), on **Riemannian manifolds** such as spheres and hyperbolic space, or on any metric space where standard Euclidean distance does not apply. Manifolds can be clustered directly, or approximated by a graph (an $\varepsilon$-net) and clustered on that. It uses a simulated annealing approach for robust convergence.
+`kmeanssa-ng` clusters data that lives on complex network structures (**quantum graphs**), on **Riemannian manifolds** such as spheres and hyperbolic space, or on any metric space where the standard Euclidean distance does not apply. Manifolds can be clustered directly, or approximated by a graph (an $\varepsilon$-net) and clustered on that.
+
+**Statement of need.** Most clustering tools assume data in $\mathbb{R}^d$ with the Euclidean metric. Data on graphs, curved manifolds, or quotient spaces has no such coordinates, and the $k$-means centroid — an average — is not even defined there. `kmeanssa-ng` targets exactly this setting: its main algorithm is an **online simulated-annealing** scheme (from the companion paper) whose centres only need a Brownian motion and a drift, so it runs on *any* space that implements three small abstractions — `Point`, `Center` and `Space`. A classical **Lloyd** iteration is also provided as a reference method. Both plug together through interchangeable *strategies* (initialisation, robustification, sampling, centre update).
 
 ## Installation
 
-Install the latest version directly from PyPi:
+Install the latest version directly from PyPI:
 ```bash
 pip install kmeanssa-ng
 ```
 
 ## Quickstart
 
-Here is a minimal example of clustering points on a quantum graph:
+Cluster points on a quantum graph. The annealer works out of the box —
+`k`-means++ initialisation and energy-minimising robustification are the
+defaults:
 
 ```python
-from kmeanssa_ng import generate_sbm, SimulatedAnnealing, MostFrequentNode, KMeansPlusPlus
+from kmeanssa_ng import generate_sbm, SimulatedAnnealing
+from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 
-# Generate a graph with two distinct communities
-# Distances are precomputed automatically (precompute=True by default)
-graph = generate_sbm(
-    sizes=[40, 40],       # Two communities of 40 nodes each
-    p=[[0.8, 0.1],        # High intra-community connectivity  
-       [0.1, 0.8]],       # Low inter-community connectivity
-)
+# A graph with two communities; pairwise distances are precomputed by default.
+graph = generate_sbm(sizes=[40, 40], p=[[0.8, 0.1], [0.1, 0.8]], random_state=0)
 
-# Sample points uniformly across the graph
-points = graph.sample_points(150)
+# Sample observations to cluster (an explicit sampling strategy is required).
+points = graph.sample_points(150, strategy=UniformNodeSampling(random_state=0))
 
-# Run quantum graph specialized simulated annealing
-sa = SimulatedAnnealing(
-    observations=points,
-    k=2,                  # We know there are 2 clusters
-    lambda0=1.0,     # Standard temperature
-    beta0=1.0,             # Standard drift strength
-    step_size=0.1         # Standard step size
-)
-
-# Get cluster centers as node IDs (more interpretable)
-node_centers = sa.run(
-    robust_prop=0.1,                                  # 10% robustness  
-    initialization_strategy=KMeansPlusPlus(),         # K-means++ initialization
-    robustification_strategy=MostFrequentNode()       # Choose centers as most frequent nodes in clusters
-)
-print(f"Cluster centers near nodes: {node_centers}")
+# robust_prop=0.1 selects the best-of-window state (0.0, the default, would
+# compare only the first and last states).
+centers = SimulatedAnnealing(points, k=2, random_state=0).run(robust_prop=0.1)
+print(f"Found {len(centers)} cluster centers")
 ```
 
 ### Clustering on a manifold
@@ -61,15 +51,16 @@ To cluster on a curved space, approximate it by a graph (an $\varepsilon$-net) a
 
 ```python
 from kmeanssa_ng import (
-    create_sphere, approximate_geodesic_space, FibonacciNet,
-    SimulatedAnnealing, KMeansPlusPlus, MinimizeEnergy,
+    create_sphere, approximate_geodesic_space, FibonacciNet, SimulatedAnnealing,
 )
+from kmeanssa_ng.quantum_graph.sampling import UniformNodeSampling
 
-# Approximate the 2-sphere by a graph, then cluster on it
+# Approximate the 2-sphere by an epsilon-net graph, then cluster on it.
 graph = approximate_geodesic_space(create_sphere(2), 500, net=FibonacciNet())
-points = graph.sample_points(200)
-sa = SimulatedAnnealing(points, k=3, lambda0=1.0, beta0=0.5, step_size=0.05)
-centers = sa.run(KMeansPlusPlus(), MinimizeEnergy(), robust_prop=0.1)
+points = graph.sample_points(200, strategy=UniformNodeSampling(random_state=0))
+centers = SimulatedAnnealing(
+    points, k=3, beta0=0.5, step_size=0.05, random_state=0
+).run(robust_prop=0.1)
 ```
 
 ## Documentation
