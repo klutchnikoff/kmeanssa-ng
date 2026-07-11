@@ -46,6 +46,22 @@ class TestGeometry:
         )
         assert err < 1e-9
 
+    def test_group_ball_word_length_enumeration(self):
+        """group_ball(r) enumerates group words of length <= r, deduplicated.
+
+        Reference tool kept for verifying group_near: radius 0 is the identity
+        alone, radius 1 adds the eight distinct side-pairings, and the ball
+        grows monotonically with the radius.
+        """
+        assert len(bg.group_ball(0)) == 1  # identity only
+        ball1 = bg.group_ball(1)
+        assert len(ball1) == 1 + bg.N_SIDES  # identity + 8 side-pairings
+        keys1 = {bg._key(g) for g in ball1}
+        assert len(keys1) == len(ball1)  # actions are distinct
+        # Larger radius is a superset (word balls are nested and deduplicated).
+        keys2 = {bg._key(g) for g in bg.group_ball(2)}
+        assert keys1 <= keys2 and len(keys2) > len(keys1)
+
     def test_octagon_tiles_without_overlap(self):
         ball = bg.default_ball()
         centres = np.array([bg.apply_mobius(g, 0j) for g in ball])
