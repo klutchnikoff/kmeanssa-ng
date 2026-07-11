@@ -19,7 +19,6 @@ from kmeanssa_ng.quantum_graph import QGPoint, QuantumGraph
 @pytest.fixture
 def simple_graph():
     """Create a simple graph for testing."""
-    import random as rd
 
     graph = QuantumGraph()
     # Create a path graph with 5 nodes: 0-1-2-3-4
@@ -28,8 +27,6 @@ def simple_graph():
 
     for i in range(4):
         graph.add_edge(i, i + 1, length=10.0, weight=1.0)
-        # Add distribution for sampling
-        graph.edges[i, i + 1]["distribution"] = lambda L=10.0: rd.uniform(0, L)
 
     graph.precomputing()
     return graph

@@ -51,6 +51,21 @@ class TestGenerateSimpleGraphErrors:
         with pytest.raises(ValueError, match="bridge_length must be positive"):
             generate_simple_graph(bridge_length=-1.5)
 
+    def test_second_level_names_do_not_collide(self):
+        """n_a >= 11 must not merge a first-level node with a second-level one.
+
+        Regression (GEN-1): the second-level name was f"{node_a}{j}", so
+        "A1" + "1" == "A11" collided with the first-level node "A11", merging
+        the topology. The separator makes them distinct ("A1_1" vs "A11").
+        """
+        graph = generate_simple_graph(n_a=11, n_aa=1, precompute=False)
+        # 2 centrals + 11 first-level + 11 second-level per cluster, x2 clusters.
+        assert graph.number_of_nodes() == 2 + 2 * (11 + 11)
+        assert graph.has_node("A11")  # first-level node
+        assert graph.has_node("A1_1")  # second-level child of A1, distinct
+        assert graph.has_edge("A1", "A1_1")
+        assert not graph.has_edge("A1", "A11")
+
 
 class TestGenerateSimpleRandomGraph:
     """Tests for generate_simple_random_graph function."""
@@ -192,7 +207,6 @@ class TestAsQuantumGraph:
             edge_data = qg.get_edge_data(*edge)
             assert edge_data["length"] == 1.5
             assert edge_data["weight"] == 0.8
-            assert "distribution" in edge_data
 
     def test_as_quantum_graph_karate_club(self):
         """Test conversion of Karate Club graph."""
@@ -304,13 +318,27 @@ class TestCompleteQuantumGraph:
             complete_quantum_graph(objects, similarities=similarities)
 
     def test_complete_quantum_graph_negative_similarities(self):
-        """Test that negative similarities raises ValueError."""
+        """Off-diagonal similarities must be strictly positive (they are lengths)."""
         objects = [1, 2]
-        similarities = np.array([[0, -1], [1, 0]])  # Negative value
+        similarities = np.array([[0.0, -1.0], [-1.0, 0.0]])  # negative length
 
-        with pytest.raises(
-            ValueError, match="Elements of `similarities` must be non-negative"
-        ):
+        with pytest.raises(ValueError, match="strictly positive"):
+            complete_quantum_graph(objects, similarities=similarities)
+
+    def test_complete_quantum_graph_zero_similarity(self):
+        """A zero off-diagonal similarity is a zero-length edge -> rejected."""
+        objects = [1, 2]
+        similarities = np.array([[0.0, 0.0], [0.0, 0.0]])
+
+        with pytest.raises(ValueError, match="strictly positive"):
+            complete_quantum_graph(objects, similarities=similarities)
+
+    def test_complete_quantum_graph_asymmetric_similarity(self):
+        """An asymmetric similarity matrix is rejected (undirected graph)."""
+        objects = [1, 2]
+        similarities = np.array([[0.0, 1.0], [2.0, 0.0]])
+
+        with pytest.raises(ValueError, match="symmetric"):
             complete_quantum_graph(objects, similarities=similarities)
 
     def test_complete_quantum_graph_invalid_labels_type(self):

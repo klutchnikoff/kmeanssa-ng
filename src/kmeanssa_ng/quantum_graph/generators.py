@@ -8,26 +8,6 @@ import numpy as np
 from .space import QuantumGraph
 
 
-class UniformDistribution:
-    """Picklable uniform distribution over ``[0, length)``.
-
-    Draws are backed by a numpy Generator (created lazily so the instance
-    stays cheap to pickle) rather than the global ``random`` module.
-    """
-
-    def __init__(
-        self, length: float, random_state: int | np.random.Generator | None = None
-    ):
-        self.length = length
-        self.random_state = random_state
-        self._rng: np.random.Generator | None = None
-
-    def __call__(self) -> float:
-        if self._rng is None:
-            self._rng = np.random.default_rng(self.random_state)
-        return float(self._rng.uniform(0, self.length))
-
-
 def generate_simple_graph(
     n_a: int = 5,
     n_aa: int = 3,
@@ -99,7 +79,7 @@ def generate_simple_graph(
         graph.add_edge("A0", node_a, length=1.0)
 
         for j in range(1, n_aa_int + 1):
-            node_aa = f"{node_a}{j}"
+            node_aa = f"{node_a}_{j}"
             graph.add_node(node_aa, weight=1)
             graph.add_edge(node_a, node_aa, length=1.0)
 
@@ -110,17 +90,13 @@ def generate_simple_graph(
         graph.add_edge("B0", node_b, length=1.0)
 
         for j in range(1, n_aa_int + 1):
-            node_bb = f"{node_b}{j}"
+            node_bb = f"{node_b}_{j}"
             graph.add_node(node_bb, weight=1)
             graph.add_edge(node_b, node_bb, length=1.0)
 
-    # Set edge weights and distributions
+    # Set edge weights.
     for edge in graph.edges:
         nx.set_edge_attributes(graph, {edge: {"weight": 1.0}})
-        edge_length = graph.get_edge_data(*edge)["length"]
-        # Use picklable callable class instead of lambda
-        distrib = UniformDistribution(edge_length)
-        nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
     if precompute:
         graph.precomputing()
@@ -177,7 +153,7 @@ def generate_simple_random_graph(
         # Poisson-distributed third level
         num_children = rng.poisson(lam_a)
         for j in range(1, num_children + 1):
-            node_aa = f"{node_a}{j}"
+            node_aa = f"{node_a}_{j}"
             graph.add_node(node_aa, weight=1)
             graph.add_edge(node_a, node_aa, length=rng.uniform(0.4, 0.6))
 
@@ -189,20 +165,15 @@ def generate_simple_random_graph(
 
         num_children = rng.poisson(lam_b)
         for j in range(1, num_children + 1):
-            node_bb = f"{node_b}{j}"
+            node_bb = f"{node_b}_{j}"
             graph.add_node(node_bb, weight=1)
             graph.add_edge(node_b, node_bb, length=rng.uniform(0.4, 0.6))
 
-    # Set edge weights and distributions
+    # Set edge weights to the harmonic mean of the endpoint node weights.
     node_weights = nx.get_node_attributes(graph, "weight")
     for edge in graph.edges:
-        # Harmonic mean of node weights
-        w = 0.5 / (1.0 / node_weights[edge[0]] + 1.0 / node_weights[edge[1]])
+        w = 2.0 / (1.0 / node_weights[edge[0]] + 1.0 / node_weights[edge[1]])
         nx.set_edge_attributes(graph, {edge: {"weight": w}})
-
-        edge_length = graph.get_edge_data(*edge)["length"]
-        distrib = UniformDistribution(edge_length)
-        nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
     if precompute:
         graph.precomputing()
@@ -297,9 +268,6 @@ def generate_sbm(
 
     for edge in graph.edges:
         nx.set_edge_attributes(graph, {edge: {"weight": 1}})
-        edge_length = graph.get_edge_data(*edge)["length"]
-        distrib = UniformDistribution(edge_length)
-        nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
     if precompute:
         graph.precomputing()
@@ -409,8 +377,6 @@ def generate_random_sbm(
         edge_length = lengths[block_i][block_j]
 
         nx.set_edge_attributes(graph, {edge: {"length": edge_length, "weight": 1}})
-        distrib = UniformDistribution(edge_length)
-        nx.set_edge_attributes(graph, {edge: {"distribution": distrib}})
 
     if precompute:
         graph.precomputing()
@@ -464,10 +430,6 @@ def as_quantum_graph(
     nx.set_edge_attributes(qg, edge_length, "length")
     nx.set_edge_attributes(qg, edge_weight, "weight")
 
-    distrib = UniformDistribution(edge_length)
-    for edge in qg.edges:
-        nx.set_edge_attributes(qg, {edge: {"distribution": distrib}})
-
     if precompute:
         qg.precomputing()
     return qg
@@ -515,8 +477,19 @@ def complete_quantum_graph(
             raise ValueError(
                 f"`similarities` must be a square matrix of size {num_objects}x{num_objects}."
             )
-        if np.any(similarities < 0):
-            raise ValueError("Elements of `similarities` must be non-negative.")
+        # Edge lengths are the off-diagonal similarities; they become edge
+        # lengths, which must be strictly positive (a zero would be a
+        # zero-length edge). Also require symmetry, since the graph is
+        # undirected and only the upper triangle is read.
+        off_diagonal = ~np.eye(num_objects, dtype=bool)
+        if np.any(similarities[off_diagonal] <= 0):
+            raise ValueError(
+                "Off-diagonal `similarities` must be strictly positive: they "
+                "become edge lengths, and a zero or negative value is not a "
+                "valid length."
+            )
+        if not np.allclose(similarities, similarities.T):
+            raise ValueError("`similarities` must be symmetric.")
 
     # Validate 'true_labels'
     if true_labels is not None:
@@ -544,8 +517,7 @@ def complete_quantum_graph(
             else:
                 edge_length = 1.0
 
-            distrib = UniformDistribution(edge_length)
-            graph.add_edge(i, j, weight=1, length=edge_length, distribution=distrib)
+            graph.add_edge(i, j, weight=1, length=edge_length)
 
     if precompute:
         graph.precomputing()

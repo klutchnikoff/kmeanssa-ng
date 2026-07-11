@@ -1030,9 +1030,9 @@ class TestGenerators:
                 "`similarities` must be a square matrix of size 2x2.",
             ),  # Not square
             (
-                np.array([[-1, 2], [3, 4]]),
-                "Elements of `similarities` must be non-negative.",
-            ),  # Negative value
+                np.array([[0, -1], [-1, 0]]),
+                "strictly positive",
+            ),  # Negative off-diagonal (would be a negative edge length)
         ],
     )
     def test_complete_quantum_graph_invalid_similarities_raises_value_error(
