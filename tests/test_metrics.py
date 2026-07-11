@@ -198,37 +198,39 @@ class TestSilhouette:
 
     def test_basic_silhouette(self, simple_graph, points_at_nodes):
         """Test basic silhouette computation."""
-        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
+        # Seed the sampling so the test is deterministic: an unseeded draw
+        # could put every point in one cluster and silently skip, making
+        # coverage flaky. This seed yields two clusters.
+        points = simple_graph.sample_points(
+            10, strategy=UniformNodeSampling(random_state=0)
+        )
         points_for_centers = simple_graph.sample_points(
-            2, strategy=UniformNodeSampling()
+            2, strategy=UniformNodeSampling(random_state=100)
         )
         centers = [simple_graph.center_from_point(p) for p in points_for_centers]
         labels = compute_labels(simple_graph, points, centers)
 
-        # Only test if we have at least 2 clusters
-        if len(np.unique(labels)) >= 2:
-            score = silhouette(simple_graph, points, centers)
-            assert -1 <= score <= 1
-        else:
-            pytest.skip("All points in single cluster")
+        assert len(np.unique(labels)) >= 2
+        score = silhouette(simple_graph, points, centers)
+        assert -1 <= score <= 1
 
     def test_with_precomputed_labels(self, simple_graph, points_at_nodes):
         """Test silhouette with pre-computed labels."""
-        # Use sample_points to get more diverse points for better clustering
-        points = simple_graph.sample_points(10, strategy=UniformNodeSampling())
+        # Seed for determinism (see test_basic_silhouette): this yields two
+        # clusters, so the comparison always runs instead of flakily skipping.
+        points = simple_graph.sample_points(
+            10, strategy=UniformNodeSampling(random_state=0)
+        )
         points_for_centers = simple_graph.sample_points(
-            2, strategy=UniformNodeSampling()
+            2, strategy=UniformNodeSampling(random_state=100)
         )
         centers = [simple_graph.center_from_point(p) for p in points_for_centers]
         labels = compute_labels(simple_graph, points, centers)
 
-        # Only run if we have at least 2 clusters
-        if len(np.unique(labels)) >= 2:
-            score1 = silhouette(simple_graph, points, centers)
-            score2 = silhouette(simple_graph, points, centers, labels=labels)
-            assert np.isclose(score1, score2)
-        else:
-            pytest.skip("All points in single cluster")
+        assert len(np.unique(labels)) >= 2
+        score1 = silhouette(simple_graph, points, centers)
+        score2 = silhouette(simple_graph, points, centers, labels=labels)
+        assert np.isclose(score1, score2)
 
     def test_single_cluster_fails(self, simple_graph, points_at_nodes):
         """Test that single cluster raises ValueError."""

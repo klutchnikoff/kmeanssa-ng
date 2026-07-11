@@ -23,6 +23,32 @@ class TestSamplingStrategy:
         with pytest.raises(TypeError):
             SamplingStrategy()
 
+    def test_int_seed_is_normalized_once(self):
+        """Successive draws on one instance must differ (RNG-2 regression).
+
+        The int seed was re-wrapped in a fresh default_rng on every draw, so
+        two sample() calls returned identical points. It is now normalized to
+        one advancing Generator at construction.
+        """
+        graph = generate_simple_graph(n_a=5)
+        strategy = UniformNodeSampling(random_state=0)
+
+        first = [p.edge[0] for p in graph.sample_points(30, strategy=strategy)]
+        second = [p.edge[0] for p in graph.sample_points(30, strategy=strategy)]
+        assert first != second
+
+        # Same seed, two instances -> reproducible first draw.
+        again = UniformNodeSampling(random_state=0)
+        assert [p.edge[0] for p in graph.sample_points(30, strategy=again)] == first
+
+    def test_random_state_property_is_a_generator(self):
+        """random_state is normalized to a Generator, however it was set."""
+        strategy = UniformNodeSampling(random_state=7)
+        assert isinstance(strategy.random_state, np.random.Generator)
+        rng = np.random.default_rng(1)
+        strategy.random_state = rng  # as run_parallel reassigns it per worker
+        assert strategy.random_state is rng
+
 
 class TestUniformNodeSampling:
     """Tests for UniformNodeSampling strategy (QuantumGraph)."""

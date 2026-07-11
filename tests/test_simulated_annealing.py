@@ -677,3 +677,33 @@ class TestPoissonTimes:
             record_energy=True,
         )
         np.testing.assert_allclose(sa.time_history, times, rtol=0, atol=1e-15)
+
+
+class TestRandomInitReplacement:
+    """RandomInit samples distinct observations (RNG-5 regression).
+
+    Drawing centers with replacement could place several centers on one
+    observation, shrinking k from the outset.
+    """
+
+    def test_no_duplicate_indices_when_k_equals_n(self):
+        graph = generate_simple_graph(n_a=3)
+        # Distinct observations, one per node, so distinct indices give
+        # distinct center locations.
+        nodes = list(graph.nodes())
+        points = [
+            graph.sample_points(1, strategy=UniformNodeSampling(random_state=i))[0]
+            for i in range(len(nodes))
+        ]
+        sa = SimulatedAnnealing(points, k=len(points), random_state=0)
+
+        centers = RandomInit().initialize_centers(sa)
+        edges = sorted(c.edge for c in centers)
+        assert edges == sorted(p.edge for p in points)  # a permutation, no repeats
+
+    def test_k_greater_than_n_raises(self):
+        graph = generate_simple_graph(n_a=3)
+        points = graph.sample_points(3, strategy=UniformNodeSampling(random_state=0))
+        sa = SimulatedAnnealing(points, k=5, random_state=0)
+        with pytest.raises(ValueError, match="distinct centers"):
+            RandomInit().initialize_centers(sa)

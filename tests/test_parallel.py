@@ -62,6 +62,48 @@ class TestRunParallel:
         # Check that best centers match first result
         assert best_centers == all_results[0][0]
 
+    def test_auto_seeds_are_distinct(self, simple_graph):
+        """Auto-generated seeds must be distinct (RNG-4).
+
+        Drawn with replacement, two runs could share a seed and, deriving
+        their streams from SeedSequence(seed), become exact duplicates.
+        """
+        _, all_results = run_parallel(
+            simple_graph,
+            n_points=15,
+            k=2,
+            sampling_strategy=UniformNodeSampling(),
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+            n_runs=8,
+            n_jobs=1,
+            return_all=True,
+        )
+        seeds = [seed for _, _, seed in all_results]
+        assert len(set(seeds)) == len(seeds)
+
+    def test_best_run_is_deterministic_across_ties(self, simple_graph):
+        """The returned best run is tie-broken by seed, not completion order.
+
+        Duplicate seeds produce identical runs (exact energy ties); the
+        (energy, seed) sort makes the whole ordering — and thus the best —
+        reproducible regardless of scheduling.
+        """
+        kwargs = dict(
+            n_points=15,
+            k=2,
+            sampling_strategy=UniformNodeSampling(),
+            initialization_strategy=KMeansPlusPlus(),
+            robustification_strategy=MinimizeEnergy(),
+            n_runs=6,
+            seeds=[1, 1, 2, 2, 3, 3],
+            n_jobs=2,
+            return_all=True,
+        )
+        _, first = run_parallel(simple_graph, **kwargs)
+        _, second = run_parallel(simple_graph, **kwargs)
+        assert [(e, s) for _, e, s in first] == [(e, s) for _, e, s in second]
+
     def test_parallel_with_specific_seeds(self, simple_graph):
         """Test parallel execution with specific seeds."""
         seeds = [42, 123, 456]

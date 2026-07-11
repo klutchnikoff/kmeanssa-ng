@@ -19,7 +19,13 @@ class MostFrequentNodeUpdate(LloydUpdateStrategy):
     """
 
     def __init__(self, random_state: int | np.random.Generator | None = None):
-        self.random_state = random_state
+        # Normalize once so the tie-breaking stream advances across update()
+        # calls instead of restarting from the same int seed each time.
+        self._rng = (
+            random_state
+            if isinstance(random_state, np.random.Generator)
+            else np.random.default_rng(random_state)
+        )
 
     def update(self, points: list[QGPoint], space: "QuantumGraph") -> "QGCenter":
         """Compute the new center for a given cluster of points.
@@ -55,13 +61,8 @@ class MostFrequentNodeUpdate(LloydUpdateStrategy):
 
         most_frequent_node = max(node_counts, key=node_counts.get)
 
-        if isinstance(self.random_state, np.random.Generator):
-            rng = self.random_state
-        else:
-            rng = np.random.default_rng(self.random_state)
-
         # Return a QGCenter at the most frequent node
-        return space.node_as_center(most_frequent_node, rng=rng)
+        return space.node_as_center(most_frequent_node, rng=self._rng)
 
 
 class MinimizeEnergyNodeUpdate(LloydUpdateStrategy):
@@ -73,7 +74,13 @@ class MinimizeEnergyNodeUpdate(LloydUpdateStrategy):
     """
 
     def __init__(self, random_state: int | np.random.Generator | None = None):
-        self.random_state = random_state
+        # Normalize once (see MostFrequentNodeUpdate): one advancing stream
+        # across update() calls rather than a fresh default_rng each time.
+        self._rng = (
+            random_state
+            if isinstance(random_state, np.random.Generator)
+            else np.random.default_rng(random_state)
+        )
 
     def update(self, points: list[QGPoint], space: "QuantumGraph") -> "QGCenter":
         """Compute the new center by finding the node that minimizes energy.
@@ -121,13 +128,8 @@ class MinimizeEnergyNodeUpdate(LloydUpdateStrategy):
             # This should not happen if there are points
             raise ValueError("Could not determine best node to minimize energy.")
 
-        if isinstance(self.random_state, np.random.Generator):
-            rng = self.random_state
-        else:
-            rng = np.random.default_rng(self.random_state)
-
         # 3. Return the new center
-        return space.node_as_center(best_node, rng=rng)
+        return space.node_as_center(best_node, rng=self._rng)
 
 
 # Helper method in QuantumGraph to get the point type

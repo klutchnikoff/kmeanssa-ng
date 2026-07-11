@@ -192,10 +192,13 @@ def run_parallel(
     elif n_jobs == -2:
         n_jobs = max(1, cpu_count - 1)
 
-    # Generate seeds if not provided
+    # Generate seeds if not provided. Draw them *without* replacement: with
+    # replacement, two runs could share a seed, and since each run derives its
+    # streams from SeedSequence(seed) they would be exact duplicates rather
+    # than independent samples.
     if seeds is None:
         rng = np.random.default_rng()
-        seeds = rng.integers(0, 2**31, size=n_runs).tolist()
+        seeds = rng.choice(2**31, size=n_runs, replace=False).tolist()
     elif len(seeds) != n_runs:
         raise ValueError(f"Length of seeds ({len(seeds)}) must match n_runs ({n_runs})")
 
@@ -238,8 +241,9 @@ def run_parallel(
             centers, energy, seed = future.result()
             results.append((centers, energy, seed))
 
-    # Sort by energy (best first)
-    results.sort(key=lambda x: x[1])
+    # Sort by energy (best first), breaking exact ties by seed so the returned
+    # best run is deterministic and does not depend on completion order.
+    results.sort(key=lambda x: (x[1], x[2]))
 
     # Return results
     if return_all:
@@ -322,10 +326,13 @@ def run_parallel_with_callback(
     elif n_jobs == -2:
         n_jobs = max(1, cpu_count - 1)
 
-    # Generate seeds if not provided
+    # Generate seeds if not provided. Draw them *without* replacement: with
+    # replacement, two runs could share a seed, and since each run derives its
+    # streams from SeedSequence(seed) they would be exact duplicates rather
+    # than independent samples.
     if seeds is None:
         rng = np.random.default_rng()
-        seeds = rng.integers(0, 2**31, size=n_runs).tolist()
+        seeds = rng.choice(2**31, size=n_runs, replace=False).tolist()
     elif len(seeds) != n_runs:
         raise ValueError(f"Length of seeds ({len(seeds)}) must match n_runs ({n_runs})")
 
@@ -375,6 +382,7 @@ def run_parallel_with_callback(
             if callback is not None:
                 callback(idx, result_seed, energy)
 
-    # Sort by energy and return best
-    results.sort(key=lambda x: x[1])
+    # Sort by energy (best first), breaking exact ties by seed so the returned
+    # best run does not depend on completion order.
+    results.sort(key=lambda x: (x[1], x[2]))
     return results[0][0]
