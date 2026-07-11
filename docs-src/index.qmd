@@ -19,5 +19,5 @@ This package implements k-means clustering via simulated annealing on **metric s
 ## License
 
 This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).<br> 
-&copy; Copyright 2025, Nicolas Klutchnikoff and Ioana Gavra
+&copy; Copyright 2026, Nicolas Klutchnikoff and Ioana Gavra
  

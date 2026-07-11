@@ -30,5 +30,5 @@ motion and a drift there.
 ## License
 
 This project is licensed under the [MIT
-License](https://opensource.org/licenses/MIT).<br> © Copyright 2025,
+License](https://opensource.org/licenses/MIT).<br> © Copyright 2026,
 Nicolas Klutchnikoff and Ioana Gavra

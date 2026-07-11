@@ -75,7 +75,7 @@ If you use this package in your research, please cite:
 @software{kmeanssa_ng,
   author       = {Klutchnikoff, Nicolas and Gavra, Ioana},
   title        = {kmeanssa-ng: K-means Clustering on Quantum Graphs and Metric Spaces},
-  year         = {2025},
+  year         = {2026},
   url          = {https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng},
   note         = {Python package for k-means clustering using simulated annealing}
 }
