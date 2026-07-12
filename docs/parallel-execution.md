@@ -100,10 +100,10 @@ print(f"Mean energy: {np.mean(energies):.4f}")
 print(f"Std energy: {np.std(energies):.4f}")
 ```
 
-    Best energy: 1.6800
-    Worst energy: 2.4400
-    Mean energy: 1.8987
-    Std energy: 0.1766
+    Best energy: 1.4100
+    Worst energy: 2.2017
+    Mean energy: 1.7092
+    Std energy: 0.2123
 
 ## Progress Monitoring
 
@@ -129,26 +129,26 @@ centers = run_parallel_with_callback(
 )
 ```
 
-    ✓ Run 8/20 completed - Energy: 1.8100 (seed=1880415768)
-    ✓ Run 1/20 completed - Energy: 1.8000 (seed=1495694099)
-    ✓ Run 7/20 completed - Energy: 1.7000 (seed=589881679)
-    ✓ Run 2/20 completed - Energy: 1.5100 (seed=183384938)
-    ✓ Run 5/20 completed - Energy: 1.8009 (seed=1494222352)
-    ✓ Run 3/20 completed - Energy: 2.0131 (seed=1680864592)
-    ✓ Run 4/20 completed - Energy: 2.2200 (seed=1690508300)
-    ✓ Run 11/20 completed - Energy: 1.9400 (seed=1754662378)
-    ✓ Run 6/20 completed - Energy: 1.2800 (seed=83158909)
-    ✓ Run 9/20 completed - Energy: 1.8509 (seed=1529584231)
-    ✓ Run 13/20 completed - Energy: 1.8000 (seed=1118367909)
-    ✓ Run 12/20 completed - Energy: 1.8905 (seed=1327791181)
-    ✓ Run 14/20 completed - Energy: 1.8800 (seed=526868701)
-    ✓ Run 15/20 completed - Energy: 2.0903 (seed=420427166)
-    ✓ Run 16/20 completed - Energy: 1.9100 (seed=96177084)
-    ✓ Run 10/20 completed - Energy: 1.7615 (seed=899972701)
-    ✓ Run 17/20 completed - Energy: 2.0200 (seed=121421773)
-    ✓ Run 18/20 completed - Energy: 2.1323 (seed=2047946061)
-    ✓ Run 19/20 completed - Energy: 1.5400 (seed=1455078363)
-    ✓ Run 20/20 completed - Energy: 1.8600 (seed=1842492945)
+    ✓ Run 2/20 completed - Energy: 2.0700 (seed=1725797332)
+    ✓ Run 6/20 completed - Energy: 1.6600 (seed=2126063927)
+    ✓ Run 5/20 completed - Energy: 1.7100 (seed=2082083474)
+    ✓ Run 7/20 completed - Energy: 1.7494 (seed=839783484)
+    ✓ Run 1/20 completed - Energy: 1.6572 (seed=1763201903)
+    ✓ Run 3/20 completed - Energy: 1.9341 (seed=1125302836)
+    ✓ Run 4/20 completed - Energy: 1.5459 (seed=1644288392)
+    ✓ Run 8/20 completed - Energy: 1.9503 (seed=875228736)
+    ✓ Run 10/20 completed - Energy: 1.8400 (seed=1221157960)
+    ✓ Run 9/20 completed - Energy: 2.0722 (seed=927673186)
+    ✓ Run 11/20 completed - Energy: 1.6296 (seed=639442356)
+    ✓ Run 12/20 completed - Energy: 2.0950 (seed=1906138083)
+    ✓ Run 13/20 completed - Energy: 1.9600 (seed=141895123)
+    ✓ Run 14/20 completed - Energy: 2.2679 (seed=518703919)
+    ✓ Run 15/20 completed - Energy: 1.5800 (seed=978136409)
+    ✓ Run 16/20 completed - Energy: 1.6500 (seed=1465165283)
+    ✓ Run 17/20 completed - Energy: 1.8400 (seed=1098769149)
+    ✓ Run 18/20 completed - Energy: 1.7100 (seed=107494062)
+    ✓ Run 19/20 completed - Energy: 1.5668 (seed=1621400038)
+    ✓ Run 20/20 completed - Energy: 1.3700 (seed=1759116548)
 
 The callback function receives three arguments:
 
@@ -267,12 +267,12 @@ print(f"\nFound optimal solution in {n_optimal}/100 runs ({n_optimal}%)")
 ```
 
     Energy statistics:
-      Min:    1.0933
-      Median: 1.4679
-      Max:    2.2933
-      Std:    0.2243
+      Min:    1.1800
+      Median: 1.5100
+      Max:    2.5400
+      Std:    0.2664
 
-    Found optimal solution in 1/100 runs (1%)
+    Found optimal solution in 2/100 runs (2%)
 
 ## API Reference
 

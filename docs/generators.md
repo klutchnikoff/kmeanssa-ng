@@ -67,7 +67,7 @@ sbm_graph = generate_sbm(
 print(f"SBM graph: {sbm_graph.number_of_nodes()} nodes, {sbm_graph.number_of_edges()} edges")
 ```
 
-    SBM graph: 100 nodes, 2103 edges
+    SBM graph: 100 nodes, 2094 edges
 
 The probability matrix `p[i][j]` controls the probability of edges
 between blocks `i` and `j`. High diagonal values (like 0.8 and 0.7
@@ -102,10 +102,10 @@ print(f"Short edges (~1.0): {sum(1 for l in edge_lengths if l < 2)}")
 print(f"Long edges (~4.0): {sum(1 for l in edge_lengths if l > 3)}")
 ```
 
-    Custom SBM: 100 nodes, 1977 edges
+    Custom SBM: 100 nodes, 1948 edges
     Edge lengths: min=1.0, max=4.0
-    Short edges (~1.0): 1720
-    Long edges (~4.0): 257
+    Short edges (~1.0): 1707
+    Long edges (~4.0): 241
 
 This is particularly useful when you want to model scenarios where
 inter-cluster distances are significantly larger than intra-cluster
