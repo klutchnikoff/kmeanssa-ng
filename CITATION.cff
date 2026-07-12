@@ -23,18 +23,8 @@ keywords:
   - "metric-spaces"
   - "quantum-graphs"
   - "simulated-annealing"
-# The companion theoretical paper. Fill in the identifier once the preprint is
-# online (arXiv / HAL); until then this is a placeholder.
-preferred-citation:
-  type: article
-  title: "Online k-means Clustering on Metric Graphs and Geodesic Spaces"
-  authors:
-    - family-names: "Brécheteau"
-      given-names: "Claire"
-    - family-names: "Gavra"
-      given-names: "Ioana"
-    - family-names: "Klutchnikoff"
-      given-names: "Nicolas"
-  year: 2026
-  # url: "https://arxiv.org/abs/..."   # TODO
-  # doi: "..."                          # TODO (HAL / arXiv)
+# A companion theoretical article (Brécheteau, Gavra, Klutchnikoff,
+# "Online k-means Clustering on Metric Graphs and Geodesic Spaces") is in
+# preparation. It will be added here as `preferred-citation` once it has an
+# arXiv / HAL identifier (targeted for 0.8.x). Until then, please cite the
+# software above.

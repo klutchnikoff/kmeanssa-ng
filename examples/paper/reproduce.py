@@ -18,7 +18,6 @@ import grid
 import sbm
 import sphere
 import rate_toy
-import bolza
 import make_tables
 import make_figures
 import make_timing
@@ -28,10 +27,10 @@ PAPER_SEEDS = tuple(range(42, 142))  # the 100 seeds behind the article's number
 
 
 def main(quick=False, n_jobs=1, n_seeds=None):
-    """Regenerate every figure and table of the article, in the paper's four parts.
+    """Regenerate every figure and table of the article, in the paper's three parts.
 
     With no arguments this is exactly the article's configuration: 100 seeds for
-    grid/sbm/sphere, the full-resolution rate toy, and the Bolza illustration.
+    grid/sbm/sphere and the full-resolution rate toy.
     ``--quick`` is a seconds-long smoke test; ``--jobs N`` (or -1) fans the seeds
     over cores with identical results; ``--seeds N`` overrides the seed count.
     """
@@ -67,10 +66,6 @@ def main(quick=False, n_jobs=1, n_seeds=None):
         geomstats_overhead.main(n_data=200, n_obs=200, n_net=400, n_runs=1)
     else:
         geomstats_overhead.main()
-
-    # ── Part 4 — Bolza surface (genus 2, curvature -1) → figure_bolza ──
-    bolza.run(n_runs=2, n_data=200) if quick else bolza.run()
-    make_figures.figure_bolza()
 
 
 def _parse_int(argv, name, default):

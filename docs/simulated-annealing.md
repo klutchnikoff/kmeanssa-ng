@@ -264,7 +264,7 @@ sa = SimulatedAnnealing(
 For the derivation of the annealing dynamics and its convergence
 analysis, see the companion paper: C. Brécheteau, I. Gavra, N.
 Klutchnikoff, *Online k-means Clustering on Metric Graphs and Geodesic
-Spaces* (preprint).
+Spaces* (in preparation).
 
 ## Monitoring Convergence
 
