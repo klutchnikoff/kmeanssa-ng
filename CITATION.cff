@@ -12,8 +12,8 @@ authors:
     affiliation: "Univ Rennes, CNRS, IRMAR (Institut de Recherche Mathématique de Rennes) - UMR 6625, F-35000 Rennes, France"
     # orcid: "https://orcid.org/..."     # TODO: add if available
 title: "kmeanssa-ng: K-means clustering on quantum graphs and metric spaces using simulated annealing"
-version: "0.8.0"          # TODO: keep in sync with pyproject at the release tag
-date-released: "2026-06-30"  # TODO: set to the 0.8.0 release date
+version: "0.8.0"
+date-released: "2026-07-12"
 url: "https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng"
 repository-code: "https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng"
 license: "MIT"
