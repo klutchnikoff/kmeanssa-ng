@@ -28,7 +28,6 @@ from kmeanssa_ng import (
     KMeansPlusPlus,
     MinimizeEnergy,
 )
-from kmeanssa_ng.quantum_graph.generators import UniformDistribution
 from calibration import potential_matrix, critical_depth
 from multistart import code_stamp, method_entropy
 
@@ -43,7 +42,6 @@ def build_toy(l_ab=1.0, l_bc=2.0):
     qg = as_quantum_graph(g, edge_length=1.0)
     for (u, v), length in [(("A", "B"), l_ab), (("B", "C"), l_bc)]:
         qg[u][v]["length"] = float(length)
-        qg[u][v]["distribution"] = UniformDistribution(float(length))
     qg.precomputing()
     nodes = list(qg.nodes())
     index = {n: i for i, n in enumerate(nodes)}
