@@ -86,8 +86,8 @@ for center in centers:
 ```
 
     Cluster centers (position in edge):
-    Center near node 65 [edge (65, 49), pos=0.000]
-    Center near node 3 [edge (3, 32), pos=0.000]
+    Center near node 62 [edge (62, 66), pos=0.000]
+    Center near node 47 [edge (47, 43), pos=0.000]
 
 ## 4. Visualize the Results
 

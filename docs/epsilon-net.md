@@ -40,7 +40,7 @@ graph = approximate_geodesic_space(sphere, 500, net=FibonacciNet())
 print(f"{graph.number_of_nodes()} nodes, {graph.number_of_edges()} edges")
 ```
 
-    500 nodes, 3421 edges
+    500 nodes, 3021 edges
 
 The result is an ordinary `QuantumGraph` whose nodes sit on the sphere
 and whose edge lengths are geodesic distances. Everything
@@ -111,8 +111,8 @@ graph = build_epsilon_net_graph(sphere, net_points, ell=float(np.sqrt(eps)))
 print(f"{graph.number_of_edges()} edges within l(eps)")
 ```
 
-    covering radius eps = 0.149   connection radius sqrt(eps) = 0.387
-    1329 edges within l(eps)
+    covering radius eps = 0.143   connection radius sqrt(eps) = 0.379
+    1219 edges within l(eps)
 
 Refining the net (more points) shrinks $\varepsilon$, and the graph
 resolves finer structure on the manifold—at the cost of a larger graph
