@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.0] - unreleased
+## [0.8.0] - 2026-07-12
 
 Makes the graph/manifold geometry and the experimental pipeline correct enough
 to back the companion paper, and prepares the package for archival and JOSS.
@@ -172,7 +172,7 @@ Contains breaking API changes.
 - NumPy and pandas dependencies for numerical operations
 - MIT license
 
-[0.8.0]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.7.0...main
+[0.8.0]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.7.0...v0.8.0
 [0.7.0]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.5.0...v0.7.0
 [0.5.0]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.3.0...v0.5.0
 [0.3.0]: https://plmlab.math.cnrs.fr/nicolas.klutchnikoff/kmeanssa-ng/-/compare/v0.2.3...v0.3.0
